@@ -1,0 +1,68 @@
+[project]
+name = "deepcode-vsa"
+version = "1.0.0"
+description = "Virtual Support Agent for IT Management - Intelligent CLI Agent"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "DeepCode Team" }
+]
+keywords = ["ai", "agent", "langgraph", "itsm", "glpi", "zabbix", "cli"]
+
+dependencies = [
+    # LangGraph & LangChain
+    "langgraph>=0.2.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.3.0",
+    "langgraph-checkpoint-postgres>=2.0.0",
+    
+    # CLI
+    "typer>=0.15.0",
+    "rich>=13.9.0",
+    
+    # HTTP & Async
+    "httpx>=0.28.0",
+    "asyncpg>=0.30.0",
+    
+    # Config & Validation
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.9.0",
+    "mypy>=1.14.0",
+    "pytest-cov>=6.0.0",
+]
+
+[project.scripts]
+vsa = "deepcode_vsa.cli.main:app"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+
+[tool.ruff.isort]
+known-first-party = ["deepcode_vsa"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/deepcode_vsa"]
