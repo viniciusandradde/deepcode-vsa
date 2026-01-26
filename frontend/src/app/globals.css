@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-display: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  
+  /* VSA Brand Colors - Orange */
+  --vsa-orange-dark: #FF6B35;
+  --vsa-orange: #FF8C42;
+  --vsa-orange-light: #FFB347;
+  --vsa-orange-lighter: #FFA726;
+  
+  /* VSA Brand Colors - Blue */
+  --vsa-blue-dark: #1E3A8A;
+  --vsa-blue: #3B82F6;
+  --vsa-blue-light: #60A5FA;
+  --vsa-blue-lighter: #3B9EFF;
+  
+  /* VSA Gradients */
+  --vsa-orange-gradient: linear-gradient(135deg, #FF6B35 0%, #FF8C42 50%, #FFB347 100%);
+  --vsa-blue-gradient: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #60A5FA 100%);
+  --vsa-gradient: linear-gradient(135deg, #FF6B35 0%, #FF8C42 25%, #3B82F6 75%, #60A5FA 100%);
+}
+
+body {
+  @apply bg-[#0d1426] text-slate-100;
+}
+

@@ -1,0 +1,12 @@
+langchain>=1.0.0
+langgraph>=1.0.0
+langchain-openai>=1.0.0
+langchain-tavily>=0.2.0
+langgraph-checkpoint>=3.0.0
+langgraph-checkpoint-postgres>=3.0.0
+python-dotenv>=1.0.0
+psycopg[binary]>=3.1.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+

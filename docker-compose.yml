@@ -1,23 +1,106 @@
+
 version: '3.8'
 
 services:
+  # PostgreSQL com extensão pgvector
   postgres:
-    image: postgres:15-alpine
-    container_name: deepcode-vsa-db
-    restart: unless-stopped
+    image: pgvector/pgvector:pg16
+    container_name: ai_agent_postgres
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-deepcode}
-      POSTGRES_DB: ${DB_DATABASE:-deepcode_vsa}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ai_agent_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d/sql
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ai_agent_db}"]
+      interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - ai_agent_network
+    restart: unless-stopped
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ai_agent_backend
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ai_agent_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      # APIs
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      COHERE_API_KEY: ${COHERE_API_KEY:-}
+      # Checkpointing
+      USE_POSTGRES_CHECKPOINT: ${USE_POSTGRES_CHECKPOINT:-true}
+      # LangSmith
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-true}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-ai-agent-template}
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - backend_cache:/root/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ai_agent_network
+    restart: unless-stopped
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: ai_agent_frontend
+    environment:
+      # Server-side API URL (for Next.js API routes - uses Docker service name)
+      - API_BASE_URL=http://backend:8000
+      # Client-side API URL (exposed to browser - use IP or hostname when accessing remotely)
+      # For local access: http://localhost:8000
+      # For remote access: http://10.10.1.105:8000 (or your server IP)
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_BASE:-http://localhost:8000}}
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - ./models.yaml:/app/models.yaml:ro
+      - ./models.yaml:/models.yaml:ro
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - ai_agent_network
+    restart: unless-stopped
+    command: npm run dev
 
 volumes:
   postgres_data:
+    driver: local
+  backend_cache:
+    driver: local
+
+networks:
+  ai_agent_network:
+    driver: bridge
+

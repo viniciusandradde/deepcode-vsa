@@ -1,0 +1,44 @@
+# ============================================================================
+# Catálogo de Modelos OpenRouter
+# ============================================================================
+# Este arquivo define os modelos de IA disponíveis no sistema.
+# 
+# Para adicionar um novo modelo:
+# 1. Encontre o modelo em https://openrouter.ai/models
+# 2. Copie o ID exato do modelo
+# 3. Adicione uma nova entrada abaixo seguindo o formato
+# 4. Reinicie o frontend: sudo docker-compose restart frontend
+#
+# Documentação completa: docs/ADICIONAR_MODELOS.md
+# ============================================================================
+
+# Campos obrigatórios para cada modelo:
+# - id: Identificador único do modelo no OpenRouter (formato: provider/model-name ou provider/model-name:variant)
+# - label: Nome amigável exibido no dropdown da interface
+# - input_cost: Custo por 1 milhão de tokens de entrada (USD). Use 0.00 para modelos gratuitos.
+# - output_cost: Custo por 1 milhão de tokens de saída (USD). Use 0.00 para modelos gratuitos.
+
+# Modelos disponíveis:
+- id: google/gemini-2.5-flash
+  label: Gemini 2.5 Flash
+  input_cost: 0.30    # USD por 1M tokens de entrada
+  output_cost: 2.50   # USD por 1M tokens de saída
+
+- id: gpt-4o-mini
+  label: GPT-4o Mini
+  input_cost: 0.15
+  output_cost: 0.60
+
+- id: x-ai/grok-4-fast
+  label: Grok 4 Fast
+  input_cost: 0.20
+  output_cost: 0.50
+
+# Modelos gratuitos (note o sufixo :free no ID)
+- id: x-ai/grok-4.1-fast:free
+  label: Grok 4.1 Fast (Free)
+  input_cost: 0.00    # Modelo gratuito
+  output_cost: 0.00   # Modelo gratuito
+
+
+

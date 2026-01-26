@@ -1,0 +1,313 @@
+"""Chat API routes."""
+
+from fastapi import APIRouter, HTTPException
+from langchain_core.messages import HumanMessage
+import logging
+import uuid
+import os
+
+from api.models.requests import ChatRequest
+from api.models.responses import ChatResponse
+from core.agents.vsa import VSAAgent
+from core.tools.search import tavily_search
+from core.checkpointing import get_checkpointer
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Debug flag for agent logs
+DEBUG_AGENT_LOGS = os.getenv("DEBUG_AGENT_LOGS", "false").strip().lower() in {"1", "true", "yes"}
+
+router = APIRouter()
+
+# Initialize checkpointer with error handling
+# Temporarily disabled to avoid setup errors - will use MemorySaver
+checkpointer = None
+try:
+    # Only try to initialize if explicitly enabled and working
+    use_checkpoint = os.getenv("USE_POSTGRES_CHECKPOINT", "false").lower() == "true"
+    if use_checkpoint:
+        checkpointer = get_checkpointer()
+        logger.info("Checkpointer initialized successfully")
+    else:
+        logger.info("Checkpointer disabled (using MemorySaver)")
+except Exception as e:
+    logger.warning(f"Failed to initialize checkpointer, using MemorySaver: {e}")
+    checkpointer = None
+
+
+@router.post("", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Chat endpoint - synchronous."""
+    try:
+        # Create agent with tools
+        tools = []
+        if request.use_tavily:
+            tools.append(tavily_search)
+        
+        agent = VSAAgent(
+            model_name=request.model or "google/gemini-2.5-flash",
+            tools=tools,
+        )
+        
+        # Get graph with checkpointer
+        graph = agent.create_graph(checkpointer=checkpointer)
+        compiled = graph
+        
+        # Generate thread_id if not provided
+        thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
+        
+        # Invoke agent
+        config = {
+            "configurable": {
+                "thread_id": thread_id,
+            }
+        }
+        if request.empresa:
+            config["configurable"]["empresa"] = request.empresa
+        if request.client_id:
+            config["configurable"]["client_id"] = request.client_id
+        
+        # Note: checkpointer cannot be added to already-compiled graphs from create_agent
+        # The graph works without checkpointing, but state won't persist between calls
+        
+        result = await compiled.ainvoke(
+            {"messages": [HumanMessage(content=request.message)]},
+            config=config
+        )
+        
+        # Extract response
+        messages = result.get("messages", [])
+        response_text = messages[-1].content if messages else "No response generated"
+        
+        return ChatResponse(
+            response=response_text,
+            thread_id=thread_id,
+            model=request.model
+        )
+    except Exception as e:
+        logger.error(f"Chat error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+
+
+@router.post("/stream")
+async def stream_chat(request: ChatRequest):
+    """Chat endpoint - streaming (SSE)."""
+    from fastapi.responses import StreamingResponse
+    import json
+    import traceback
+    
+    try:
+        logger.info(f"Starting stream chat: model={request.model}, thread_id={request.thread_id}, use_tavily={request.use_tavily}")
+        
+        # Create agent with tools
+        tools = []
+        if request.use_tavily:
+            tools.append(tavily_search)
+        
+        logger.info("Creating agent...")
+        # Validate API keys before creating agent
+        import os
+        if not os.getenv("OPENROUTER_API_KEY"):
+            error_msg = "OPENROUTER_API_KEY not configured. Please set it in .env file."
+            logger.error(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        try:
+            agent = VSAAgent(
+                model_name=request.model or "google/gemini-2.5-flash",
+                tools=tools,
+            )
+            logger.info("Agent created successfully")
+        except RuntimeError as agent_error:
+            # RuntimeError usually means missing API key
+            error_msg = str(agent_error)
+            logger.error(f"Failed to create agent: {error_msg}", exc_info=True)
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to create agent: {error_msg}"
+            )
+        except Exception as agent_error:
+            logger.error(f"Failed to create agent: {agent_error}", exc_info=True)
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to create agent: {str(agent_error)}"
+            )
+        
+        logger.info("Creating graph...")
+        try:
+            # Get graph (checkpointer not used for now to avoid errors)
+            graph = agent.create_graph(checkpointer=None)
+            compiled = graph
+            logger.info("Graph created successfully")
+        except Exception as graph_error:
+            logger.error(f"Failed to create graph: {graph_error}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create graph: {str(graph_error)}"
+            )
+        
+        # Generate thread_id if not provided
+        thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
+        logger.info(f"Using thread_id: {thread_id}")
+        
+        config = {
+            "configurable": {
+                "thread_id": thread_id,
+            }
+        }
+        if request.empresa:
+            config["configurable"]["empresa"] = request.empresa
+        if request.client_id:
+            config["configurable"]["client_id"] = request.client_id
+        
+        # Note: checkpointer cannot be added to already-compiled graphs from create_agent
+        # The graph works without checkpointing, but state won't persist between calls
+        # To use checkpointing, we would need to create the graph manually and compile with checkpointer
+        # For now, we'll work without checkpointing to avoid errors
+        
+        async def gen():
+            try:
+                logger.info("Starting stream generation...")
+                accumulated_content = ""
+                chunk_count = 0
+                
+                # Use stream_mode="values" to get complete state at each step
+                # This ensures we receive the full accumulated messages in each chunk
+                async for chunk in compiled.astream(
+                    {"messages": [HumanMessage(content=request.message)]},
+                    config=config,
+                    stream_mode="values"  # Get complete state, not just updates
+                ):
+                    chunk_count += 1
+                    
+                    # Log chunk structure for debugging
+                    if DEBUG_AGENT_LOGS:
+                        logger.info(f"Chunk {chunk_count} type: {type(chunk)}, keys: {list(chunk.keys()) if isinstance(chunk, dict) else 'N/A'}")
+                    
+                    # Extract content from chunk
+                    # With stream_mode="values", each chunk contains the complete state
+                    # Structure: {"messages": [HumanMessage(...), AIMessage(...), ...]}
+                    # The state accumulates messages, so the last AIMessage has the complete response
+                    messages = None
+                    
+                    if isinstance(chunk, dict):
+                        # With stream_mode="values", chunk should be the complete state
+                        # Try direct "messages" key first (most common case)
+                        if "messages" in chunk:
+                            messages = chunk.get("messages", [])
+                            if DEBUG_AGENT_LOGS:
+                                logger.info(f"[CHUNK {chunk_count}] Found messages in state: {len(messages)} messages")
+                        else:
+                            # Fallback: Try to find messages in nested structure (node outputs)
+                            # Some LangGraph implementations may return {"node_name": {"messages": [...]}}
+                            for key, value in chunk.items():
+                                if isinstance(value, dict) and "messages" in value:
+                                    messages = value.get("messages", [])
+                                    if DEBUG_AGENT_LOGS:
+                                        logger.info(f"[CHUNK {chunk_count}] Found messages in node '{key}': {len(messages)} messages")
+                                    break
+                                # Also check if value is directly a list of messages
+                                elif isinstance(value, list) and value:
+                                    # Check if first item looks like a message object
+                                    first_item = value[0]
+                                    if (hasattr(first_item, 'content') or 
+                                        (isinstance(first_item, dict) and 'content' in first_item)):
+                                        messages = value
+                                        if DEBUG_AGENT_LOGS:
+                                            logger.info(f"[CHUNK {chunk_count}] Found messages as direct list in node '{key}': {len(messages)} messages")
+                                        break
+                    
+                    if messages:
+                        # Find the last AIMessage in the list
+                        # LangGraph accumulates messages, so the last AIMessage has the complete content
+                        last_ai_msg = None
+                        for msg in reversed(messages):
+                            if hasattr(msg, 'content'):
+                                # Check if it's an AIMessage by class name
+                                if hasattr(msg, '__class__'):
+                                    class_name = msg.__class__.__name__
+                                    if 'AI' in class_name or 'Assistant' in class_name or 'AIMessage' in class_name:
+                                        last_ai_msg = msg
+                                        if DEBUG_AGENT_LOGS:
+                                            logger.info(f"[CHUNK {chunk_count}] Found AIMessage: {class_name}, content length: {len(str(msg.content)) if msg.content else 0}")
+                                        break
+                                # Fallback: if it has content, assume it's a message
+                                elif not last_ai_msg:
+                                    last_ai_msg = msg
+                        
+                        # If no AIMessage found, try the last message
+                        if not last_ai_msg and messages:
+                            last_ai_msg = messages[-1]
+                            if DEBUG_AGENT_LOGS:
+                                logger.warning(f"[CHUNK {chunk_count}] No AIMessage found, using last message")
+                        
+                        if last_ai_msg and hasattr(last_ai_msg, 'content'):
+                            content_raw = last_ai_msg.content
+                            
+                            # Handle different content types
+                            # Some models return content as a list of strings
+                            if isinstance(content_raw, list):
+                                content = "".join(str(item) for item in content_raw if item)
+                            elif isinstance(content_raw, str):
+                                content = content_raw
+                            else:
+                                content = str(content_raw) if content_raw else ""
+                            
+                            if content:
+                                # LangGraph accumulates content, so each chunk has the FULL content so far
+                                # We need to send only the NEW part (increment)
+                                if len(content) > len(accumulated_content):
+                                    # New content is longer - send the difference (incremental)
+                                    new_content = content[len(accumulated_content):]
+                                    accumulated_content = content
+                                    logger.info(f"[CHUNK {chunk_count}] Sending content increment: {len(new_content)} chars (total accumulated: {len(accumulated_content)})")
+                                    yield f"data: {json.dumps({'type': 'content', 'content': new_content, 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
+                                elif not accumulated_content:
+                                    # First content received
+                                    accumulated_content = content
+                                    logger.info(f"[CHUNK {chunk_count}] Sending initial content: {len(content)} chars")
+                                    yield f"data: {json.dumps({'type': 'content', 'content': content, 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
+                                elif content != accumulated_content:
+                                    # Content changed but not longer - send full content update
+                                    accumulated_content = content
+                                    logger.info(f"[CHUNK {chunk_count}] Sending full content update: {len(content)} chars (content changed)")
+                                    yield f"data: {json.dumps({'type': 'content', 'content': content, 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
+                            elif DEBUG_AGENT_LOGS:
+                                logger.warning(f"[CHUNK {chunk_count}] Content is empty after processing. Raw type: {type(content_raw)}, raw value: {str(content_raw)[:100] if content_raw else 'None'}")
+                        elif DEBUG_AGENT_LOGS:
+                            logger.warning(f"[CHUNK {chunk_count}] No valid message found. last_ai_msg: {last_ai_msg}, has content attr: {hasattr(last_ai_msg, 'content') if last_ai_msg else False}")
+                    elif DEBUG_AGENT_LOGS:
+                        logger.warning(f"[CHUNK {chunk_count}] No messages found in chunk structure. Chunk keys: {list(chunk.keys()) if isinstance(chunk, dict) else 'N/A'}")
+                    
+                    # Yield chunk data for debugging (only in debug mode)
+                    if DEBUG_AGENT_LOGS:
+                        chunk_str = str(chunk)[:1000]  # Limit chunk size
+                        yield f"data: {json.dumps({'type': 'chunk', 'data': chunk_str})}\n\n"
+                
+                logger.info(f"Stream generation completed ({chunk_count} chunks, total content: {len(accumulated_content)} chars)")
+                # Send a final content update with the complete accumulated content
+                # This ensures the frontend receives the complete response even if the last chunk
+                # didn't trigger a content update
+                if accumulated_content:
+                    logger.info(f"Sending final complete content: {len(accumulated_content)} chars")
+                    yield f"data: {json.dumps({'type': 'content', 'content': accumulated_content, 'thread_id': thread_id, 'final': True}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id, 'total_length': len(accumulated_content)})}\n\n"
+            except Exception as e:
+                error_msg = str(e)
+                error_trace = traceback.format_exc()
+                logger.error(f"Error in stream generation: {error_msg}\n{error_trace}")
+                yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
+        
+        return StreamingResponse(gen(), media_type="text/event-stream")
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        error_msg = str(e)
+        error_trace = traceback.format_exc()
+        logger.error(f"Stream error: {error_msg}\n{error_trace}")
+        # Return detailed error message
+        error_detail = f"Stream error: {error_msg} (Type: {type(e).__name__})"
+        raise HTTPException(status_code=500, detail=error_detail)

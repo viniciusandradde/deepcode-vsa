@@ -1,0 +1,16 @@
+langchain>=1.0.0
+langgraph>=1.0.0
+langchain-openai>=1.0.1
+langchain-tavily>=0.2.12
+langchain-text-splitters>=0.3.0
+langgraph-checkpoint>=3.0.1
+langgraph-checkpoint-postgres>=3.0.1
+python-dotenv>=1.2.1
+psycopg[binary]>=3.1.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.12.4
+
+httpx
+pydantic-settings
+pydantic-settings>=2.0.0
