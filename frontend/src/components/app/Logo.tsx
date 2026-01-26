@@ -67,7 +67,7 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
       </div>
       {showText && (
         <div className="flex flex-col">
-          <span className={clsx("font-bold text-white", textSizeClasses[size])}>VSA</span>
+          <span className={clsx("font-bold text-white", textSizeClasses[size])}>DeepCode VSA</span>
           <span className={clsx("text-vsa-blue-light text-xs", size === "sm" ? "text-[10px]" : "")}>
             Soluções em Tecnologia
           </span>
