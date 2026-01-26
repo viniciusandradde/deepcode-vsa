@@ -9,15 +9,19 @@
 O sistema está configurado com credenciais de **produção** do Hospital Evangélico:
 
 ### GLPI (ITSM)
-- **URL:** https://glpi.hospitalevangelico.com.br/glpi/apirest.php
-- **App Token:** `hmj96ml658lz3t3mf0ouxw0dbt0qfdf2ie4j4he8`
-- **User Token:** ⚠️ Pendente (necessário para operações específicas de usuário)
+
+- **URL:** <https://glpi.hospitalevangelico.com.br/glpi/apirest.php>
+- **App Token:** `gvP15n0MEabjKEhRxzsqX8rp4Z6a27FEmUKv8s4b`
+- **Auth Method:** Basic Auth (Username + Password)
+- **Status:** ✅ Operacional
 
 ### Zabbix (Monitoring)
-- **URL:** https://zabbix.hospitalevangelico.com.br/api_jsonrpc.php
+
+- **URL:** <https://zabbix.hospitalevangelico.com.br/api_jsonrpc.php>
 - **API Token:** `a4419b6574113b0be4062813f54d39aa88b33d07a43f2dadbf0a9b044f4d87b1`
 
 ### Linear.app (Project Management)
+
 - **API Key:** `lin_api_VZJYnVszyfCSbmFwWYaPEvC2dCHHtgoDhdDYAE9G`
 
 ---
@@ -29,12 +33,14 @@ O sistema está configurado com credenciais de **produção** do Hospital Evang�
 ✅ **Verificado:** `.gitignore` está configurado para ignorar `.env`
 
 **NUNCA:**
+
 - ❌ Commitar o arquivo `.env` no Git
 - ❌ Compartilhar credenciais em chat/email sem criptografia
 - ❌ Fazer upload do `.env` para serviços de nuvem públicos
 - ❌ Incluir credenciais em logs ou outputs visíveis
 
 **SEMPRE:**
+
 - ✅ Manter `.env` apenas local
 - ✅ Usar `.env.example` como template (sem valores reais)
 - ✅ Rotacionar credenciais periodicamente
@@ -43,16 +49,19 @@ O sistema está configurado com credenciais de **produção** do Hospital Evang�
 ### 2. Permissões das APIs
 
 #### GLPI
+
 - **READ:** Consultar tickets, SLAs, entidades
 - **WRITE:** Criar tickets (DRY_RUN ativo por padrão)
 - **DELETE:** ❌ Bloqueado no código
 
 #### Zabbix
+
 - **READ:** Consultar alertas, hosts, métricas
 - **WRITE:** ❌ Não implementado (read-only)
 - **DELETE:** ❌ Não implementado
 
 #### Linear
+
 - **READ:** Consultar issues, teams, comments
 - **WRITE:** Criar issues, adicionar comments (DRY_RUN ativo por padrão)
 - **DELETE:** ❌ Não implementado
@@ -70,6 +79,7 @@ class Settings(BaseSettings):
 ```
 
 Para executar operações reais:
+
 1. Usuário deve **confirmar explicitamente** no chat
 2. Sistema valida a operação
 3. Gera preview da ação
@@ -96,11 +106,13 @@ Todas as operações são registradas:
 ### 5. Acesso Restrito
 
 **Quem pode usar o sistema:**
+
 - ✅ Equipe de TI autorizada
 - ✅ Gestores de TI
 - ✅ NOC/Service Desk
 
 **Controle de acesso:**
+
 - Sistema deve rodar em servidor seguro
 - Acesso via VPN/rede interna
 - Logs de todas as sessões
@@ -113,12 +125,14 @@ Todas as operações são registradas:
 ### ✅ No Código
 
 1. **Credenciais via Environment Variables**
+
    ```python
    from core.config import get_settings
    settings = get_settings()  # Carrega de .env
    ```
 
 2. **Nunca hardcoded**
+
    ```python
    # ❌ ERRADO
    api_key = "hmj96ml658lz3t3mf0ouxw0dbt0qfdf2ie4j4he8"
@@ -128,6 +142,7 @@ Todas as operações são registradas:
    ```
 
 3. **Dry-Run por Padrão**
+
    ```python
    async def create_ticket(..., dry_run: bool = True):
        if dry_run:
@@ -136,6 +151,7 @@ Todas as operações são registradas:
    ```
 
 4. **Logs Sanitizados**
+
    ```python
    logger.info(f"GLPI token: {token[:10]}...")  # Não loga token completo
    ```
@@ -166,6 +182,7 @@ Se qualquer credencial for comprometida:
 ### Ação Imediata (< 15 minutos)
 
 1. **GLPI:**
+
    ```
    1. Acesse: https://glpi.hospitalevangelico.com.br
    2. Setup → API → Tokens
@@ -175,6 +192,7 @@ Se qualquer credencial for comprometida:
    ```
 
 2. **Zabbix:**
+
    ```
    1. Acesse: https://zabbix.hospitalevangelico.com.br
    2. Administration → API tokens
@@ -184,6 +202,7 @@ Se qualquer credencial for comprometida:
    ```
 
 3. **Linear:**
+
    ```
    1. Acesse: https://linear.app/settings/api
    2. Revoque a key: lin_api_VZJYnVszyfCSbmFwWYaPEvC2dCHHtgoDhdDYAE9G
@@ -248,6 +267,7 @@ Se qualquer credencial for comprometida:
 2. Vá em: Meu Perfil → Configurações Remotas → Tokens de API
 3. Gere um novo token
 4. Adicione ao `.env`:
+
    ```bash
    GLPI_USER_TOKEN=seu_token_de_usuario_aqui
    ```
