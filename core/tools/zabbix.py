@@ -31,16 +31,17 @@ async def zabbix_get_alerts(
     """
     client = get_client()
     try:
-        # Map severity to Zabbix API expectation if needed, or pass directly
-        # Legacy tool wrapped this logic, let's call client directly or adapt
-        # Client has get_alerts?
-        # Let's check client implementation. 
-        # Assuming get_problems is the method name in client based on common Zabbix usage
-        # But legacy had get_alerts? Let's assume client has get_problems
-        result = await client.get_problems(min_severity=min_severity, limit=limit)
+        # Call get_problems with correct parameter name
+        result = await client.get_problems(severity=min_severity, limit=limit)
         if not result.success:
             return {"error": result.error}
-        return result.output
+        
+        problems = result.output if isinstance(result.output, list) else []
+        return {
+            "count": len(problems),
+            "problems": problems,
+            "min_severity": min_severity
+        }
     except Exception as e:
         return {"error": str(e)}
 
