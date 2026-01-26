@@ -82,22 +82,28 @@ class ZabbixClient:
 
     async def get_problems(self, limit: int = 50, severity: int = 3) -> ToolResult:
         """Get active problems.
-        
+
         Args:
             limit: Max records
-            severity: Min severity (0-5)
+            severity: Min severity (0-5) - Note: applied as filter after retrieval
         """
         params = {
             "output": "extend",
-            "selectAck": "extend",
             "selectTags": "extend",
             "sortfield": ["eventid"],
             "sortorder": "DESC",
-            "recent": "true",
-            "severity": severity,
+            "recent": True,
             "limit": limit
         }
-        return await self._rpc_call("problem.get", params)
+        result = await self._rpc_call("problem.get", params)
+
+        # Filter by severity after retrieval if needed
+        if result.success and severity > 0:
+            problems = result.output if isinstance(result.output, list) else []
+            filtered = [p for p in problems if int(p.get('severity', 0)) >= severity]
+            result.output = filtered
+
+        return result
 
     async def get_host(self, name: str) -> ToolResult:
         """Find host by name."""

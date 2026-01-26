@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Agent VSA AI",
-  description: "Template completo de Agente de IA com RAG usando LangChain e PostgreSQL",
+  title: "DeepCode VSA",
+  description: "Agente Inteligente para Gestão de TI",
 };
 
 export default function RootLayout({

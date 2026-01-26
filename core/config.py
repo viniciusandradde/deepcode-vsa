@@ -27,7 +27,9 @@ class GLPISettings(BaseSettings):
     enabled: bool = True
     base_url: str = Field(default="", description="GLPI API base URL")
     app_token: str = Field(default="", description="GLPI App Token")
-    user_token: str = Field(default="", description="GLPI User Token")
+    user_token: str = Field(default="", description="GLPI User Token (optional)")
+    username: str = Field(default="", description="GLPI Username for Basic Auth")
+    password: str = Field(default="", description="GLPI Password for Basic Auth")
 
 
 class ZabbixSettings(BaseSettings):
@@ -38,6 +40,15 @@ class ZabbixSettings(BaseSettings):
     enabled: bool = True
     base_url: str = Field(default="", description="Zabbix API URL")
     api_token: str = Field(default="", description="Zabbix API Token")
+
+
+class LinearSettings(BaseSettings):
+    """Linear.app API configuration."""
+
+    model_config = SettingsConfigDict(env_prefix="LINEAR_")
+
+    enabled: bool = True
+    api_key: str = Field(default="", description="Linear API Key")
 
 
 class LLMSettings(BaseSettings):
@@ -101,6 +112,7 @@ class Settings(BaseSettings):
     # Sub-settings
     glpi: GLPISettings = Field(default_factory=GLPISettings)
     zabbix: ZabbixSettings = Field(default_factory=ZabbixSettings)
+    linear: LinearSettings = Field(default_factory=LinearSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
 

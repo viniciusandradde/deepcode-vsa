@@ -58,10 +58,30 @@ class GLPIClient:
 
     async def init_session(self) -> ToolResult:
         """Initialize GLPI session.
-        
-        Uses User-Token authentication.
+
+        Supports both Basic Auth (username/password) and User-Token authentication.
+        Basic Auth is preferred if username is provided.
         """
+        import base64
+        
         client = await self._get_client()
+
+        # Build authorization header
+        if self.settings.username and self.settings.password:
+            # Basic Auth (preferred)
+            auth_string = base64.b64encode(
+                f"{self.settings.username}:{self.settings.password}".encode()
+            ).decode()
+            auth_header = f"Basic {auth_string}"
+        elif self.settings.user_token:
+            # User Token fallback
+            auth_header = f"user_token {self.settings.user_token}"
+        else:
+            return ToolResult.fail(
+                "GLPI authentication not configured. "
+                "Please provide either GLPI_USERNAME/GLPI_PASSWORD or GLPI_USER_TOKEN.",
+                operation="init_session"
+            )
 
         try:
             response = await client.get(
@@ -69,7 +89,7 @@ class GLPIClient:
                 headers={
                     "Content-Type": "application/json",
                     "App-Token": self.settings.app_token,
-                    "Authorization": f"user_token {self.settings.user_token}",
+                    "Authorization": auth_header,
                 }
             )
             response.raise_for_status()
@@ -82,7 +102,7 @@ class GLPIClient:
             )
         except httpx.HTTPStatusError as e:
             return ToolResult.fail(
-                f"GLPI auth failed: {e.response.status_code}",
+                f"GLPI auth failed: {e.response.status_code} - {e.response.text}",
                 operation="init_session"
             )
         except Exception as e:
