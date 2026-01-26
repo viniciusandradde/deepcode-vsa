@@ -12,6 +12,11 @@ from core.agents.simple import SimpleAgent
 from core.tools.search import tavily_search
 from core.checkpointing import get_checkpointer
 
+# Integration tools (Task 1.1)
+from core.tools.glpi import glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket
+from core.tools.zabbix import zabbix_get_alerts, zabbix_get_host
+from core.tools.linear import linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,10 +33,25 @@ checkpointer = get_checkpointer()
 async def chat(request: ChatRequest):
     """Chat endpoint - synchronous."""
     try:
-        # Create agent with tools
+        # Create agent with tools (Task 1.1 - Dynamic tools)
         tools = []
         if request.use_tavily:
             tools.append(tavily_search)
+        
+        # GLPI tools (Task 1.2)
+        if request.enable_glpi:
+            tools.extend([glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket])
+            logger.info("✅ GLPI tools enabled")
+        
+        # Zabbix tools (Task 1.3)
+        if request.enable_zabbix:
+            tools.extend([zabbix_get_alerts, zabbix_get_host])
+            logger.info("✅ Zabbix tools enabled")
+        
+        # Linear tools
+        if request.enable_linear:
+            tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
+            logger.info("✅ Linear tools enabled")
         
         agent = SimpleAgent(
             model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
@@ -75,10 +95,25 @@ async def stream_chat(request: ChatRequest):
     import json
     
     try:
-        # Create agent with tools
+        # Create agent with tools (Task 1.1 - Dynamic tools)
         tools = []
         if request.use_tavily:
             tools.append(tavily_search)
+        
+        # GLPI tools (Task 1.2)
+        if request.enable_glpi:
+            tools.extend([glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket])
+            logger.info("✅ GLPI tools enabled (stream)")
+        
+        # Zabbix tools (Task 1.3)
+        if request.enable_zabbix:
+            tools.extend([zabbix_get_alerts, zabbix_get_host])
+            logger.info("✅ Zabbix tools enabled (stream)")
+        
+        # Linear tools
+        if request.enable_linear:
+            tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
+            logger.info("✅ Linear tools enabled (stream)")
         
         agent = SimpleAgent(
             model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),

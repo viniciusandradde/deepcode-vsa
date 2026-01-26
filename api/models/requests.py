@@ -12,6 +12,13 @@ class ChatRequest(BaseModel):
     empresa: Optional[str] = None
     client_id: Optional[str] = None
     use_tavily: Optional[bool] = None
+    
+    # VSA-specific fields (Task 1.1)
+    enable_vsa: bool = False
+    enable_glpi: bool = False
+    enable_zabbix: bool = False
+    enable_linear: bool = False
+    dry_run: bool = True  # Safe by default
 
 
 class RAGSearchRequest(BaseModel):

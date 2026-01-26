@@ -36,6 +36,15 @@ interface GenesisUIState {
   setSelectedModelId: (id: string) => void;
   useTavily: boolean;
   setUseTavily: (value: boolean) => void;
+  // VSA Integration states (Task 1.2, 1.3)
+  enableVSA: boolean;
+  setEnableVSA: (value: boolean) => void;
+  enableGLPI: boolean;
+  setEnableGLPI: (value: boolean) => void;
+  enableZabbix: boolean;
+  setEnableZabbix: (value: boolean) => void;
+  enableLinear: boolean;
+  setEnableLinear: (value: boolean) => void;
   sessions: GenesisSession[];
   currentSessionId: string;
   createSession: () => Promise<string | undefined>;
@@ -58,6 +67,11 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   const [models, setModels] = useState<ModelOption[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [useTavily, setUseTavily] = useState<boolean>(false);
+  // VSA Integration states (Task 1.2, 1.3)
+  const [enableVSA, setEnableVSA] = useState<boolean>(false);
+  const [enableGLPI, setEnableGLPI] = useState<boolean>(false);
+  const [enableZabbix, setEnableZabbix] = useState<boolean>(false);
+  const [enableLinear, setEnableLinear] = useState<boolean>(false);
   const [sessions, setSessions] = useState<GenesisSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [messagesBySession, setMessagesBySession] = useState<Record<string, GenesisMessage[]>>({});
@@ -132,19 +146,19 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         const threads = Array.isArray(data.threads) ? data.threads : [];
-        
+
         const apiSessions: GenesisSession[] = threads.map((thread: any) => ({
           id: thread.thread_id || thread.id,
           title: thread.title || `Sessão ${thread.thread_id?.slice(0, 8) || thread.id?.slice(0, 8)}`,
           createdAt: thread.created_at ? Date.parse(thread.created_at) : Date.now(),
         }));
-        
+
         // Merge with stored sessions
-        const allSessions = [...apiSessions, ...storedSessions.filter(s => 
+        const allSessions = [...apiSessions, ...storedSessions.filter(s =>
           !apiSessions.find(api => api.id === s.id)
         )];
         setSessions(allSessions);
-        
+
         // Save to localStorage
         storage.sessions.save(allSessions.map(s => ({
           id: s.id,
@@ -181,17 +195,17 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       const threadId = data.thread_id || data.thread?.thread_id || data.id;
       if (!threadId) return;
-      
+
       const session: GenesisSession = {
         id: threadId,
         title: `Nova Sessão ${new Date().toLocaleTimeString()}`,
         createdAt: Date.now(),
       };
-      
+
       setSessions((prev) => [session, ...prev]);
       setMessagesBySession((prev) => ({ ...prev, [session.id]: [] }));
       setCurrentSessionId(session.id);
-      
+
       // Save to localStorage
       storage.sessions.add({
         id: session.id,
@@ -201,7 +215,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         messageCount: 0,
       });
       storage.messages.save(session.id, []);
-      
+
       return session.id;
     } catch (error) {
       console.error("Error creating session:", error);
@@ -222,7 +236,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         modelId: msg.modelId,
         usedTavily: msg.usedTavily,
       }));
-      
+
       if (merge) {
         // Merge with existing messages instead of replacing
         setMessagesBySession((prev) => {
@@ -236,7 +250,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           return { ...prev, [sessionId]: Array.from(existingMap.values()) };
         });
       } else {
-      setMessagesBySession((prev) => ({ ...prev, [sessionId]: messages }));
+        setMessagesBySession((prev) => ({ ...prev, [sessionId]: messages }));
       }
     } catch (error) {
       console.error("Error fetching session:", error);
@@ -258,7 +272,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`/api/threads/${id}`, {
         method: "DELETE",
       });
-      
+
       if (!res.ok && res.status !== 204) {
         console.error("Failed to delete thread in backend:", res.status);
         // Continua com limpeza local mesmo se backend falhar
@@ -267,21 +281,21 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       console.error("Error deleting thread:", error);
       // Continua com limpeza local mesmo se API falhar
     }
-    
+
     // Limpar do estado local
     setSessions((prev) => {
       const nextSessions = prev.filter((session) => session.id !== id);
       setCurrentSessionId((prevId) => (prevId === id ? nextSessions[0]?.id ?? "" : prevId));
       return nextSessions;
     });
-    
+
     // Limpar mensagens do estado
     setMessagesBySession((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
     });
-    
+
     // Limpar do localStorage
     storage.sessions.remove(id);
     storage.messages.clear(id);
@@ -315,7 +329,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       setCurrentSessionId(threadId);
 
       setIsSending(true);
-      
+
       const thinkingMessageId = `thinking-${Date.now()}`;
       const thinkingMessage: GenesisMessage = {
         id: thinkingMessageId,
@@ -323,31 +337,41 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         content: "Pensando...",
         timestamp: Date.now(),
       };
-      
+
       setMessagesBySession((prev) => {
         const existing = prev[threadId] ?? [];
         return { ...prev, [threadId]: [...existing, thinkingMessage] };
       });
-      
+
       try {
         if (useStreaming) {
           // Streaming mode
           const res = await fetch(`/api/threads/${threadId}/messages/stream`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content, model: selectedModelId, useTavily, thread_id: threadId }),
+            body: JSON.stringify({
+              content,
+              model: selectedModelId,
+              useTavily,
+              thread_id: threadId,
+              // VSA Integration flags (Task 1.1)
+              enable_vsa: enableVSA,
+              enable_glpi: enableGLPI,
+              enable_zabbix: enableZabbix,
+              enable_linear: enableLinear,
+            }),
           });
 
           if (!res.ok) {
             // Try to get error details from response
             let errorMessage = `Stream failed: ${res.status}`;
             let errorDetails: any = {};
-            
+
             try {
               const errorData = await res.json();
               console.error("Stream error details:", errorData);
               errorDetails = errorData;
-              
+
               // Try different error formats
               if (typeof errorData.error === "string") {
                 errorMessage = errorData.error;
@@ -377,7 +401,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                 errorDetails = { status: res.status, statusText: res.statusText };
               }
             }
-            
+
             // Create a more informative error message
             const fullErrorMessage = errorMessage || `Stream failed with status ${res.status}`;
             const error = new Error(fullErrorMessage);
@@ -398,10 +422,10 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
             const existing = prev[threadId] ?? [];
             console.log("[STREAM] Before removing thinking, messages count:", existing.length);
             console.log("[STREAM] Messages:", existing.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) })));
-            
+
             // Remove apenas thinking, preserva tudo mais (incluindo mensagem do usuário)
             const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
-            
+
             // Garantir que não há mensagem do assistente com conteúdo incorreto
             // Se houver alguma mensagem do assistente vazia ou com conteúdo errado, removê-la
             const cleaned = withoutThinking.filter(msg => {
@@ -414,7 +438,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
               }
               return true;
             });
-            
+
             const assistantMessage: GenesisMessage = {
               id: assistantMessageId,
               role: "assistant",
@@ -423,11 +447,11 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
               modelId: selectedModelId,
               usedTavily: useTavily,
             };
-            
+
             const updated = [...cleaned, assistantMessage];
             console.log("[STREAM] After adding assistant message, messages count:", updated.length);
             console.log("[STREAM] Updated messages:", updated.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) || "(vazio)" })));
-            
+
             return { ...prev, [threadId]: updated };
           });
 
@@ -437,8 +461,8 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
             let totalLinesProcessed = 0;
             try {
               console.log("[STREAM] Starting to read stream...");
-            while (true) {
-              const { done, value } = await reader.read();
+              while (true) {
+                const { done, value } = await reader.read();
                 if (done) {
                   console.log("[STREAM] Stream completed. Total bytes:", totalBytesReceived, "Total lines:", totalLinesProcessed, "Final buffer:", buffer.length);
                   break;
@@ -446,37 +470,37 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
                 if (value) {
                   totalBytesReceived += value.length;
-              buffer += decoder.decode(value, { stream: true });
+                  buffer += decoder.decode(value, { stream: true });
                 }
-                
+
                 // Process buffer into lines
-              const lines = buffer.split("\n");
-              buffer = lines.pop() || "";
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
                 totalLinesProcessed += lines.length;
                 console.log("[STREAM] Received chunk:", value?.length || 0, "bytes. Buffer now has", buffer.length, "chars. Processing", lines.length, "lines");
 
-              for (const line of lines) {
+                for (const line of lines) {
                   if (line.trim() === "") {
                     console.log("[STREAM] Skipping empty line");
                     continue; // Skip empty lines
                   }
-                  
+
                   console.log("[STREAM] Processing line:", line.substring(0, 100));
-                  
+
                   // Try to parse as SSE data
-                if (line.startsWith("data: ")) {
-                  try {
+                  if (line.startsWith("data: ")) {
+                    try {
                       const jsonStr = line.slice(6);
                       console.log("[STREAM] Parsing JSON:", jsonStr.substring(0, 200));
                       const data = JSON.parse(jsonStr);
                       console.log("[STREAM] Parsed data type:", data.type, "has content:", !!data.content, "content length:", data.content?.length || 0);
-                      
-                    if (data.type === "content" && data.content) {
+
+                      if (data.type === "content" && data.content) {
                         // Handle escaped newlines - convert \n to actual newlines
-                        const processedContent = typeof data.content === 'string' 
+                        const processedContent = typeof data.content === 'string'
                           ? data.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
                           : data.content;
-                        
+
                         // If this is a final content update (complete content), replace instead of append
                         if (data.final === true) {
                           console.log("[STREAM] Received final complete content, replacing accumulated content");
@@ -526,10 +550,10 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                                 const newContent = extractedContent.substring(accumulatedContent.length);
                                 accumulatedContent = extractedContent;
                                 console.log("[STREAM] Extracted content from chunk:", newContent.length, "chars");
-                      setMessagesBySession((prev) => {
-                        const existing = prev[threadId] ?? [];
-                        return {
-                          ...prev,
+                                setMessagesBySession((prev) => {
+                                  const existing = prev[threadId] ?? [];
+                                  return {
+                                    ...prev,
                                     [threadId]: existing.map((msg) => {
                                       // Apenas atualizar a mensagem do assistente com o ID correto
                                       if (msg.id === assistantMessageId && msg.role === "assistant") {
@@ -538,26 +562,26 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                                       // Garantir que mensagens do usuário nunca sejam modificadas
                                       return msg;
                                     }),
-                        };
-                      });
+                                  };
+                                });
                               }
                             }
                           }
                         } catch (extractError) {
                           console.error("[STREAM] Error extracting content from chunk:", extractError);
                         }
-                    } else if (data.type === "done") {
+                      } else if (data.type === "done") {
                         console.log("[STREAM] Stream done signal received");
                         console.log("[STREAM] Final content length from done message:", data.total_length || "not provided");
                         console.log("[STREAM] Accumulated content length:", accumulatedContent.length);
                         streamActive = false;
-                        
+
                         // Check if we received the expected total length
                         if (data.total_length && data.total_length > accumulatedContent.length) {
                           console.warn(`[STREAM] WARNING: Expected ${data.total_length} chars but only have ${accumulatedContent.length} chars!`);
                           console.warn("[STREAM] Content may be incomplete. Check if final content message was received.");
                         }
-                        
+
                         // Process any remaining content in buffer before final save
                         if (buffer.trim()) {
                           console.log("[STREAM] Processing remaining buffer:", buffer.substring(0, 100));
@@ -567,7 +591,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                               const jsonStr = buffer.slice(6);
                               const bufferData = JSON.parse(jsonStr);
                               if (bufferData.type === "content" && bufferData.content) {
-                                const processedContent = typeof bufferData.content === 'string' 
+                                const processedContent = typeof bufferData.content === 'string'
                                   ? bufferData.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
                                   : bufferData.content;
                                 accumulatedContent += processedContent;
@@ -578,7 +602,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                             console.log("[STREAM] Could not parse remaining buffer as JSON:", e);
                           }
                         }
-                        
+
                         // Ensure final content is saved
                         if (accumulatedContent) {
                           console.log("[STREAM] Saving final content. Length:", accumulatedContent.length);
@@ -617,9 +641,9 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                         }
                         // Don't call fetchSession as it might overwrite messages
                         // await fetchSession(threadId);
-                    } else if (data.type === "error") {
+                      } else if (data.type === "error") {
                         console.error("[STREAM] Error from stream:", data.error);
-                      throw new Error(data.error);
+                        throw new Error(data.error);
                       } else if (data.type === "chunk") {
                         // Log chunk data for debugging
                         console.log("[STREAM] Chunk received:", data.data?.substring(0, 100));
@@ -634,7 +658,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                   }
                 }
               }
-              
+
               // If stream ended without "done" message, ensure content is saved
               // Also process any remaining buffer
               if (buffer.trim() && accumulatedContent) {
@@ -648,13 +672,13 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                         const jsonStr = bufferLine.slice(6);
                         const bufferData = JSON.parse(jsonStr);
                         if (bufferData.type === "content" && bufferData.content) {
-                          const processedContent = typeof bufferData.content === 'string' 
+                          const processedContent = typeof bufferData.content === 'string'
                             ? bufferData.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
                             : bufferData.content;
                           accumulatedContent += processedContent;
                           console.log("[STREAM] Added final buffer content, new total:", accumulatedContent.length);
-                    }
-                  } catch (e) {
+                        }
+                      } catch (e) {
                         console.log("[STREAM] Could not parse final buffer line:", e);
                       }
                     }
@@ -663,7 +687,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                   console.log("[STREAM] Error processing final buffer:", e);
                 }
               }
-              
+
               if (streamActive && accumulatedContent) {
                 console.log("[STREAM] Stream ended without done message, saving content. Length:", accumulatedContent.length);
                 console.log("[STREAM] Final content preview:", accumulatedContent.substring(0, 200));
@@ -691,7 +715,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                   return { ...prev, [threadId]: existing.filter(msg => msg.id !== assistantMessageId) };
                 });
               }
-              
+
               // Final check: ensure content is saved even if stream completed normally
               console.log("[STREAM] Stream loop ended. Final accumulatedContent length:", accumulatedContent.length);
               if (accumulatedContent) {
@@ -761,7 +785,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
           const data = await res.json();
           const responseContent = data.response || data.result?.response || "Sem resposta";
-          
+
           setMessagesBySession((prev) => {
             const existing = prev[threadId] ?? [];
             const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
@@ -775,7 +799,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
             };
             return { ...prev, [threadId]: [...withoutThinking, assistantMessage] };
           });
-          
+
           await fetchSession(threadId);
         }
       } catch (error) {
@@ -786,16 +810,16 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           // Filter out thinking message but keep user message
           const filtered = existing.filter(msg => msg.id !== thinkingMessageId);
           // Also remove empty assistant message if it exists
-          const cleaned = filtered.filter(msg => 
+          const cleaned = filtered.filter(msg =>
             !(msg.role === "assistant" && msg.content === "")
           );
           return { ...prev, [threadId]: cleaned };
         });
-        
+
         // Extract detailed error information
         let errorMsg = error instanceof Error ? error.message : String(error);
         let errorDetails = "";
-        
+
         if (error instanceof Error) {
           const errorAny = error as any;
           if (errorAny.details) {
@@ -810,7 +834,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
             errorDetails += `\n**Status HTTP:** ${errorAny.status}`;
           }
         }
-        
+
         // Show error to user with detailed message
         const errorMessage: GenesisMessage = {
           id: `error-${Date.now()}`,
@@ -887,6 +911,15 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       setSelectedModelId,
       useTavily,
       setUseTavily,
+      // VSA Integration states
+      enableVSA,
+      setEnableVSA,
+      enableGLPI,
+      setEnableGLPI,
+      enableZabbix,
+      setEnableZabbix,
+      enableLinear,
+      setEnableLinear,
       sessions,
       currentSessionId,
       createSession,
@@ -906,6 +939,10 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       models,
       selectedModelId,
       useTavily,
+      enableVSA,
+      enableGLPI,
+      enableZabbix,
+      enableLinear,
       sessions,
       currentSessionId,
       messagesBySession,

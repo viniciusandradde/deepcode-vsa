@@ -10,6 +10,11 @@ interface PostPayload {
   model: string;
   useTavily: boolean;
   thread_id?: string;
+  // VSA Integration fields (Task 1.1)
+  enable_vsa?: boolean;
+  enable_glpi?: boolean;
+  enable_zabbix?: boolean;
+  enable_linear?: boolean;
 }
 
 export async function POST(
@@ -31,6 +36,11 @@ export async function POST(
     console.log("[DEBUG] API_BASE_URL env:", process.env.API_BASE_URL);
     console.log("[DEBUG] NEXT_PUBLIC_API_BASE env:", process.env.NEXT_PUBLIC_API_BASE);
 
+    // Log VSA flags
+    if (body.enable_vsa) {
+      console.log("[VSA] Mode enabled - GLPI:", body.enable_glpi, "Zabbix:", body.enable_zabbix, "Linear:", body.enable_linear);
+    }
+
     // Chama a API FastAPI com streaming
     const res = await fetch(backendUrl, {
       method: "POST",
@@ -40,19 +50,24 @@ export async function POST(
         thread_id: threadId,
         model: body.model,
         use_tavily: body.useTavily ?? false,
+        // VSA Integration flags (Task 1.1)
+        enable_vsa: body.enable_vsa ?? false,
+        enable_glpi: body.enable_glpi ?? false,
+        enable_zabbix: body.enable_zabbix ?? false,
+        enable_linear: body.enable_linear ?? false,
       }),
     });
 
     if (!res.ok) {
       let errorMessage = `Failed to start stream (${res.status})`;
       let errorDetails: any = {};
-      
+
       try {
         // FastAPI returns {"detail": "message"} for HTTPException
         const errorData = await res.json();
         console.error("Backend error (JSON):", errorData);
         errorDetails = errorData;
-        
+
         // Try different error formats
         if (typeof errorData.detail === "string") {
           errorMessage = errorData.detail;
@@ -77,8 +92,8 @@ export async function POST(
           errorDetails = { parseError: String(textError) };
         }
       }
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         error: errorMessage,
         details: errorDetails,
         status: res.status,
@@ -89,7 +104,7 @@ export async function POST(
     // Log antes de retornar o stream
     console.log("[STREAM] Returning stream to frontend, status:", res.status);
     console.log("[STREAM] Content-Type:", res.headers.get("content-type"));
-    
+
     // Retorna o stream como SSE
     return new NextResponse(res.body, {
       headers: {
@@ -121,7 +136,7 @@ export async function POST(
     if (error instanceof Error) {
       errorMessage = error.message;
       errorType = error.name;
-      
+
       // Detectar tipos específicos de erro de rede
       if (error.message.includes("ECONNREFUSED") || error.message.includes("connection refused")) {
         errorType = "Connection Refused";
@@ -150,11 +165,11 @@ export async function POST(
     errorDetails.attemptedUrl = apiBaseUrl + "/api/v1/chat/stream";
 
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
         errorType: errorType,
         details: errorDetails
-      }, 
+      },
       { status: 500 }
     );
   }
