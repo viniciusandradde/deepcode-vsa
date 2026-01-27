@@ -3,6 +3,40 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef, type MutableRefObject } from "react";
 import { storage } from "@/lib/storage";
 
+// Custom hook for localStorage persistence
+function useLocalStorageState(key: string, defaultValue: boolean): [boolean, (value: boolean) => void] {
+  const [state, setState] = useState<boolean>(() => {
+    // This runs only on client
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(key);
+      console.log(`[useLocalStorageState] Init ${key}:`, saved);
+      return saved === 'true';
+    }
+    return defaultValue;
+  });
+
+  const setValue = useCallback((value: boolean) => {
+    setState(value);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, String(value));
+      console.log(`[useLocalStorageState] Saved ${key}:`, value);
+    }
+  }, [key]);
+
+  // Sync state with localStorage on mount (for SSR hydration)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(key);
+      console.log(`[useLocalStorageState] Mount sync ${key}:`, saved);
+      if (saved !== null && (saved === 'true') !== state) {
+        setState(saved === 'true');
+      }
+    }
+  }, [key]);
+
+  return [state, setValue];
+}
+
 export type Role = "user" | "assistant";
 
 export interface GenesisMessage {
@@ -70,11 +104,11 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   const [models, setModels] = useState<ModelOption[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [useTavily, setUseTavily] = useState<boolean>(false);
-  // VSA Integration states (Task 1.2, 1.3)
-  const [enableVSA, setEnableVSA] = useState<boolean>(false);
-  const [enableGLPI, setEnableGLPI] = useState<boolean>(false);
-  const [enableZabbix, setEnableZabbix] = useState<boolean>(false);
-  const [enableLinear, setEnableLinear] = useState<boolean>(false);
+  // VSA Integration states (Task 1.2, 1.3) - Persisted in localStorage
+  const [enableVSA, setEnableVSA] = useLocalStorageState('vsa_enableVSA', false);
+  const [enableGLPI, setEnableGLPI] = useLocalStorageState('vsa_enableGLPI', false);
+  const [enableZabbix, setEnableZabbix] = useLocalStorageState('vsa_enableZabbix', false);
+  const [enableLinear, setEnableLinear] = useLocalStorageState('vsa_enableLinear', false);
   const [sessions, setSessions] = useState<GenesisSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [messagesBySession, setMessagesBySession] = useState<Record<string, GenesisMessage[]>>({});
