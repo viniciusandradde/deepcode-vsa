@@ -67,6 +67,21 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
     }
   }
 
+  // Ref para evitar stale closures no useEffect
+  const draftRef = useRef(draft);
+  const isLoadingRef = useRef(isLoading);
+  const isSendingRef = useRef(isSending);
+
+  // Manter refs atualizados
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+    isSendingRef.current = isSending;
+  }, [isLoading, isSending]);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       // Ignore if user is typing in an input/textarea
@@ -77,11 +92,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
           setEditingMessageId(null);
           setEditingContent("");
         }
-        // Allow Ctrl/Cmd+Enter to submit
-        if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-          event.preventDefault();
-          handleSubmit();
-        }
+        // Allow Ctrl/Cmd+Enter to submit (handled separately in textarea onKeyDown)
         return;
       }
 
@@ -106,7 +117,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [draft, isLoading, isSending, useStreaming, editingMessageId, messages, setEditingMessageId]);
+  }, [editingMessageId, messages, setEditingMessageId]);
 
   useEffect(() => {
     const mainElement = mainRef.current;
