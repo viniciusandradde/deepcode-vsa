@@ -1,10 +1,12 @@
 """FastAPI main application."""
 
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import chat, rag, agents
+from core.checkpointing import initialize_checkpointer, cleanup_checkpointer
 
 # Configure LangSmith tracing
 # LangSmith is automatically enabled when LANGCHAIN_API_KEY is set
@@ -20,10 +22,36 @@ else:
     print("⚠️  LangSmith tracing disabled (LANGCHAIN_API_KEY not set)")
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events.
+
+    Startup: Initialize checkpointer connection pool
+    Shutdown: Cleanup checkpointer resources
+    """
+    # Startup
+    print("🚀 Starting up application...")
+    try:
+        await initialize_checkpointer()
+    except Exception as e:
+        print(f"⚠️  Checkpointer initialization failed: {e}")
+        print("ℹ️  Application will continue with MemorySaver fallback")
+
+    yield
+
+    # Shutdown
+    print("🛑 Shutting down application...")
+    try:
+        await cleanup_checkpointer()
+    except Exception as e:
+        print(f"⚠️  Checkpointer cleanup failed: {e}")
+
+
 app = FastAPI(
     title="AI Agent + RAG API",
     description="API for AI agents with RAG capabilities",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware

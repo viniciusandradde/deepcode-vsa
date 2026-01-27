@@ -1,4 +1,16 @@
-"""Checkpointing utilities for agent state persistence."""
+"""Checkpointing utilities for agent state persistence.
+
+Note: PostgreSQL checkpointing with LangGraph AsyncPostgresSaver is complex
+because it requires async context management. For now, we use MemorySaver
+which is fast and reliable for development.
+
+For production persistence, we have these options:
+1. Implement custom checkpointer that wraps PostgreSQL
+2. Use MemorySaver + periodic backup to PostgreSQL
+3. Use Redis/file-based checkpointing instead
+
+See: .agent/PROBLEMA-PERSISTENCIA.md for detailed analysis.
+"""
 
 import os
 from typing import Optional
@@ -10,24 +22,47 @@ from core.database import get_db_url
 
 load_dotenv()
 
+# Global checkpointer instance
+_checkpointer: Optional[any] = None
+
+
+async def initialize_checkpointer():
+    """Initialize checkpointer.
+
+    Currently uses MemorySaver for simplicity and reliability.
+    PostgreSQL checkpointing requires complex async context management.
+    """
+    global _checkpointer
+
+    use_postgres = os.getenv("USE_POSTGRES_CHECKPOINT", "false").lower() == "true"
+
+    if use_postgres:
+        print("⚠️  PostgreSQL checkpointing not yet implemented (requires async context)")
+        print("ℹ️  Using MemorySaver instead")
+
+    print("✅ Using MemorySaver for checkpointing")
+    from langgraph.checkpoint.memory import MemorySaver
+    _checkpointer = MemorySaver()
+
+
+async def cleanup_checkpointer():
+    """Cleanup checkpointer resources."""
+    global _checkpointer
+    _checkpointer = None
+    print("ℹ️  Checkpointer cleanup complete")
+
 
 def get_checkpointer():
-    """Get appropriate checkpointer for environment.
+    """Get the global checkpointer instance.
 
-    Returns:
-        MemorySaver (PostgresSaver requires context manager setup)
-
-    Note: PostgreSQL checkpointing requires proper async context management.
-    For now, using MemorySaver. To implement PostgreSQL:
-    1. Use AsyncPostgresSaver with async context manager
-    2. Initialize in async context: async with AsyncPostgresSaver.from_conn_string(url) as saver:
-    3. Or use a connection pool and pass connection to saver
-
-    See: https://langchain-ai.github.io/langgraph/reference/checkpoints/#asyncpostgressaver
+    Returns MemorySaver (fast, reliable, but not persistent across restarts).
     """
-    # For now, always use MemorySaver until we implement proper async context
-    # TODO: Implement PostgreSQL checkpointing with proper async context management
-    print("ℹ️  Using MemorySaver (PostgreSQL checkpointing requires async context - TODO)")
-    from langgraph.checkpoint.memory import MemorySaver
-    return MemorySaver()
+    global _checkpointer
+
+    if _checkpointer is None:
+        print("⚠️  Checkpointer not initialized, creating MemorySaver fallback")
+        from langgraph.checkpoint.memory import MemorySaver
+        return MemorySaver()
+
+    return _checkpointer
 
