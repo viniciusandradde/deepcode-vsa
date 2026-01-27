@@ -279,3 +279,11 @@ Result: ✅ Success - Returned 1 alert (Event ID: 2170626, Severity: High)
 
 **Last Updated:** 27/01/2026 12:30 UTC
 **Maintainer:** VSA Tecnologia
+
+### 25/01/2026
+
+- **Backend**: Integração completa GLPI + Zabbix (Phase 2 Start).
+- **Frontend**: Suporte a streaming de badges ITIL (ITILBadge.tsx).
+- **Feature**: Botão de Cancelar envio de mensagem (AbortController).
+- **Core**: System Prompt ITIL com classificação automática.
+- **Docs**: PRD revisado para Chat-First approach.

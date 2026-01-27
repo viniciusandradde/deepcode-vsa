@@ -120,15 +120,17 @@ Após análise profunda do código base, identificamos que:
 **Objetivo:** Permitir que usuários consultem GLPI e Zabbix via chat natural
 
 #### Semana 1-2: Integração de Tools ao Chat
-- [ ] **Task 1.1**: Modificar `api/routes/chat.py` para aceitar tools dinâmicos
-- [ ] **Task 1.2**: Criar toggle no frontend para ativar GLPI tools
-- [ ] **Task 1.3**: Criar toggle no frontend para ativar Zabbix tools
-- [ ] **Task 1.4**: Testar consultas: "Liste os últimos 5 tickets do GLPI"
-- [ ] **Task 1.5**: Testar consultas: "Quais alertas críticos no Zabbix?"
+
+- [x] **Task 1.1**: Modificar `api/routes/chat.py` para aceitar tools dinâmicos
+- [x] **Task 1.2**: Criar toggle no frontend para ativar GLPI tools
+- [x] **Task 1.3**: Criar toggle no frontend para ativar Zabbix tools
+- [x] **Task 1.4**: Testar consultas: "Liste os últimos 5 tickets do GLPI"
+- [x] **Task 1.5**: Testar consultas: "Quais alertas críticos no Zabbix?"
 
 **Entregável:** Chat consegue consultar GLPI e Zabbix quando solicitado
 
 #### Semana 3-4: Detecção Inteligente de Intent
+
 - [ ] **Task 1.6**: Adaptar `WorkflowAgent` para detectar intents de gestão de TI
   - `consulta_glpi`: "mostre chamados", "quais tickets"
   - `consulta_zabbix`: "alertas", "problemas de monitoramento"
@@ -146,16 +148,18 @@ Após análise profunda do código base, identificamos que:
 **Objetivo:** Aplicar classificação ITIL e priorização GUT nas conversas
 
 #### Semana 5-6: Classificação ITIL Automática
-- [ ] **Task 2.1**: Integrar VSAAgent como opção de agente no chat
-- [ ] **Task 2.2**: Implementar node `Classifier` no fluxo de chat
+
+- [x] **Task 2.1**: Integrar VSAAgent como opção de agente no chat (System Prompt ITIL)
+- [x] **Task 2.2**: Implementar node `Classifier` no fluxo de chat (via Prompt)
   - Detectar: Incident, Problem, Change, Request, Chat
-- [ ] **Task 2.3**: Exibir classificação ITIL no frontend (badge visual)
-- [ ] **Task 2.4**: Calcular GUT score automaticamente
-- [ ] **Task 2.5**: Exibir GUT score no chat (ex: "🔴 Criticidade: Alta (GUT: 125)")
+- [x] **Task 2.3**: Exibir classificação ITIL no frontend (badge visual `ITILBadge.tsx`)
+- [x] **Task 2.4**: Calcular GUT score automaticamente (via Prompt)
+- [x] **Task 2.5**: Exibir GUT score no chat (ex: "🔴 Criticidade: Alta (GUT: 125)")
 
 **Entregável:** Chat classifica automaticamente solicitações em categorias ITIL
 
 #### Semana 7-8: Planner com Metodologias
+
 - [ ] **Task 2.6**: Implementar node `Planner` para criar planos de ação
   - Para Incident: diagnóstico → resolução → documentação
   - Para Problem: RCA (5 Whys) → ação corretiva
@@ -172,6 +176,7 @@ Após análise profunda do código base, identificamos que:
 **Objetivo:** Correlacionar dados de múltiplas fontes e gerar insights
 
 #### Semana 9-10: Correlação GLPI ↔ Zabbix
+
 - [ ] **Task 3.1**: Implementar função de correlação por hostname
   - Buscar alertas Zabbix para hosts mencionados em tickets GLPI
 - [ ] **Task 3.2**: Implementar análise temporal
@@ -182,6 +187,7 @@ Após análise profunda do código base, identificamos que:
 **Entregável:** Chat correlaciona automaticamente tickets com alertas
 
 #### Semana 11-12: Reflector e Insights
+
 - [ ] **Task 3.5**: Implementar node `Reflector` para validação
   - Verificar se objetivos foram atingidos
   - Sugerir ações adicionais
@@ -198,6 +204,7 @@ Após análise profunda do código base, identificamos que:
 **Objetivo:** Implementar audit trail e governança completa
 
 #### Semana 13-14: Audit Trail Completo
+
 - [ ] **Task 4.1**: Implementar log estruturado de todas operações
 - [ ] **Task 4.2**: Salvar audit trail em banco (PostgreSQL)
 - [ ] **Task 4.3**: Criar endpoint `/api/v1/audit` para consultar logs
@@ -338,11 +345,13 @@ VSA Agent:
 ### Integração 1: GLPI (Semana 1-2)
 
 **Tools Disponíveis:**
+
 - ✅ `glpi_get_tickets` - Listar tickets
 - ✅ `glpi_get_ticket_details` - Detalhes de ticket
 - ✅ `glpi_create_ticket` - Criar ticket (com dry_run)
 
 **Ações:**
+
 1. Adicionar GLPI tools ao SimpleAgent no endpoint `/chat`
 2. Criar toggle "Habilitar GLPI" no frontend
 3. Testar queries: "liste tickets", "detalhes do ticket 123", "criar ticket"
@@ -351,10 +360,12 @@ VSA Agent:
 ### Integração 2: Zabbix (Semana 1-2)
 
 **Tools Disponíveis:**
+
 - ✅ `zabbix_get_alerts` - Listar alertas/problemas
 - ✅ `zabbix_get_host` - Detalhes de host
 
 **Ações:**
+
 1. Adicionar Zabbix tools ao SimpleAgent no endpoint `/chat`
 2. Criar toggle "Habilitar Zabbix" no frontend
 3. Testar queries: "alertas críticos", "status do servidor web01"
@@ -363,6 +374,7 @@ VSA Agent:
 ### Integração 2.5: Linear.app (Semana 2-3) **NOVO**
 
 **Tools Disponíveis:**
+
 - ✅ `linear_get_issues` - Listar issues
 - ✅ `linear_get_issue` - Detalhes de issue
 - ✅ `linear_create_issue` - Criar issue (com dry_run)
@@ -370,6 +382,7 @@ VSA Agent:
 - ✅ `linear_add_comment` - Adicionar comentário
 
 **Ações:**
+
 1. Adicionar Linear tools ao SimpleAgent no endpoint `/chat`
 2. Criar toggle "Habilitar Linear" no frontend
 3. Testar queries: "liste issues do Linear", "criar issue no time de infra"
@@ -377,6 +390,7 @@ VSA Agent:
 5. Documentar exemplos de uso
 
 **Casos de Uso:**
+
 - **Alternativa moderna ao GLPI**: Para equipes que preferem Linear
 - **Change Management**: Criar issues para mudanças planejadas
 - **Incident Tracking**: Rastrear incidents em paralelo ao GLPI
@@ -385,9 +399,11 @@ VSA Agent:
 ### Integração 3: Correlação Multi-Sistema (Semana 9-10)
 
 **Tool Novo:**
+
 - ❌ `correlate_multi_system` - Correlacionar GLPI + Zabbix + Linear
 
 **Ações:**
+
 1. Criar novo tool de correlação em `core/tools/correlation.py`
 2. Implementar busca por hostname/keywords em todos sistemas
 3. Implementar análise temporal (timeline cross-system)
@@ -396,6 +412,7 @@ VSA Agent:
 6. Criar visualização no frontend
 
 **Exemplo de Correlação:**
+
 ```
 Alerta Zabbix (servidor web01)
   ↓
@@ -409,6 +426,7 @@ Issue Linear ENG-456 (time dev investiga código)
 **Status:** Não implementado
 
 **Ações:**
+
 1. Criar `core/integrations/proxmox_client.py`
 2. Criar tools: `proxmox_get_vms`, `proxmox_get_vm_status`
 3. Integrar ao chat
