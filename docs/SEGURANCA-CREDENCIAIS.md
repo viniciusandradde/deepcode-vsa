@@ -10,19 +10,19 @@ O sistema está configurado com credenciais de **produção** do Hospital Evang�
 
 ### GLPI (ITSM)
 
-- **URL:** <https://glpi.hospitalevangelico.com.br/glpi/apirest.php>
-- **App Token:** `gvP15n0MEabjKEhRxzsqX8rp4Z6a27FEmUKv8s4b`
+- **URL:** <https://glpi.servidor/glpi/apirest.php>
+- **App Token:** 
 - **Auth Method:** Basic Auth (Username + Password)
 - **Status:** ✅ Operacional
 
 ### Zabbix (Monitoring)
 
-- **URL:** <https://zabbix.hospitalevangelico.com.br/api_jsonrpc.php>
-- **API Token:** `a4419b6574113b0be4062813f54d39aa88b33d07a43f2dadbf0a9b044f4d87b1`
+- **URL:** <https://zabbix.servidor/api_jsonrpc.php>
+- **API Token:** 
 
 ### Linear.app (Project Management)
 
-- **API Key:** `lin_api_VZJYnVszyfCSbmFwWYaPEvC2dCHHtgoDhdDYAE9G`
+- **API Key:** 
 
 ---
 
@@ -186,7 +186,7 @@ Se qualquer credencial for comprometida:
    ```
    1. Acesse: https://glpi.hospitalevangelico.com.br
    2. Setup → API → Tokens
-   3. Revogue o token: hmj96ml658lz3t3mf0ouxw0dbt0qfdf2ie4j4he8
+   3. Revogue o token: 
    4. Gere novo token
    5. Atualize .env
    ```
@@ -196,7 +196,7 @@ Se qualquer credencial for comprometida:
    ```
    1. Acesse: https://zabbix.hospitalevangelico.com.br
    2. Administration → API tokens
-   3. Revogue o token: a4419b6574113b0be4062813f54d39aa...
+   3. Revogue o token: 
    4. Gere novo token
    5. Atualize .env
    ```
@@ -205,7 +205,7 @@ Se qualquer credencial for comprometida:
 
    ```
    1. Acesse: https://linear.app/settings/api
-   2. Revoque a key: lin_api_VZJYnVszyfCSbmFwWYaPEvC2dCHHtgoDhdDYAE9G
+   2. Revoque a key: 
    3. Gere nova key
    4. Atualize .env
    ```
@@ -306,3 +306,4 @@ Se qualquer credencial for comprometida:
 ---
 
 ⚠️ **ESTE DOCUMENTO É CONFIDENCIAL - NÃO COMPARTILHAR FORA DA EQUIPE AUTORIZADA**
+
