@@ -9,6 +9,7 @@ import os
 from api.models.requests import ChatRequest
 from api.models.responses import ChatResponse
 from core.agents.simple import SimpleAgent
+from core.agents.unified import UnifiedAgent
 from core.tools.search import tavily_search
 from core.checkpointing import get_checkpointer
 
@@ -238,12 +239,25 @@ async def chat(request: ChatRequest):
             tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
             logger.info("✅ Linear tools enabled")
         
-        agent = SimpleAgent(
-            model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
-            tools=tools,
-            checkpointer=checkpointer,
-            system_prompt=get_system_prompt(request.enable_vsa),  # Phase 2: ITIL prompt
-        )
+        # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
+        if request.enable_vsa:
+            agent = UnifiedAgent(
+                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                tools=tools,
+                checkpointer=checkpointer,
+                system_prompt=get_system_prompt(True),  # Use complete ITIL prompt
+                enable_itil=False,  # Disable internal classifier (prompt handles it)
+                enable_planning=False,
+            )
+            logger.info("🤖 Using UnifiedAgent (ITIL mode)")
+        else:
+            agent = SimpleAgent(
+                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                tools=tools,
+                checkpointer=checkpointer,
+                system_prompt=get_system_prompt(False),
+            )
+            logger.info("🤖 Using SimpleAgent")
         
         # Generate thread_id if not provided
         thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
@@ -301,12 +315,25 @@ async def stream_chat(request: ChatRequest):
             tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
             logger.info("✅ Linear tools enabled (stream)")
         
-        agent = SimpleAgent(
-            model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
-            tools=tools,
-            checkpointer=checkpointer,
-            system_prompt=get_system_prompt(request.enable_vsa),  # Phase 2: ITIL prompt
-        )
+        # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
+        if request.enable_vsa:
+            agent = UnifiedAgent(
+                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                tools=tools,
+                checkpointer=checkpointer,
+                system_prompt=get_system_prompt(True),  # Use complete ITIL prompt
+                enable_itil=False,  # Disable internal classifier (prompt handles it)
+                enable_planning=False,
+            )
+            logger.info("🤖 Using UnifiedAgent (ITIL mode) [stream]")
+        else:
+            agent = SimpleAgent(
+                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                tools=tools,
+                checkpointer=checkpointer,
+                system_prompt=get_system_prompt(False),
+            )
+            logger.info("🤖 Using SimpleAgent [stream]")
         
         # Generate thread_id if not provided
         thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
