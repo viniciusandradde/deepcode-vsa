@@ -11,6 +11,7 @@ import { MessageActions } from "./MessageActions";
 import { Logo } from "./Logo";
 import { AudioRecorderButton } from "./AudioRecorderButton";
 import { ITILBadge, parseITILFromResponse } from "./ITILBadge";
+import { ActionPlan, parseActionPlanFromResponse } from "./ActionPlan";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { StructuredResponse, parseStructuredResponse } from "./StructuredResponse";
 
@@ -346,6 +347,15 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                             </div>
                           ) : null;
                         })()}
+                        {/* Action Plan - Task 2.6 */}
+                        {(() => {
+                          const actionPlanData = parseActionPlanFromResponse(message.content);
+                          return actionPlanData ? (
+                            <div className="mb-4">
+                              <ActionPlan {...actionPlanData} />
+                            </div>
+                          ) : null;
+                        })()}
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           rehypePlugins={[]}
@@ -390,7 +400,25 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                             img: ({ src, alt, ...props }) => {
                               if (!src) return null;
                               return <img src={src} alt={alt || ""} className="max-w-full rounded-lg my-4" {...props} />;
-                            }
+                            },
+                            // Table components (Task 2.6 - ITIL structured responses)
+                            table: ({ ...props }) => (
+                              <div className="my-4 overflow-x-auto rounded-lg border border-white/10">
+                                <table className="min-w-full divide-y divide-white/10 text-sm" {...props} />
+                              </div>
+                            ),
+                            thead: ({ ...props }) => <thead className="bg-white/5" {...props} />,
+                            tbody: ({ ...props }) => <tbody className="divide-y divide-white/5 bg-white/[0.02]" {...props} />,
+                            tr: ({ ...props }) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
+                            th: ({ ...props }) => (
+                              <th
+                                className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-300"
+                                {...props}
+                              />
+                            ),
+                            td: ({ ...props }) => (
+                              <td className="px-4 py-3 text-sm text-slate-200" {...props} />
+                            ),
                           }}
                         >
                           {message.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')}

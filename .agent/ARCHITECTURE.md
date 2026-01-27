@@ -83,14 +83,19 @@ deepcode-vsa/
 | 1.4 | ✅ | Test GLPI queries |
 | 1.5 | ✅ | Test Zabbix queries |
 
-### Phase 2: ITIL Methodologies (Pending)
+### Phase 2: ITIL Methodologies (In Progress)
 
 | Task | Status | Description |
 |------|--------|-------------|
-| 2.1 | 🔲 | VSAAgent integration |
-| 2.2 | 🔲 | Classifier Node |
-| 2.3 | 🔲 | ITILBadge.tsx |
-| 2.4 | 🔲 | GUT Score calculation |
+| 2.1 | ✅ | System Prompt ITIL |
+| 2.2 | ✅ | Classifier via Prompt |
+| 2.3 | ✅ | ITILBadge.tsx created |
+| 2.4 | ✅ | GUT Score via Prompt |
+| 2.5 | ✅ | GUT display in chat |
+| 2.6 | ✅ | Planner Node (ActionPlan.tsx) |
+| 2.7 | 🔲 | Display action plan before execution |
+| 2.8 | 🔲 | User confirmation for WRITE plans |
+| 2.9 | 🔲 | Step-by-step execution with feedback |
 
 ### Phase 3-4: Correlation & Governance (Future)
 
@@ -240,6 +245,14 @@ docker compose logs -f backend frontend
 
 ## 📝 Recent Changes (27/01/2026)
 
+### Latest (27/01 - 15:00 UTC) - Task 2.6 Complete
+1. ✅ **Action Plan Component**: Created ActionPlan.tsx for structured plan visualization
+2. ✅ **Planner System Prompt**: Updated VSA_ITIL_SYSTEM_PROMPT with planning flow
+3. ✅ **Plan Parsing**: Implemented parseActionPlanFromResponse() for automatic detection
+4. ✅ **ChatPane Integration**: ActionPlan renders automatically alongside ITILBadge
+5. ✅ **ITIL Methodologies**: System now generates plans for INCIDENT, PROBLEM, CHANGE, REQUEST
+
+### Earlier (27/01 - 12:30 UTC) - Phase 1 Complete
 1. ✅ **Phase 1 Complete**: GLPI, Zabbix, Linear tools integrated into chat
 2. ✅ **VSA Toggles**: Frontend settings panel with integration toggles
 3. ✅ **Dynamic Tools**: Chat loads tools based on user preferences

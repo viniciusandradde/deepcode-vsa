@@ -160,12 +160,20 @@ Após análise profunda do código base, identificamos que:
 
 #### Semana 7-8: Planner com Metodologias
 
-- [ ] **Task 2.6**: Implementar node `Planner` para criar planos de ação
-  - Para Incident: diagnóstico → resolução → documentação
-  - Para Problem: RCA (5 Whys) → ação corretiva
+- [x] **Task 2.6**: Implementar node `Planner` para criar planos de ação ✅ COMPLETO
+  - ✅ System Prompt atualizado com fluxo de planejamento ITIL
+  - ✅ Exemplos de planos por tipo (INCIDENT, PROBLEM, CHANGE, REQUEST)
+  - ✅ ActionPlan.tsx component criado para visualização
+  - ✅ Parsing automático de planos do texto markdown
+  - ✅ Integração com ChatPane (renderização automática)
 - [ ] **Task 2.7**: Exibir plano de ação no chat antes de executar
+  - 🟡 Parcialmente implementado (component pronto, aguarda confirmação flow)
 - [ ] **Task 2.8**: Solicitar confirmação do usuário para planos WRITE
+  - 🟡 UI preparada (botões Confirmar/Cancelar no ActionPlan)
+  - ⏳ Falta: implementar lógica de confirmação no backend
 - [ ] **Task 2.9**: Implementar execução passo-a-passo com feedback visual
+  - 🟡 Status indicators prontos no ActionPlan (pending/in_progress/completed/failed)
+  - ⏳ Falta: implementar streaming de status de execução
 
 **Entregável:** Chat cria planos ITIL e solicita aprovação antes de executar
 
