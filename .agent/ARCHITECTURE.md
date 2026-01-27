@@ -246,6 +246,25 @@ docker compose logs -f backend frontend
 4. ✅ **Default Model**: Changed to `x-ai/grok-4.1-fast`
 5. ✅ **Security**: Removed sensitive files from git history
 6. ✅ **Zabbix Fix**: Corrected parameter name in `zabbix_get_alerts`
+7. ✅ **Tests Passed**: GLPI query (5 tickets), Zabbix query (1 alert)
+
+---
+
+## 🧪 Phase 1 Test Results (27/01/2026 12:30 UTC)
+
+**GLPI Query Test:**
+
+```
+Query: "Liste os últimos 5 tickets do GLPI"
+Result: ✅ Success - Returned 5 tickets (IDs: 23597, 23596, 23595, 23594, 23593)
+```
+
+**Zabbix Query Test:**
+
+```
+Query: "Quais alertas críticos estão ativos no Zabbix?"
+Result: ✅ Success - Returned 1 alert (Event ID: 2170626, Severity: High)
+```
 
 ---
 
@@ -258,5 +277,5 @@ docker compose logs -f backend frontend
 
 ---
 
-**Last Updated:** 27/01/2026 12:20 UTC
+**Last Updated:** 27/01/2026 12:30 UTC
 **Maintainer:** VSA Tecnologia
