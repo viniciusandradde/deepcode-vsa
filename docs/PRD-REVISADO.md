@@ -16,8 +16,9 @@ Após análise profunda do código base, identificamos que:
 2. ✅ **Integrações GLPI e Zabbix estão implementadas** (clients + tools LangChain)
 3. ✅ **SimpleAgent e WorkflowAgent funcionam** com streaming SSE
 4. ❌ **CLI não está implementado** (`deepcode_vsa/cli/` não existe)
-5. ❌ **VSAAgent não está integrado ao sistema de chat**
-6. ❌ **Metodologias ITIL/GUT não aplicadas no fluxo de chat**
+5. ✅ **UnifiedAgent unifica SimpleAgent e WorkflowAgent**
+6. ✅ **Metodologias ITIL/GUT aplicadas no fluxo de chat via UnifiedAgent**
+7. ✅ **Persistência de estado (Modo VSA) implementada via localStorage**
 
 **Proposta:** Pivotar de CLI-First para **Chat-First**, usando a interface web estável como produto principal e aplicando as metodologias de gestão de TI gradualmente no sistema de chat existente.
 
@@ -96,8 +97,10 @@ Após análise profunda do código base, identificamos que:
 
 ### Componentes Implementados
 
-| Componente | Status | Arquivo | Funcionalidade |
-|------------|--------|---------|----------------|
+| UnifiedAgent | ✅ Produção | `core/agents/unified.py` | Orquestrador ITIL, Router e Executor |
+| ITIL Classification | ✅ Produção | `core/agents/unified.py` | Categorização e GUT Score em Markdown |
+| VSA Persistence | ✅ Produção | `useGenesisUI.tsx` | Persistência de toggles via localStorage |
+| Anti-Hallucination | ✅ Produção | `api/routes/chat.py` | Regras rígidas contra dados inventados |
 | **ChatPane** | ✅ Funcional | `frontend/src/components/app/ChatPane.tsx` | Interface de chat com streaming |
 | **useGenesisUI** | ✅ Funcional | `frontend/src/state/useGenesisUI.tsx` | State management (sessions, messages) |
 | **SimpleAgent** | ✅ Funcional | `core/agents/simple.py` | Agente básico com tools |

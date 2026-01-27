@@ -38,7 +38,9 @@ core/
 ├── config.py                # Pydantic Settings (GLPI, Zabbix, Linear configs)
 ├── agents/
 │   ├── simple.py            # SimpleAgent - Main agent (active)
-│   └── vsa.py               # VSAAgent - ITIL agent (Phase 2)
+│   ├── vsa.py               # VSAAgent - ITIL agent logic
+│   ├── unified.py           # UnifiedAgent - Main orchestrator (active)
+│   └── workflow.py          # WorkflowAgent - Multi-intent logic
 ├── tools/
 │   ├── glpi.py              # glpi_get_tickets, glpi_create_ticket
 │   ├── zabbix.py            # zabbix_get_alerts, zabbix_get_host
@@ -110,10 +112,10 @@ services:
 
 ---
 
-## 📊 Data Flow
+### 📉 Fluxo de Dados
 
 ```
-User Message
+Mensagem do Usuário
     ↓
 Frontend (Next.js)
     ↓ POST /api/threads/{id}/messages/stream
@@ -121,13 +123,10 @@ Next.js Route Handler
     ↓ POST /api/v1/chat/stream
 Backend (FastAPI)
     ↓
-SimpleAgent.astream()
+    ├─ UnifiedAgent.astream() (VSA Habilitado) ─▶ Router → Classifier → Planner → Executor
+    └─ SimpleAgent.astream() (VSA Desabilitado) ─▶ Tools
     ↓
-[GLPI Tool] → GLPIClient → GLPI API
-[Zabbix Tool] → ZabbixClient → Zabbix API
-[Linear Tool] → LinearClient → Linear GraphQL
-    ↓
-LLM Response (SSE Stream)
+LLM Resposta (SSE Stream)
     ↓
 Frontend (ChatPane)
 ```
@@ -154,7 +153,7 @@ docker compose logs -f backend
 ## 📝 Implementation Status
 
 - [x] Phase 1: Basic Chat with Integrations
-- [ ] Phase 2: ITIL Methodologies (Classifier, Planner)
+- [/] Phase 2: ITIL Methodologies (UnifiedAgent, Classifier) [EM PROGRESSO]
 - [ ] Phase 3: Cross-system Correlation
 - [ ] Phase 4: Governance & Audit
 
