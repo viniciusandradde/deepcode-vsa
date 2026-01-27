@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import { MessageActions } from "./MessageActions";
 import { Logo } from "./Logo";
 import { AudioRecorderButton } from "./AudioRecorderButton";
+import { ITILBadge, parseITILFromResponse } from "./ITILBadge";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
@@ -326,6 +327,15 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                       </div>
                     ) : (
                       <div className="markdown-body">
+                        {/* ITIL Badge - Phase 2 */}
+                        {(() => {
+                          const itilData = parseITILFromResponse(message.content);
+                          return itilData ? (
+                            <div className="mb-4">
+                              <ITILBadge {...itilData} />
+                            </div>
+                          ) : null;
+                        })()}
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           rehypePlugins={[]}
