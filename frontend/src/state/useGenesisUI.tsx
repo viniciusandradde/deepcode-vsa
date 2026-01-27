@@ -102,7 +102,8 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [models, setModels] = useState<ModelOption[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
-  const [useTavily, setUseTavily] = useState<boolean>(false);
+  // Tavily Search - Persisted in localStorage
+  const [useTavily, setUseTavily] = useLocalStorageState('vsa_useTavily', false);
   // VSA Integration states (Task 1.2, 1.3) - Persisted in localStorage
   const [enableVSA, setEnableVSA] = useLocalStorageState('vsa_enableVSA', false);
   const [enableGLPI, setEnableGLPI] = useLocalStorageState('vsa_enableGLPI', false);

@@ -147,7 +147,10 @@ export function SettingsPanel() {
                 <Switch
                   checked={useTavily}
                   label={useTavily ? "Ativado" : "Desativado"}
-                  onClick={() => setUseTavily(!useTavily)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setUseTavily(!useTavily);
+                  }}
                 />
               </div>
 
@@ -158,7 +161,10 @@ export function SettingsPanel() {
                 <Switch
                   checked={enableStreaming}
                   label={enableStreaming ? "Ativado" : "Desativado"}
-                  onClick={() => setEnableStreaming(!enableStreaming)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setEnableStreaming(!enableStreaming);
+                  }}
                 />
               </div>
 
