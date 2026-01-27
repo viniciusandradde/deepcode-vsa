@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef, type MutableRefObject } from "react";
 import { storage } from "@/lib/storage";
 
 export type Role = "user" | "assistant";
@@ -52,13 +52,13 @@ interface GenesisUIState {
   renameSession: (id: string, title: string) => void;
   deleteSession: (id: string) => Promise<void>;
   messagesBySession: Record<string, GenesisMessage[]>;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, useStreaming?: boolean) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
   editMessage: (messageId: string, newContent: string) => void;
-  editMessage: (messageId: string, newContent: string) => void;
   resendMessage: (messageId: string) => Promise<void>;
   cancelMessage: () => void;
+  abortControllerRef: MutableRefObject<AbortController | null>;
 }
 
 const GenesisUIContext = createContext<GenesisUIState | null>(null);
@@ -247,7 +247,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           // Create a map of existing messages by ID
           const existingMap = new Map(existing.map(msg => [msg.id, msg]));
           // Update with new messages, preserving existing ones
-          messages.forEach(msg => {
+          messages.forEach((msg: GenesisMessage) => {
             existingMap.set(msg.id, msg);
           });
           return { ...prev, [sessionId]: Array.from(existingMap.values()) };
@@ -953,9 +953,9 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       editingMessageId,
       setEditingMessageId,
       editMessage,
-      editMessage,
       resendMessage,
       cancelMessage,
+      abortControllerRef,
     }),
     [
       isLoading,
@@ -975,8 +975,6 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       renameSession,
       deleteSession,
       sendMessage,
-      editingMessageId,
-      editMessage,
       editingMessageId,
       editMessage,
       resendMessage,

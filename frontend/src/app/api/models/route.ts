@@ -21,7 +21,7 @@ export async function GET() {
     
     console.log(`[MODELS] Trying paths:`, possiblePaths);
     
-    let modelsData;
+    let modelsData: { models?: Array<{ id: string; label: string; input_cost: number; output_cost: number }> } | undefined;
     let fileRead = false;
     
     for (const modelsPath of possiblePaths) {
@@ -30,9 +30,9 @@ export async function GET() {
         if (fs.existsSync(modelsPath)) {
           console.log(`[MODELS] File exists at: ${modelsPath}`);
           const fileContents = fs.readFileSync(modelsPath, 'utf8');
-          modelsData = yaml.load(fileContents);
+          modelsData = yaml.load(fileContents) as typeof modelsData;
           console.log(`[MODELS] Successfully loaded from: ${modelsPath}`);
-          console.log(`[MODELS] Found ${modelsData.models?.length || 0} models in file`);
+          console.log(`[MODELS] Found ${modelsData?.models?.length || 0} models in file`);
           fileRead = true;
           break;
         } else {
@@ -78,8 +78,8 @@ export async function GET() {
       };
     }
     
-    console.log(`[MODELS] Returning ${modelsData.models?.length || 0} models`);
-    return NextResponse.json(modelsData);
+    console.log(`[MODELS] Returning ${modelsData?.models?.length || 0} models`);
+    return NextResponse.json(modelsData || { models: [] });
   } catch (error) {
     console.error('[MODELS] Error loading models:', error);
     return NextResponse.json(

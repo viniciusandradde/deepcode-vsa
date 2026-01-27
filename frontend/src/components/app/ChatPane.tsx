@@ -11,6 +11,8 @@ import { MessageActions } from "./MessageActions";
 import { Logo } from "./Logo";
 import { AudioRecorderButton } from "./AudioRecorderButton";
 import { ITILBadge, parseITILFromResponse } from "./ITILBadge";
+import { ThinkingIndicator } from "./ThinkingIndicator";
+import { StructuredResponse, parseStructuredResponse } from "./StructuredResponse";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
@@ -30,6 +32,12 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
     setEditingMessageId,
     editMessage,
     resendMessage,
+    cancelMessage,
+    // VSA Integration states
+    enableVSA,
+    enableGLPI,
+    enableZabbix,
+    enableLinear,
   } = useGenesisUI();
   const messages = useMemo(() => messagesBySession[currentSessionId] ?? [], [messagesBySession, currentSessionId]);
   const [draft, setDraft] = useState("");
@@ -177,6 +185,15 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
           </div>
         </div>
         <div className="flex items-center gap-4 text-[11px] uppercase tracking-wide">
+          {enableVSA && (
+            <span className="rounded-md border border-green-500/40 px-3 py-1 text-green-400 bg-green-500/10 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+              VSA Ativo
+              {enableGLPI && <span className="text-purple-400">GLPI</span>}
+              {enableZabbix && <span className="text-orange-400">Zabbix</span>}
+              {enableLinear && <span className="text-blue-400">Linear</span>}
+            </span>
+          )}
           <span className="rounded-md border border-vsa-blue/40 px-3 py-1 text-vsa-blue-light bg-vsa-blue/5">
             Modelo: <span className="font-semibold text-white">{selectedModelId || "—"}</span>
           </span>
@@ -317,14 +334,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                     </div>
                   ) : isAssistant ? (
                     isThinking ? (
-                      <div className="flex items-center gap-3 italic text-slate-300">
-                        <div className="flex gap-1">
-                          <div className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse" style={{ animationDelay: "0ms" }} />
-                          <div className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse" style={{ animationDelay: "150ms" }} />
-                          <div className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse" style={{ animationDelay: "300ms" }} />
-                        </div>
-                        <span className="animate-pulse">Analisando sua mensagem...</span>
-                      </div>
+                      <ThinkingIndicator autoProgress={true} />
                     ) : (
                       <div className="markdown-body">
                         {/* ITIL Badge - Phase 2 */}
