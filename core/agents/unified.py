@@ -261,10 +261,7 @@ class UnifiedAgent(BaseAgent):
         # Build graph
         builder = StateGraph(UnifiedAgentState)
         
-        # Add nodes
-        builder.add_node("router", self._router_node)
-        builder.add_node("classifier", self._classifier_node)
-        builder.add_node("planner", self._planner_node)
+        # Add nodes based on configuration
         builder.add_node("executor", self._executor_node)
         builder.add_node("responder", self._responder_node)
         
@@ -273,26 +270,35 @@ class UnifiedAgent(BaseAgent):
             tool_node = ToolNode(self.tools)
             builder.add_node("tools", tool_node)
         
-        # Define edges
-        builder.add_edge(START, "router")
-        
-        # Router decides next step
-        builder.add_conditional_edges(
-            "router",
-            self._route_after_router,
-            {
-                "classifier": "classifier",
-                "executor": "executor",
-                "responder": "responder",
-            }
-        )
-        
-        # Classifier → Planner (if enabled) or Executor
-        if self.enable_planning:
-            builder.add_edge("classifier", "planner")
-            builder.add_edge("planner", "executor")
+        # Simplified graph when ITIL is disabled (no router/classifier)
+        if not self.enable_itil:
+            # Direct path: START → executor → (tools loop) → responder → END
+            builder.add_edge(START, "executor")
         else:
-            builder.add_edge("classifier", "executor")
+            # Full ITIL path with router and classifier
+            builder.add_node("router", self._router_node)
+            builder.add_node("classifier", self._classifier_node)
+            builder.add_node("planner", self._planner_node)
+            
+            builder.add_edge(START, "router")
+            
+            # Router decides next step
+            builder.add_conditional_edges(
+                "router",
+                self._route_after_router,
+                {
+                    "classifier": "classifier",
+                    "executor": "executor",
+                    "responder": "responder",
+                }
+            )
+            
+            # Classifier → Planner (if enabled) or Executor
+            if self.enable_planning:
+                builder.add_edge("classifier", "planner")
+                builder.add_edge("planner", "executor")
+            else:
+                builder.add_edge("classifier", "executor")
         
         # Executor → Tools (if tools called) or Responder
         builder.add_conditional_edges(
