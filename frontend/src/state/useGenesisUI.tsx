@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { storage } from "@/lib/storage";
 
 export type Role = "user" | "assistant";
@@ -56,7 +56,9 @@ interface GenesisUIState {
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
   editMessage: (messageId: string, newContent: string) => void;
+  editMessage: (messageId: string, newContent: string) => void;
   resendMessage: (messageId: string) => Promise<void>;
+  cancelMessage: () => void;
 }
 
 const GenesisUIContext = createContext<GenesisUIState | null>(null);
@@ -76,6 +78,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [messagesBySession, setMessagesBySession] = useState<Record<string, GenesisMessage[]>>({});
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const abortControllerRef = useContext(GenesisUIContext)?.abortControllerRef ?? useRef<AbortController | null>(null);
 
   useEffect(() => {
     async function bootstrap() {
@@ -301,6 +304,16 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
     storage.messages.clear(id);
   }, []);
 
+  const cancelMessage = useCallback(() => {
+    if (abortControllerRef.current) {
+      console.log("Cancelling message request...");
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsSending(false);
+      setIsLoading(false);
+    }
+  }, []);
+
   const sendMessage = useCallback(
     async (content: string, useStreaming: boolean = true) => {
       let threadId = currentSessionId;
@@ -346,7 +359,12 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       try {
         if (useStreaming) {
           // Streaming mode
+          // Setup AbortController
+          const controller = new AbortController();
+          abortControllerRef.current = controller;
+
           const res = await fetch(`/api/threads/${threadId}/messages/stream`, {
+            signal: controller.signal,
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -772,7 +790,11 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           // Non-streaming mode (fallback)
+          const controller = new AbortController();
+          abortControllerRef.current = controller;
+
           const res = await fetch(`/api/threads/${threadId}/messages`, {
+            signal: controller.signal,
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content, model: selectedModelId, useTavily }),
@@ -931,7 +953,9 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       editingMessageId,
       setEditingMessageId,
       editMessage,
+      editMessage,
       resendMessage,
+      cancelMessage,
     }),
     [
       isLoading,
@@ -953,7 +977,10 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       sendMessage,
       editingMessageId,
       editMessage,
+      editingMessageId,
+      editMessage,
       resendMessage,
+      cancelMessage,
     ],
   );
 

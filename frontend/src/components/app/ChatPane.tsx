@@ -472,12 +472,24 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
           </div>
           <div className="flex items-end pt-[30px]">
             <Button
-              type="submit"
-              disabled={isLoading || isSending || !draft.trim()}
-              className="h-[80px] rounded-lg border border-vsa-orange/40 bg-vsa-orange/20 px-6 text-sm uppercase tracking-[0.35em] text-vsa-orange-light transition hover:border-vsa-orange hover:bg-vsa-orange/30 focus:outline-none focus:ring-2 focus:ring-vsa-orange/50"
-              aria-label={isSending ? "Enviando mensagem" : "Enviar mensagem"}
+              type={isSending ? "button" : "submit"}
+              disabled={isLoading || (!draft.trim() && !isSending)}
+              onClick={isSending ? (e) => {
+                e.preventDefault();
+                cancelMessage();
+                // Restore draft if needed, or just let user continue typing
+                // For now, we just stop the sending process
+                textareaRef.current?.focus();
+              } : undefined}
+              className={clsx(
+                "h-[80px] rounded-lg border px-6 text-sm uppercase tracking-[0.35em] transition focus:outline-none focus:ring-2",
+                isSending
+                  ? "border-red-500/40 bg-red-500/20 text-red-400 hover:border-red-500 hover:bg-red-500/30 focus:ring-red-500/50"
+                  : "border-vsa-orange/40 bg-vsa-orange/20 text-vsa-orange-light hover:border-vsa-orange hover:bg-vsa-orange/30 focus:ring-vsa-orange/50"
+              )}
+              aria-label={isSending ? "Cancelar envio" : "Enviar mensagem"}
             >
-              {isSending ? "Enviando..." : "Enviar"}
+              {isSending ? "Cancelar" : "Enviar"}
             </Button>
           </div>
         </form>
