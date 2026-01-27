@@ -37,8 +37,8 @@
 # Modelos gratuitos (note o sufixo :free no ID)
 - id: x-ai/grok-4.1-fast:free
   label: Grok 4.1 Fast (Free)
-  input_cost: 0.00    # Modelo gratuito
-  output_cost: 0.00   # Modelo gratuito
+  input_cost: 0.00   
+  output_cost: 0.00   
 
 
 
