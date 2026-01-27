@@ -26,8 +26,9 @@ DEBUG_AGENT_LOGS = os.getenv("DEBUG_AGENT_LOGS", "false").strip().lower() in {"1
 
 router = APIRouter()
 
-# Initialize checkpointer
-checkpointer = get_checkpointer()
+# Initialize checkpointer with MemorySaver (simpler and reliable)
+from langgraph.checkpoint.memory import MemorySaver
+checkpointer = MemorySaver()
 
 # Phase 2: ITIL System Prompt for VSA Mode
 VSA_ITIL_SYSTEM_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), um especialista em Gestão de TI com profundo conhecimento em ITIL, GUT Matrix e metodologias de análise.
