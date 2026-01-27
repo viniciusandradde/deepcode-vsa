@@ -8,7 +8,7 @@ export async function GET() {
     // Debug: Log current working directory
     const cwd = process.cwd();
     console.log(`[MODELS] Current working directory: ${cwd}`);
-    
+
     // Try multiple paths for models.yaml
     const possiblePaths = [
       '/app/models.yaml', // Docker absolute path (most reliable - mounted from docker-compose)
@@ -18,12 +18,12 @@ export async function GET() {
       path.join(cwd, '..', '..', 'models.yaml'), // Alternative relative path
       path.join(__dirname, '..', '..', '..', '..', 'models.yaml'), // From route directory
     ];
-    
+
     console.log(`[MODELS] Trying paths:`, possiblePaths);
-    
-    let modelsData: { models?: Array<{ id: string; label: string; input_cost: number; output_cost: number }> } | undefined;
+
+    let modelsData: { models?: Array<{ id: string; label: string; input_cost: number; output_cost: number; default?: boolean }> } | undefined;
     let fileRead = false;
-    
+
     for (const modelsPath of possiblePaths) {
       try {
         console.log(`[MODELS] Checking path: ${modelsPath}`);
@@ -43,7 +43,7 @@ export async function GET() {
         continue;
       }
     }
-    
+
     if (!fileRead) {
       console.warn('[MODELS] Could not read models.yaml, using fallback');
       console.warn('[MODELS] Please check if models.yaml is mounted correctly in docker-compose.yml');
@@ -73,11 +73,12 @@ export async function GET() {
             label: 'Grok 4.1 Fast (Free)',
             input_cost: 0.00,
             output_cost: 0.00,
+            default: true,
           },
         ],
       };
     }
-    
+
     console.log(`[MODELS] Returning ${modelsData?.models?.length || 0} models`);
     return NextResponse.json(modelsData || { models: [] });
   } catch (error) {

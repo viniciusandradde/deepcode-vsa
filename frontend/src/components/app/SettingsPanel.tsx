@@ -107,6 +107,27 @@ export function SettingsPanel() {
             </div>
 
             <div className="border-t border-white/10 pt-4 space-y-4">
+              {/* Model Selection Dropdown */}
+              <div className="space-y-2">
+                <label className="block text-xs uppercase tracking-[0.35em] text-slate-400">
+                  Modelo de IA
+                </label>
+                <select
+                  value={selectedModelId}
+                  onChange={(e) => setSelectedModelId(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-[#0b1526] px-3 py-2 text-sm text-white focus:border-vsa-blue focus:outline-none"
+                >
+                  {models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.label} {model.isDefault && "⭐ (Padrão)"}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500">
+                  Custo: ${models.find(m => m.id === selectedModelId)?.inputCost?.toFixed(2) ?? "0.00"}/1M tokens
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <label className="block text-xs uppercase tracking-[0.35em] text-slate-400">
                   Busca Web (Tavily)

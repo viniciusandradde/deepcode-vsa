@@ -115,7 +115,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                   onChange={setSelectedModelId}
                   options={models.map((model) => ({
                     value: model.id,
-                    label: model.label,
+                    label: `${model.label}${model.isDefault ? " ⭐" : ""}`,
                     description: `custo in/out $${model.inputCost.toFixed(2)} / $${model.outputCost.toFixed(2)}`,
                   }))}
                   placeholder="Selecione um modelo..."

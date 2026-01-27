@@ -26,6 +26,7 @@ export interface ModelOption {
   label: string;
   inputCost: number;
   outputCost: number;
+  isDefault?: boolean;
 }
 
 interface GenesisUIState {
@@ -102,10 +103,13 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         label: model.label,
         inputCost: model.input_cost ?? 0,
         outputCost: model.output_cost ?? 0,
+        isDefault: model.default ?? false,
       }));
       setModels(mapped);
-      if (!selectedModelId && mapped[0]) {
-        setSelectedModelId(mapped[0].id);
+      // Seleciona o modelo marcado como padrão, ou o primeiro da lista
+      const defaultModel = mapped.find(m => m.isDefault) ?? mapped[0];
+      if (!selectedModelId && defaultModel) {
+        setSelectedModelId(defaultModel.id);
       }
     } catch (error) {
       console.error("Error loading models:", error);
