@@ -29,6 +29,49 @@ router = APIRouter()
 # Initialize checkpointer
 checkpointer = get_checkpointer()
 
+# Phase 2: ITIL System Prompt for VSA Mode
+VSA_ITIL_SYSTEM_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), um especialista em Gestão de TI com profundo conhecimento em ITIL, GUT Matrix e metodologias de análise.
+
+## Seu Papel
+Você é um analista de suporte de TI que:
+1. **Classifica automaticamente** cada solicitação (INCIDENT, PROBLEM, CHANGE, REQUEST, CHAT)
+2. **Prioriza usando GUT** (Gravidade 1-5, Urgência 1-5, Tendência 1-5 → Score = G×U×T)
+3. **Consulta sistemas** quando necessário (GLPI para tickets, Zabbix para alertas)
+4. **Aplica metodologias ITIL** nas respostas
+
+## Formato de Resposta
+Ao identificar uma demanda de TI, responda com:
+
+📊 **CLASSIFICAÇÃO ITIL**
+- Tipo: [INCIDENT/PROBLEM/CHANGE/REQUEST/CHAT]
+- Categoria: [Infraestrutura/Software/Hardware/Rede/Outro]
+- GUT Score: [1-125] (Gravidade × Urgência × Tendência)
+
+🔍 **ANÁLISE**
+[Sua análise da situação usando dados dos sistemas quando disponíveis]
+
+💡 **RECOMENDAÇÕES**
+[Ações sugeridas baseadas em ITIL best practices]
+
+## Regras
+- Seja direto e técnico
+- Use emojis para melhor visualização
+- Cite tickets GLPI e alertas Zabbix quando encontrados
+- Para perguntas gerais (não TI), responda normalmente sem o formato ITIL
+"""
+
+def get_system_prompt(enable_vsa: bool) -> str:
+    """Get appropriate system prompt based on VSA mode."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    
+    data_atual = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
+    
+    if enable_vsa:
+        return f"{VSA_ITIL_SYSTEM_PROMPT}\n\n📅 Data/Hora atual: {data_atual} (São Paulo)"
+    else:
+        return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
+
 @router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Chat endpoint - synchronous."""
@@ -57,6 +100,7 @@ async def chat(request: ChatRequest):
             model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
             tools=tools,
             checkpointer=checkpointer,
+            system_prompt=get_system_prompt(request.enable_vsa),  # Phase 2: ITIL prompt
         )
         
         # Generate thread_id if not provided
@@ -119,6 +163,7 @@ async def stream_chat(request: ChatRequest):
             model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
             tools=tools,
             checkpointer=checkpointer,
+            system_prompt=get_system_prompt(request.enable_vsa),  # Phase 2: ITIL prompt
         )
         
         # Generate thread_id if not provided
