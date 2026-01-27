@@ -60,7 +60,10 @@ export function SettingsPanel() {
                 <Switch
                   checked={enableVSA}
                   label={enableVSA ? "Ativo" : "Inativo"}
-                  onClick={() => setEnableVSA(!enableVSA)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setEnableVSA(!enableVSA);
+                  }}
                 />
               </div>
 
@@ -75,7 +78,10 @@ export function SettingsPanel() {
                     <Switch
                       checked={enableGLPI}
                       label=""
-                      onClick={() => setEnableGLPI(!enableGLPI)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setEnableGLPI(!enableGLPI);
+                      }}
                     />
                   </div>
 
@@ -87,7 +93,10 @@ export function SettingsPanel() {
                     <Switch
                       checked={enableZabbix}
                       label=""
-                      onClick={() => setEnableZabbix(!enableZabbix)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setEnableZabbix(!enableZabbix);
+                      }}
                     />
                   </div>
 
@@ -99,7 +108,10 @@ export function SettingsPanel() {
                     <Switch
                       checked={enableLinear}
                       label=""
-                      onClick={() => setEnableLinear(!enableLinear)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setEnableLinear(!enableLinear);
+                      }}
                     />
                   </div>
                 </div>

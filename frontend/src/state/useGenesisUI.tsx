@@ -5,32 +5,31 @@ import { storage } from "@/lib/storage";
 
 // Custom hook for localStorage persistence
 function useLocalStorageState(key: string, defaultValue: boolean): [boolean, (value: boolean) => void] {
-  const [state, setState] = useState<boolean>(() => {
-    // This runs only on client
+  // Always start with defaultValue for SSR
+  const [state, setState] = useState<boolean>(defaultValue);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Hydrate from localStorage on mount (client-side only)
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(key);
-      console.log(`[useLocalStorageState] Init ${key}:`, saved);
-      return saved === 'true';
+      console.log(`[useLocalStorageState] Hydrating ${key}:`, saved);
+
+      if (saved !== null) {
+        const parsedValue = saved === 'true';
+        setState(parsedValue);
+        console.log(`[useLocalStorageState] Restored ${key}:`, parsedValue);
+      }
+
+      setIsHydrated(true);
     }
-    return defaultValue;
-  });
+  }, [key]);
 
   const setValue = useCallback((value: boolean) => {
     setState(value);
     if (typeof window !== 'undefined') {
       localStorage.setItem(key, String(value));
       console.log(`[useLocalStorageState] Saved ${key}:`, value);
-    }
-  }, [key]);
-
-  // Sync state with localStorage on mount (for SSR hydration)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(key);
-      console.log(`[useLocalStorageState] Mount sync ${key}:`, saved);
-      if (saved !== null && (saved === 'true') !== state) {
-        setState(saved === 'true');
-      }
     }
   }, [key]);
 
