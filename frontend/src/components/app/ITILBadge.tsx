@@ -6,10 +6,12 @@ import React from "react";
  * ITIL Badge Component
  * Displays ITIL classification, GUT score, and priority badges
  * for IT service management responses.
+ *
+ * Updated: 2026-01-27 - Portuguese (Brazil) terms
  */
 
-export type ITILType = "incident" | "problem" | "change" | "request" | "chat";
-export type Priority = "critical" | "high" | "medium" | "low";
+export type ITILType = "incidente" | "problema" | "mudanca" | "requisicao" | "conversa";
+export type Priority = "critico" | "alto" | "medio" | "baixo";
 
 export interface ITILBadgeProps {
     type: ITILType;
@@ -23,48 +25,48 @@ const typeConfig: Record<
     ITILType,
     { color: string; icon: string; label: string }
 > = {
-    incident: {
+    incidente: {
         color: "bg-red-500 hover:bg-red-600",
         icon: "🔥",
-        label: "INCIDENT",
+        label: "INCIDENTE",
     },
-    problem: {
+    problema: {
         color: "bg-orange-500 hover:bg-orange-600",
         icon: "🔍",
-        label: "PROBLEM",
+        label: "PROBLEMA",
     },
-    change: {
+    mudanca: {
         color: "bg-blue-500 hover:bg-blue-600",
         icon: "🔄",
-        label: "CHANGE",
+        label: "MUDANÇA",
     },
-    request: {
+    requisicao: {
         color: "bg-green-500 hover:bg-green-600",
         icon: "📋",
-        label: "REQUEST",
+        label: "REQUISIÇÃO",
     },
-    chat: {
+    conversa: {
         color: "bg-gray-500 hover:bg-gray-600",
         icon: "💬",
-        label: "CHAT",
+        label: "CONVERSA",
     },
 };
 
 const priorityConfig: Record<Priority, { color: string; label: string }> = {
-    critical: { color: "bg-red-600", label: "CRÍTICO" },
-    high: { color: "bg-orange-600", label: "ALTO" },
-    medium: { color: "bg-yellow-600", label: "MÉDIO" },
-    low: { color: "bg-gray-600", label: "BAIXO" },
+    critico: { color: "bg-red-600", label: "CRÍTICO" },
+    alto: { color: "bg-orange-600", label: "ALTO" },
+    medio: { color: "bg-yellow-600", label: "MÉDIO" },
+    baixo: { color: "bg-gray-600", label: "BAIXO" },
 };
 
 /**
  * Get priority based on GUT score
  */
 function getPriorityFromGUT(gutScore: number): Priority {
-    if (gutScore >= 100) return "critical";
-    if (gutScore >= 64) return "high";
-    if (gutScore >= 27) return "medium";
-    return "low";
+    if (gutScore >= 100) return "critico";
+    if (gutScore >= 64) return "alto";
+    if (gutScore >= 27) return "medio";
+    return "baixo";
 }
 
 /**
@@ -84,7 +86,7 @@ export function ITILBadge({
     category,
     compact = false,
 }: ITILBadgeProps) {
-    const config = typeConfig[type] || typeConfig.chat;
+    const config = typeConfig[type] || typeConfig.conversa;
     const effectivePriority = priority || (gutScore ? getPriorityFromGUT(gutScore) : undefined);
 
     if (compact) {
@@ -147,16 +149,34 @@ export function ITILBadge({
 /**
  * Parse ITIL classification from response text
  * Looks for patterns like:
- * - Tipo: INCIDENT
+ * - Tipo: INCIDENTE
  * - GUT Score: 75
  * - Categoria: Infraestrutura
+ *
+ * Updated: 2026-01-27 - Portuguese terms
  */
 export function parseITILFromResponse(text: string): ITILBadgeProps | null {
-    // Match type
-    const typeMatch = text.match(/Tipo:\s*(INCIDENT|PROBLEM|CHANGE|REQUEST|CHAT)/i);
+    // Match type (Portuguese terms)
+    const typeMatch = text.match(/Tipo:\s*(INCIDENTE|PROBLEMA|MUDANÇA|REQUISIÇÃO|CONVERSA|INCIDENT|PROBLEM|CHANGE|REQUEST|CHAT)/i);
     if (!typeMatch) return null;
 
-    const type = typeMatch[1].toLowerCase() as ITILType;
+    // Normalize to Portuguese lowercase
+    const typeMap: Record<string, ITILType> = {
+        'incidente': 'incidente',
+        'incident': 'incidente',
+        'problema': 'problema',
+        'problem': 'problema',
+        'mudança': 'mudanca',
+        'mudanca': 'mudanca',
+        'change': 'mudanca',
+        'requisição': 'requisicao',
+        'requisicao': 'requisicao',
+        'request': 'requisicao',
+        'conversa': 'conversa',
+        'chat': 'conversa',
+    };
+
+    const type = typeMap[typeMatch[1].toLowerCase()] || 'conversa';
 
     // Match GUT Score
     const gutMatch = text.match(/GUT\s*(?:Score)?:\s*(\d+)/i);

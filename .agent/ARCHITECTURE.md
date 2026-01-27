@@ -245,7 +245,15 @@ docker compose logs -f backend frontend
 
 ## 📝 Recent Changes (27/01/2026)
 
-### Latest (27/01 - 15:00 UTC) - Task 2.6 Complete
+### Latest (27/01 - 18:30 UTC) - Portuguese (BR) ITIL Terms
+1. ✅ **ITIL em Português**: Todos termos traduzidos (INCIDENTE, PROBLEMA, MUDANÇA, REQUISIÇÃO, CONVERSA)
+2. ✅ **Categorias em PT-BR**: Infraestrutura, Rede, Software, Hardware, Segurança, Acesso, Consulta
+3. ✅ **Backend Atualizado**: System Prompt com definições ITIL detalhadas em português
+4. ✅ **Frontend Atualizado**: ITILBadge.tsx com novos tipos e labels em PT-BR
+5. ✅ **VSAAgent Atualizado**: Enums TaskCategory e Priority em português
+6. ✅ **Table Rendering**: Estilos CSS para renderização de tabelas markdown
+
+### Earlier (27/01 - 15:00 UTC) - Task 2.6 Complete
 1. ✅ **Action Plan Component**: Created ActionPlan.tsx for structured plan visualization
 2. ✅ **Planner System Prompt**: Updated VSA_ITIL_SYSTEM_PROMPT with planning flow
 3. ✅ **Plan Parsing**: Implemented parseActionPlanFromResponse() for automatic detection

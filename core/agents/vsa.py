@@ -27,17 +27,19 @@ class Methodology(str, Enum):
     PDCA = "pdca"
 
 class TaskCategory(str, Enum):
-    INCIDENT = "incident"
-    PROBLEM = "problem"
-    CHANGE = "change"
-    REQUEST = "request"
-    CHAT = "chat"
+    """ITIL Task Categories (Portuguese BR)"""
+    INCIDENTE = "incidente"
+    PROBLEMA = "problema"
+    MUDANCA = "mudanca"
+    REQUISICAO = "requisicao"
+    CONVERSA = "conversa"
 
 class Priority(str, Enum):
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
+    """Priority Levels (Portuguese BR)"""
+    CRITICO = "critico"
+    ALTO = "alto"
+    MEDIO = "medio"
+    BAIXO = "baixo"
 
 class VSAAgentState(TypedDict):
     """VSA Agent State."""
@@ -79,14 +81,22 @@ def create_initial_state(user_request: str, dry_run: bool = True) -> VSAAgentSta
 
 # --- Prompts ---
 
-CLASSIFIER_PROMPT = """You are an IT Service Management Expert.
-Analyze the user request and classify it into ITIL categories (INCIDENT, PROBLEM, CHANGE, REQUEST, CHAT).
-Also estimate urgency/impact to calculate GUT score.
+CLASSIFIER_PROMPT = """Você é um Especialista em Gestão de Serviços de TI (ITIL).
+Analise a solicitação do usuário e classifique nas categorias ITIL em português:
+- INCIDENTE: Interrupção inesperada de serviço
+- PROBLEMA: Causa raiz de incidentes
+- MUDANÇA: Alteração controlada em serviços
+- REQUISIÇÃO: Solicitação de serviço padrão
+- CONVERSA: Interação geral sem demanda técnica
+
+Estime também urgência/impacto para calcular o GUT score.
 """
 
-PLANNER_PROMPT = """Create a step-by-step execution plan obeying the ITIL methodology.
-For CHAT, just provide "Responder ao usuário".
-For INCIDENT, include diagnosis and resolution steps.
+PLANNER_PROMPT = """Crie um plano de ação passo-a-passo seguindo a metodologia ITIL.
+Para CONVERSA, apenas responda normalmente.
+Para INCIDENTE, inclua etapas de diagnóstico e resolução.
+Para PROBLEMA, inclua análise de causa raiz (5 Porquês).
+Para MUDANÇA, inclua avaliação de impacto e planejamento.
 """
 
 # --- Agent Class ---
