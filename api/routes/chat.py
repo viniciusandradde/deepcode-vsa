@@ -11,7 +11,7 @@ from api.models.responses import ChatResponse
 from core.agents.simple import SimpleAgent
 from core.agents.unified import UnifiedAgent
 from core.tools.search import tavily_search
-from core.checkpointing import get_checkpointer
+from core.checkpointing import get_async_checkpointer
 
 # Integration tools (Task 1.1)
 from core.tools.glpi import glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket
@@ -26,9 +26,6 @@ logger = logging.getLogger(__name__)
 DEBUG_AGENT_LOGS = os.getenv("DEBUG_AGENT_LOGS", "false").strip().lower() in {"1", "true", "yes"}
 
 router = APIRouter()
-
-# Initialize checkpointer (will use PostgreSQL if available, fallback to Memory)
-checkpointer = get_checkpointer()
 
 # Phase 2: ITIL System Prompt for VSA Mode
 VSA_ITIL_SYSTEM_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), um especialista em Gestão de TI com profundo conhecimento em ITIL, GUT Matrix e metodologias de análise.
@@ -226,6 +223,9 @@ def get_system_prompt(enable_vsa: bool) -> str:
 async def chat(request: ChatRequest):
     """Chat endpoint - synchronous."""
     try:
+        # Get checkpointer (initialized via lifespan)
+        checkpointer = get_async_checkpointer()
+
         # Create agent with tools (Task 1.1 - Dynamic tools)
         tools = []
         if request.use_tavily:
@@ -300,8 +300,11 @@ async def stream_chat(request: ChatRequest):
     """Chat endpoint - streaming (SSE)."""
     from fastapi.responses import StreamingResponse
     import json
-    
+
     try:
+        # Get checkpointer (initialized via lifespan)
+        checkpointer = get_async_checkpointer()
+
         # Create agent with tools (Task 1.1 - Dynamic tools)
         tools = []
         if request.use_tavily:
