@@ -135,7 +135,7 @@ DeepCode VSA
 
 ```bash
 # 1. Clonar repositório
-git clone https://github.com/USER/deepcode-vsa.git
+git clone https://github.com/viniciusandradde/deepcode-vsa.git
 cd deepcode-vsa
 
 # 2. Copiar .env de exemplo
@@ -165,8 +165,8 @@ uvicorn api.main:app --reload --port 8000
 
 # Frontend
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 ---
@@ -200,6 +200,7 @@ npm run dev
 - 🧪 **[GUIA-TESTE-PERSISTENCIA.md](.agent/GUIA-TESTE-PERSISTENCIA.md)** - Guia de testes
 - 🔌 **[MCP-SERVERS-CONFIGURADOS.md](.agent/MCP-SERVERS-CONFIGURADOS.md)** - MCPs configurados
 - ⚙️ **[STATUS-INTEGRACOES.md](STATUS-INTEGRACOES.md)** - Status das integrações
+- 📱 **[PWA-GUIDE.md](docs/PWA-GUIDE.md)** - Guia de uso da PWA
 
 ---
 
@@ -263,6 +264,7 @@ make setup-db
 - ✅ Integrações GLPI, Zabbix, Linear
 - ✅ ITIL classification em português
 - ✅ MCP servers (15 configurados)
+- ✅ PWA com Service Worker e cache inteligente
 
 ### 🚧 Fase 2: ITIL Completo (v1.1+ - Em planejamento)
 - ✅ Classificação ITIL automática
@@ -283,6 +285,39 @@ make setup-db
 - [ ] Cloud integrations (AWS/Azure)
 - [ ] CLI interface
 - [ ] Multi-tenancy completo
+
+---
+
+## 📱 PWA (Progressive Web App)
+
+O DeepCode VSA é uma **Progressive Web App** completa:
+
+- ✅ **Installável** em desktop e mobile (Android, iOS, Windows, macOS)
+- ✅ **Cache inteligente** de assets estáticos para melhor performance
+- ✅ **Modo offline** parcial (shell da aplicação + sessões em cache)
+- ✅ **Detecção de conexão** em tempo real com banner de status
+- ✅ **Otimizações mobile** (gestos, áreas de toque, viewport)
+- ✅ **Notificações** (hooks prontos para integração futura)
+
+### Como instalar
+
+**Android / Chrome**
+1. Acesse a URL do DeepCode VSA no Chrome
+2. Toque em **"Instalar"** no banner laranja exibido no rodapé
+3. Confirme a instalação
+
+**iOS / Safari**
+1. Acesse a URL do DeepCode VSA no Safari
+2. Toque no ícone de **compartilhar** (↗️)
+3. Selecione **"Adicionar à Tela de Início"**
+4. Confirme o nome
+
+**Desktop (Chrome / Edge)**
+1. Acesse a URL do DeepCode VSA
+2. Clique no ícone de **instalação** na barra de endereços (📥)
+3. Confirme a instalação
+
+Para mais detalhes sobre PWA, consulte **[PWA-GUIDE.md](docs/PWA-GUIDE.md)**.
 
 ---
 
@@ -346,12 +381,12 @@ Para questões técnicas ou suporte:
 
 1. Verificar documentação em `.agent/` e `docs/`
 2. Consultar logs: `docker compose logs backend`
-3. Abrir issue no repositório (quando configurado)
+3. Abrir issue no repositório
 
 ---
 
 **Desenvolvido com ❤️ pela equipe VSA Tecnologia**
 
-**Status:** ✅ MVP v1.0 COMPLETO (pronto para uso)
+**Status:** ✅ MVP v1.0 COMPLETO + PWA
 
 **Última atualização:** 2026-01-28
