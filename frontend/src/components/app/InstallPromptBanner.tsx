@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Download, X } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { useMounted } from "@/hooks/useMounted";
 
 export function InstallPromptBanner() {
+  const mounted = useMounted();
   const { canInstall, promptInstall } = useInstallPrompt();
   const [dismissed, setDismissed] = useState(false);
 
-  if (!canInstall || dismissed) return null;
+  // Só renderiza após montar no cliente (previne hydration mismatch)
+  if (!mounted || !canInstall || dismissed) return null;
 
   const handleInstall = async () => {
     const accepted = await promptInstall();

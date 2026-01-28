@@ -26,7 +26,6 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <GenesisUIProvider>
-        <OfflineBanner />
         <div className="flex h-screen">
           <Sidebar collapsed={sidebarCollapsed} />
           <ChatPane 
@@ -34,6 +33,8 @@ export default function Home() {
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
+        {/* PWA Banners - renderizados após UI principal para evitar hydration issues */}
+        <OfflineBanner />
         <InstallPromptBanner />
       </GenesisUIProvider>
     </ErrorBoundary>

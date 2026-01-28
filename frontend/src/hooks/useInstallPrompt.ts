@@ -12,37 +12,46 @@ export function useInstallPrompt() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Verifica se já está instalado (PWA standalone)
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setIsInstalled(true);
-      return;
+    try {
+      // Verifica se já está instalado (PWA standalone)
+      if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
+        setIsInstalled(true);
+        return;
+      }
+
+      const handleBeforeInstall = (e: Event) => {
+        e.preventDefault();
+        setInstallPrompt(e as BeforeInstallPromptEvent);
+      };
+
+      window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+
+      return () => {
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      };
+    } catch (error) {
+      console.warn("useInstallPrompt error:", error);
     }
-
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-    };
   }, []);
 
   const promptInstall = async () => {
     if (!installPrompt) return false;
 
-    installPrompt.prompt();
-    const choice = await installPrompt.userChoice;
+    try {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
 
-    if (choice.outcome === "accepted") {
-      setInstallPrompt(null);
-      setIsInstalled(true);
-      return true;
+      if (choice.outcome === "accepted") {
+        setInstallPrompt(null);
+        setIsInstalled(true);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.warn("promptInstall error:", error);
+      return false;
     }
-
-    return false;
   };
 
   return {
