@@ -1,0 +1,126 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "postgres-homologacao": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+      ]
+    },
+    "postgres-producao": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+      ]
+    },
+    "postgres-analytics_health": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp",
+      "headers": {}
+    },
+    "metabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@easecloudio/mcp-metabase-server"
+      ],
+      "env": {
+        "METABASE_URL": "https://your-metabase-url.com",
+        "METABASE_API_KEY": "your-api-key-here"
+      }
+    },
+    "Notion": {
+      "url": "https://mcp.notion.com/mcp",
+      "headers": {}
+    },
+    "shadcn/ui": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ],
+      "env": {}
+    },
+    "n8n-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "supergateway",
+        "--streamableHttp",
+        "https://your-n8n-url.com/mcp-server/http",
+        "--header",
+        "authorization:Bearer YOUR_JWT_TOKEN_HERE"
+      ]
+    },
+    "Vercel": {
+      "url": "https://mcp.vercel.com",
+      "headers": {}
+    },
+    "grafana": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "GRAFANA_URL",
+        "-e",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN",
+        "grafana/mcp-grafana",
+        "-t",
+        "stdio",
+        "-debug"
+      ],
+      "env": {
+        "GRAFANA_URL": "http://your-grafana-url:3000/",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "your-service-account-token"
+      }
+    },
+    "perplexity": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@perplexity-ai/mcp-server"
+      ],
+      "env": {
+        "PERPLEXITY_API_KEY": "your-perplexity-api-key"
+      }
+    },
+    "Docs by LangChain": {
+      "name": "Docs by LangChain",
+      "url": "https://docs.langchain.com/mcp",
+      "headers": {}
+    },
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer YOUR_GITHUB_TOKEN"
+      }
+    }
+  }
+}

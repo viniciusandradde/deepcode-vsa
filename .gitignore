@@ -39,3 +39,7 @@ Thumbs.db
 *.log
 logs/
 
+# MCP Servers (contains credentials)
+.claude/mcp.json
+.claude/settings.local.json
+
