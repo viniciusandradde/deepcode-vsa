@@ -11,13 +11,21 @@ export async function GET(
 ) {
   try {
     const { threadId } = await context.params;
-    
-    // Por enquanto, retorna mensagens vazias
-    // Em produção, isso buscaria mensagens do backend
-    return NextResponse.json({ 
-      thread_id: threadId,
-      messages: []
-    });
+
+    // Busca o histórico de mensagens do backend FastAPI,
+    // que lê os checkpoints do PostgreSQL via LangGraph.
+    const res = await fetch(backend(`/api/v1/threads/${threadId}`));
+
+    if (!res.ok) {
+      console.error("Backend /api/v1/threads/{id} responded with", res.status);
+      return NextResponse.json(
+        { thread_id: threadId, messages: [] },
+        { status: 200 },
+      );
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching thread:", error);
     return NextResponse.json({ error: "Failed to fetch thread" }, { status: 500 });

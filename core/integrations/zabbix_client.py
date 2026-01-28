@@ -31,7 +31,12 @@ class ZabbixClient:
 
     def __init__(self, settings: ZabbixSettings):
         self.settings = settings
-        self.api_url = f"{settings.base_url.rstrip('/')}/api_jsonrpc.php"
+        # Handle both URL formats: with or without /api_jsonrpc.php
+        base = settings.base_url.rstrip('/')
+        if base.endswith('/api_jsonrpc.php'):
+            self.api_url = base
+        else:
+            self.api_url = f"{base}/api_jsonrpc.php"
         self.auth_token: str | None = settings.api_token
         self._client: httpx.AsyncClient | None = None
         self._request_id = 1

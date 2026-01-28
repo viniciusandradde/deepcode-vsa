@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import chat, rag, agents
+from api.routes import chat, rag, agents, threads
 from core.checkpointing import initialize_checkpointer, cleanup_checkpointer
 
 # Configure LangSmith tracing
@@ -51,7 +51,7 @@ app = FastAPI(
     title="AI Agent + RAG API",
     description="API for AI agents with RAG capabilities",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -67,6 +67,7 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(rag.router, prefix="/api/v1/rag", tags=["rag"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["agents"])
+app.include_router(threads.router, prefix="/api/v1/threads", tags=["threads"])
 
 
 @app.get("/")
@@ -79,23 +80,25 @@ async def root():
 async def health():
     """Health check endpoint."""
     import os
+
     checks = {
         "status": "healthy",
         "checks": {
             "openrouter_api_key": bool(os.getenv("OPENROUTER_API_KEY")),
             "openai_api_key": bool(os.getenv("OPENAI_API_KEY")),
             "database": False,
-        }
+        },
     }
-    
+
     # Check database connection
     try:
         from core.database import get_conn
+
         conn = get_conn()
         conn.close()
         checks["checks"]["database"] = True
     except Exception as e:
         checks["database_error"] = str(e)
-    
+
     return checks
 

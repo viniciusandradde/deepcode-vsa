@@ -7,9 +7,17 @@ function backend(path: string) {
 
 export async function GET() {
   try {
-    // Por enquanto, retorna lista vazia ou cria uma sessão padrão
-    // Em produção, isso viria de um endpoint de listagem de threads
-    return NextResponse.json({ threads: [] });
+    // Agora buscamos as threads diretamente do backend FastAPI,
+    // que lê os checkpoints do PostgreSQL.
+    const res = await fetch(backend("/api/v1/threads"));
+
+    if (!res.ok) {
+      console.error("Backend /api/v1/threads responded with", res.status);
+      return NextResponse.json({ threads: [] });
+    }
+
+    const data = await res.json();
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error loading threads:", error);
     return NextResponse.json({ error: "Failed to load threads" }, { status: 500 });
