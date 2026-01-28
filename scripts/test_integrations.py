@@ -109,7 +109,7 @@ async def test_zabbix():
             print(f"❌ Falha ao buscar problemas: {result.error}")
             return False
 
-        problems = result if isinstance(result, list) else []
+        problems = result.output if isinstance(result.output, list) else []
         print(f"✅ Encontrados {len(problems)} problemas")
 
         if problems:

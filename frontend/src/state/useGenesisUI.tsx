@@ -187,6 +187,7 @@ export interface GenesisSession {
   id: string;
   title: string;
   createdAt: number;
+  lastActivityAt?: number;
 }
 
 export interface ModelOption {
@@ -293,11 +294,25 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         const threads = Array.isArray(data.threads) ? data.threads : [];
 
-        const apiSessions: GenesisSession[] = threads.map((thread: any) => ({
-          id: thread.thread_id || thread.id,
-          title: thread.title || `Sessão ${thread.thread_id?.slice(0, 8) || thread.id?.slice(0, 8)}`,
-          createdAt: thread.created_at ? Date.parse(thread.created_at) : Date.now(), // podemos melhorar quando o backend expuser created_at
-        }));
+        const apiSessions: GenesisSession[] = threads.map((thread: any) => {
+          const id = thread.thread_id || thread.id;
+          // last_ts vem do backend a partir do checkpoint->>'ts'
+          const lastTs = thread.last_ts ? Date.parse(thread.last_ts) : Date.now();
+          const dt = new Date(lastTs);
+          const time = dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          const date = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+
+          const title =
+            thread.title ||
+            `Sessão de ${date} ${time}`;
+
+          return {
+            id,
+            title,
+            createdAt: lastTs, // proxy de criação
+            lastActivityAt: lastTs,
+          };
+        });
 
         setSessions(apiSessions);
 
@@ -469,6 +484,9 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       }
       if (!threadId) return;
 
+      // Número de mensagens antes de adicionar a nova (para auto-título)
+      const previousMessagesCount = messagesBySession[threadId]?.length ?? 0;
+
       const optimistic: GenesisMessage = {
         id: `user-${Date.now()}`,
         role: "user",
@@ -486,6 +504,45 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         return updated;
       });
       setCurrentSessionId(threadId);
+
+      // Atualizar lastActivityAt e, se for a primeira mensagem da sessão,
+      // gerar um título automático amigável baseado no conteúdo
+      setSessions((prev) => {
+        return prev.map((session) => {
+          if (session.id !== threadId) return session;
+
+          const now = Date.now();
+          let title = session.title;
+
+          // Auto título apenas se for a primeira mensagem e o título ainda
+          // estiver no formato padrão "Sessão de ..." ou "Nova Sessão ..."
+          const isFirstMessage = previousMessagesCount === 0;
+          const isDefaultTitle =
+            title.startsWith("Sessão de ") || title.startsWith("Nova Sessão");
+
+          if (isFirstMessage && isDefaultTitle) {
+            const plain = content.replace(/\s+/g, " ").trim();
+            const snippet = plain.slice(0, 60);
+            if (snippet) {
+              const autoTitle = snippet.charAt(0).toUpperCase() + snippet.slice(1);
+              title = autoTitle;
+
+              // Atualizar cache de sessões no localStorage
+              const storedSessions = storage.sessions.getAll();
+              const updatedStored = storedSessions.map((s) =>
+                s.id === session.id ? { ...s, title: autoTitle } : s,
+              );
+              storage.sessions.save(updatedStored);
+            }
+          }
+
+          return {
+            ...session,
+            title,
+            lastActivityAt: now,
+          };
+        });
+      });
 
       setIsSending(true);
 

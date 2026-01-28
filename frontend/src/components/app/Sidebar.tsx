@@ -26,11 +26,14 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     selectSession,
     createSession,
     deleteSession,
+    renameSession,
     messagesBySession,
   } = useGenesisUI();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>("");
 
   const handleDeleteClick = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
@@ -38,7 +41,11 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     setDeleteDialogOpen(true);
   };
 
-  // Keyboard shortcut: Delete key to delete current session
+  // Keyboard shortcuts:
+  // - Delete: deletar sessão atual
+  // - Ctrl/Cmd+N: nova sessão
+  // - Ctrl/Cmd+]: próxima sessão
+  // - Ctrl/Cmd+[: sessão anterior
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       // Only if not typing in an input
@@ -47,15 +54,52 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         return;
       }
 
+      const isMeta = event.metaKey || event.ctrlKey;
+
       if (event.key === "Delete" && currentSessionId) {
         setSessionToDelete(currentSessionId);
         setDeleteDialogOpen(true);
+        return;
+      }
+
+      // Nova sessão
+      if (isMeta && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        createSession().catch(console.error);
+        return;
+      }
+
+      // Navegação entre sessões
+      if (!sessions.length) return;
+      const currentIndex = sessions.findIndex((s) => s.id === currentSessionId);
+
+      // Próxima sessão
+      if (isMeta && event.key === "]") {
+        event.preventDefault();
+        const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % sessions.length : 0;
+        const nextSession = sessions[nextIndex];
+        if (nextSession) {
+          selectSession(nextSession.id).catch(console.error);
+        }
+        return;
+      }
+
+      // Sessão anterior
+      if (isMeta && event.key === "[") {
+        event.preventDefault();
+        const prevIndex =
+          currentIndex > 0 ? currentIndex - 1 : sessions.length - 1;
+        const prevSession = sessions[prevIndex];
+        if (prevSession) {
+          selectSession(prevSession.id).catch(console.error);
+        }
+        return;
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSessionId]);
+  }, [currentSessionId, sessions, createSession, selectSession]);
 
   const handleDeleteConfirm = async () => {
     if (sessionToDelete) {
@@ -208,7 +252,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                 Nenhuma sessão. Clique em "Nova Sessão" para começar.
               </div>
             ) : (
-              sessions.map((session) => {
+              [...sessions]
+                .sort((a, b) => {
+                  const aTs = a.lastActivityAt ?? a.createdAt;
+                  const bTs = b.lastActivityAt ?? b.createdAt;
+                  return bTs - aTs;
+                })
+                .map((session) => {
                 const active = session.id === currentSessionId;
                 const messages = messagesBySession[session.id] || [];
                 const messageCount = messages.length;
@@ -254,12 +304,41 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                         aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
                       >
                         <div className="flex items-center justify-between">
-                          <span
-                            className="text-sm font-semibold uppercase tracking-wide text-slate-100"
-                            style={{ fontFamily: "var(--font-sans)" }}
-                          >
-                            {session.title}
-                          </span>
+                          {editingSessionId === session.id ? (
+                            <input
+                              autoFocus
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onBlur={() => {
+                                if (editingTitle.trim()) {
+                                  renameSession(session.id, editingTitle.trim());
+                                }
+                                setEditingSessionId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  if (editingTitle.trim()) {
+                                    renameSession(session.id, editingTitle.trim());
+                                  }
+                                  setEditingSessionId(null);
+                                } else if (e.key === "Escape") {
+                                  setEditingSessionId(null);
+                                }
+                              }}
+                              className="w-full rounded bg-black/40 px-1 py-0.5 text-sm font-semibold text-slate-100 outline-none"
+                            />
+                          ) : (
+                            <span
+                              className="text-sm font-semibold uppercase tracking-wide text-slate-100"
+                              style={{ fontFamily: "var(--font-sans)" }}
+                              onDoubleClick={() => {
+                                setEditingSessionId(session.id);
+                                setEditingTitle(session.title);
+                              }}
+                            >
+                              {session.title}
+                            </span>
+                          )}
                           {messageCount > 0 && (
                             <span className="ml-2 rounded-full bg-vsa-blue/20 px-2 py-0.5 text-[10px] text-vsa-blue-light">
                               {messageCount}

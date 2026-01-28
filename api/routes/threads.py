@@ -202,20 +202,22 @@ async def delete_thread(thread_id: str):
     try:
         conn = get_conn()
         try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    INSERT INTO archived_threads (thread_id)
-                    VALUES (%s)
-                    ON CONFLICT (thread_id) DO NOTHING
-                    """,
-                    (thread_id,),
-                )
+            # Usar contexto de transação para garantir COMMIT
+            with conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO archived_threads (thread_id)
+                        VALUES (%s)
+                        ON CONFLICT (thread_id) DO NOTHING
+                        """,
+                        (thread_id,),
+                    )
         finally:
             conn.close()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao arquivar thread {thread_id}: {e}")
 
-    # 204 No Content
+    # 204 No Content (sem corpo)
     return {}
 
