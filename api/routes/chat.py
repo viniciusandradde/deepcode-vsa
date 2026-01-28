@@ -22,9 +22,6 @@ from core.tools.linear import linear_get_issues, linear_get_issue, linear_create
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Debug flag for agent logs
-DEBUG_AGENT_LOGS = os.getenv("DEBUG_AGENT_LOGS", "false").strip().lower() in {"1", "true", "yes"}
-
 router = APIRouter()
 
 # Phase 2: ITIL System Prompt for VSA Mode
