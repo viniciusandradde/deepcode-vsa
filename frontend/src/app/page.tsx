@@ -1,12 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { GenesisUIProvider } from "@/state/useGenesisUI";
 import { ChatPane } from "@/components/app/ChatPane";
 import { Sidebar } from "@/components/app/Sidebar";
 import { ErrorBoundary } from "@/components/app/ErrorBoundary";
-import { InstallPromptBanner } from "@/components/app/InstallPromptBanner";
-import { OfflineBanner } from "@/components/app/OfflineBanner";
+
+// Lazy load PWA banners (client-only) para evitar hydration mismatch
+const InstallPromptBanner = dynamic(
+  () => import("@/components/app/InstallPromptBanner").then(mod => ({ default: mod.InstallPromptBanner })),
+  { ssr: false }
+);
+
+const OfflineBanner = dynamic(
+  () => import("@/components/app/OfflineBanner").then(mod => ({ default: mod.OfflineBanner })),
+  { ssr: false }
+);
 
 export default function Home() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -33,7 +43,7 @@ export default function Home() {
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
-        {/* PWA Banners - renderizados após UI principal para evitar hydration issues */}
+        {/* PWA Banners com lazy loading (client-only, sem SSR) */}
         <OfflineBanner />
         <InstallPromptBanner />
       </GenesisUIProvider>
