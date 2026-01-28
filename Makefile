@@ -1,33 +1,72 @@
 .PHONY: help install install-frontend dev api studio frontend test setup-db \
+	build build-backend build-frontend rebuild rebuild-all up down up-build \
 	status logs-backend logs-frontend logs-postgres \
 	restart-backend restart-frontend restart-postgres \
 	cleanup-checkpoints cleanup-checkpoints-dry-run health
 
 help:
 	@echo "Comandos disponíveis:"
+	@echo ""
+	@echo "Instalação:"
 	@echo "  make install       - Instala dependências Python"
-	@echo "  make install-frontend - Instala dependências do frontend"
+	@echo "  make install-frontend - Instala dependências do frontend (pnpm)"
 	@echo "  make setup-db      - Configura banco de dados (executa scripts SQL)"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build         - Build de todos os containers (backend + frontend)"
+	@echo "  make build-backend - Build apenas do container backend"
+	@echo "  make build-frontend - Build apenas do container frontend"
+	@echo "  make rebuild       - Rebuild completo sem cache (backend + frontend)"
+	@echo "  make rebuild-all   - Rebuild de todos os containers sem cache"
+	@echo "  make up            - Inicia todos os containers Docker"
+	@echo "  make down          - Para todos os containers Docker"
+	@echo "  make up-build      - Build e inicia todos os containers"
+	@echo ""
+	@echo "Desenvolvimento:"
 	@echo "  make dev           - Inicia servidor de desenvolvimento (API)"
-	@echo "  make frontend      - Inicia frontend Next.js"
+	@echo "  make frontend      - Inicia frontend Next.js (local)"
 	@echo "  make studio        - Inicia LangGraph Studio"
 	@echo "  make test          - Executa testes"
-	@echo "  make status        - Mostra status dos containers Docker (backend, frontend, postgres)"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make status        - Mostra status dos containers Docker"
 	@echo "  make logs-backend  - Mostra logs recentes do backend"
 	@echo "  make logs-frontend - Mostra logs recentes do frontend"
 	@echo "  make logs-postgres - Mostra logs recentes do Postgres"
 	@echo "  make restart-backend  - Reinicia o backend"
 	@echo "  make restart-frontend - Reinicia o frontend"
 	@echo "  make restart-postgres - Reinicia o Postgres"
+	@echo ""
+	@echo "Manutenção:"
 	@echo "  make cleanup-checkpoints       - Limpa checkpoints antigos (padrão 180 dias)"
-	@echo "  make cleanup-checkpoints-dry-run - Simula limpeza de checkpoints (nenhum dado é apagado)"
+	@echo "  make cleanup-checkpoints-dry-run - Simula limpeza de checkpoints"
 	@echo "  make health       - Verifica /health da API backend"
 
 install:
 	pip install -r requirements.txt
 
 install-frontend:
-	cd frontend && npm install
+	cd frontend && pnpm install
+
+build:
+	@echo "Building backend e frontend containers..."
+	docker compose build backend frontend
+
+build-backend:
+	@echo "Building backend container..."
+	docker compose build backend
+
+build-frontend:
+	@echo "Building frontend container..."
+	docker compose build frontend
+
+rebuild:
+	@echo "Rebuild completo (sem cache) de backend e frontend..."
+	docker compose build --no-cache backend frontend
+
+rebuild-all:
+	@echo "Rebuild completo de TODOS os containers (sem cache)..."
+	docker compose build --no-cache
 
 setup-db:
 	@echo "Configurando banco de dados..."
@@ -42,7 +81,19 @@ dev:
 	uvicorn api.main:app --reload --port 8000
 
 frontend:
-	cd frontend && npm run dev
+	cd frontend && pnpm run dev
+
+up:
+	@echo "Iniciando todos os containers..."
+	docker compose up -d
+
+down:
+	@echo "Parando todos os containers..."
+	docker compose down
+
+up-build:
+	@echo "Building e iniciando todos os containers..."
+	docker compose up -d --build
 
 studio:
 	cd backend && langgraph dev
