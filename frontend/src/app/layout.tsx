@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -8,22 +8,23 @@ export const metadata: Metadata = {
   title: "DeepCode VSA",
   description: "Agente Inteligente para Gestão de TI",
   manifest: "/manifest.json",
-  themeColor: "#FF6B35",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "DeepCode VSA",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   icons: {
     icon: "/images/vsa-logo.png",
     apple: "/images/vsa-logo.png",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#FF6B35",
 };
 
 export default function RootLayout({
