@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef, type MutableRefObject } from "react";
 import { storage } from "@/lib/storage";
+import { logger } from "@/lib/logger";
 
 
 // ============================================
@@ -148,12 +149,12 @@ function useLocalStorageState(key: string, defaultValue: boolean): [boolean, (va
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(key);
-      console.log(`[useLocalStorageState] Hydrating ${key}:`, saved);
+      logger.perf(`[useLocalStorageState] Hydrating ${key}:`, saved);
 
       if (saved !== null) {
         const parsedValue = saved === 'true';
         setState(parsedValue);
-        console.log(`[useLocalStorageState] Restored ${key}:`, parsedValue);
+        logger.perf(`[useLocalStorageState] Restored ${key}:`, parsedValue);
       }
 
       setIsHydrated(true);
@@ -164,7 +165,7 @@ function useLocalStorageState(key: string, defaultValue: boolean): [boolean, (va
     setState(value);
     if (typeof window !== 'undefined') {
       localStorage.setItem(key, String(value));
-      console.log(`[useLocalStorageState] Saved ${key}:`, value);
+      logger.perf(`[useLocalStorageState] Saved ${key}:`, value);
     }
   }, [key]);
 
@@ -429,7 +430,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   // ✅ Auto-load messages when currentSessionId changes
   useEffect(() => {
     if (currentSessionId && !messagesBySession[currentSessionId]) {
-      console.log(`[useGenesisUI] Auto-loading messages for session: ${currentSessionId}`);
+      logger.debug(`[useGenesisUI] Auto-loading messages for session: ${currentSessionId}`);
       fetchSession(currentSessionId).catch(console.error);
     }
   }, [currentSessionId, fetchSession, messagesBySession]);
@@ -475,7 +476,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
   const cancelMessage = useCallback(() => {
     if (abortControllerRef.current) {
-      console.log("Cancelling message request...");
+      logger.debug("Cancelling message request...");
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setIsSending(false);
@@ -649,8 +650,8 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           // IMPORTANTE: Preservar todas as mensagens do usuário e garantir que a mensagem do assistente esteja vazia
           setMessagesBySession((prev) => {
             const existing = prev[threadId] ?? [];
-            console.log("[STREAM] Before removing thinking, messages count:", existing.length);
-            console.log("[STREAM] Messages:", existing.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) })));
+            logger.perf("[STREAM] Before removing thinking, messages count:", existing.length);
+            logger.perf("[STREAM] Messages:", existing.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) })));
 
             // Remove apenas thinking, preserva tudo mais (incluindo mensagem do usuário)
             const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
@@ -678,8 +679,8 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
             };
 
             const updated = [...cleaned, assistantMessage];
-            console.log("[STREAM] After adding assistant message, messages count:", updated.length);
-            console.log("[STREAM] Updated messages:", updated.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) || "(vazio)" })));
+            logger.perf("[STREAM] After adding assistant message, messages count:", updated.length);
+            logger.perf("[STREAM] Updated messages:", updated.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) || "(vazio)" })));
 
             return { ...prev, [threadId]: updated };
           });
@@ -689,11 +690,11 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
             let totalBytesReceived = 0;
             let totalLinesProcessed = 0;
             try {
-              console.log("[STREAM] Starting to read stream...");
+              logger.perf("[STREAM] Starting to read stream...");
               while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
-                  console.log("[STREAM] Stream completed. Total bytes:", totalBytesReceived, "Total lines:", totalLinesProcessed, "Final buffer:", buffer.length);
+                  logger.perf("[STREAM] Stream completed. Total bytes:", totalBytesReceived, "Total lines:", totalLinesProcessed, "Final buffer:", buffer.length);
                   break;
                 }
 
@@ -706,23 +707,23 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                 const lines = buffer.split("\n");
                 buffer = lines.pop() || "";
                 totalLinesProcessed += lines.length;
-                console.log("[STREAM] Received chunk:", value?.length || 0, "bytes. Buffer now has", buffer.length, "chars. Processing", lines.length, "lines");
+                logger.perf("[STREAM] Received chunk:", value?.length || 0, "bytes. Buffer now has", buffer.length, "chars. Processing", lines.length, "lines");
 
                 for (const line of lines) {
                   if (line.trim() === "") {
-                    console.log("[STREAM] Skipping empty line");
+                    logger.perf("[STREAM] Skipping empty line");
                     continue; // Skip empty lines
                   }
 
-                  console.log("[STREAM] Processing line:", line.substring(0, 100));
+                  logger.perf("[STREAM] Processing line:", line.substring(0, 100));
 
                   // Try to parse as SSE data
                   if (line.startsWith("data: ")) {
                     try {
                       const jsonStr = line.slice(6);
-                      console.log("[STREAM] Parsing JSON:", jsonStr.substring(0, 200));
+                      logger.perf("[STREAM] Parsing JSON:", jsonStr.substring(0, 200));
                       const data = JSON.parse(jsonStr);
-                      console.log("[STREAM] Parsed data type:", data.type, "has content:", !!data.content, "content length:", data.content?.length || 0);
+                      logger.perf("[STREAM] Parsed data type:", data.type, "has content:", !!data.content, "content length:", data.content?.length || 0);
 
                       if (data.type === "content" && data.content) {
                         // Handle escaped newlines - convert \n to actual newlines
@@ -732,15 +733,15 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
                         // If this is a final content update (complete content), replace instead of append
                         if (data.final === true) {
-                          console.log("[STREAM] Received final complete content, replacing accumulated content");
-                          console.log("[STREAM] Final content length:", processedContent.length);
-                          console.log("[STREAM] Previous accumulated length:", accumulatedContent.length);
+                          logger.perf("[STREAM] Received final complete content, replacing accumulated content");
+                          logger.perf("[STREAM] Final content length:", processedContent.length);
+                          logger.perf("[STREAM] Previous accumulated length:", accumulatedContent.length);
                           accumulatedContent = processedContent;
-                          console.log("[STREAM] After replacement, accumulated length:", accumulatedContent.length);
+                          logger.perf("[STREAM] After replacement, accumulated length:", accumulatedContent.length);
                         } else {
                           accumulatedContent += processedContent;
                         }
-                        console.log("[STREAM] Content updated, total length:", accumulatedContent.length, "new chunk:", processedContent.length, "is final:", data.final || false);
+                        logger.perf("[STREAM] Content updated, total length:", accumulatedContent.length, "new chunk:", processedContent.length, "is final:", data.final || false);
                         // Update state immediately
                         // IMPORTANTE: Garantir que apenas a mensagem do assistente com o ID correto seja atualizada
                         setMessagesBySession((prev) => {
@@ -765,7 +766,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                         });
                       } else if (data.type === "chunk" && data.data) {
                         // Try to extract content from chunk data if content type not received
-                        console.log("[STREAM] Received chunk data, trying to extract content");
+                        logger.perf("[STREAM] Received chunk data, trying to extract content");
                         try {
                           // Chunk data might contain the message content
                           const chunkStr = data.data;
@@ -778,7 +779,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                               if (extractedContent.length > accumulatedContent.length) {
                                 const newContent = extractedContent.substring(accumulatedContent.length);
                                 accumulatedContent = extractedContent;
-                                console.log("[STREAM] Extracted content from chunk:", newContent.length, "chars");
+                                logger.perf("[STREAM] Extracted content from chunk:", newContent.length, "chars");
                                 setMessagesBySession((prev) => {
                                   const existing = prev[threadId] ?? [];
                                   return {
@@ -800,9 +801,9 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                           console.error("[STREAM] Error extracting content from chunk:", extractError);
                         }
                       } else if (data.type === "done") {
-                        console.log("[STREAM] Stream done signal received");
-                        console.log("[STREAM] Final content length from done message:", data.total_length || "not provided");
-                        console.log("[STREAM] Accumulated content length:", accumulatedContent.length);
+                        logger.perf("[STREAM] Stream done signal received");
+                        logger.perf("[STREAM] Final content length from done message:", data.total_length || "not provided");
+                        logger.perf("[STREAM] Accumulated content length:", accumulatedContent.length);
                         streamActive = false;
 
                         // Check if we received the expected total length
@@ -813,7 +814,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
                         // Process any remaining content in buffer before final save
                         if (buffer.trim()) {
-                          console.log("[STREAM] Processing remaining buffer:", buffer.substring(0, 100));
+                          logger.perf("[STREAM] Processing remaining buffer:", buffer.substring(0, 100));
                           // Try to parse remaining buffer as JSON
                           try {
                             if (buffer.startsWith("data: ")) {
@@ -824,19 +825,19 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                                   ? bufferData.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
                                   : bufferData.content;
                                 accumulatedContent += processedContent;
-                                console.log("[STREAM] Added buffer content, new total length:", accumulatedContent.length);
+                                logger.perf("[STREAM] Added buffer content, new total length:", accumulatedContent.length);
                               }
                             }
                           } catch (e) {
-                            console.log("[STREAM] Could not parse remaining buffer as JSON:", e);
+                            logger.perf("[STREAM] Could not parse remaining buffer as JSON:", e);
                           }
                         }
 
                         // Ensure final content is saved
                         if (accumulatedContent) {
-                          console.log("[STREAM] Saving final content. Length:", accumulatedContent.length);
-                          console.log("[STREAM] Final content preview (first 200):", accumulatedContent.substring(0, 200));
-                          console.log("[STREAM] Final content preview (last 200):", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 200)));
+                          logger.perf("[STREAM] Saving final content. Length:", accumulatedContent.length);
+                          logger.perf("[STREAM] Final content preview (first 200):", accumulatedContent.substring(0, 200));
+                          logger.perf("[STREAM] Final content preview (last 200):", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 200)));
                           setMessagesBySession((prev) => {
                             const existing = prev[threadId] ?? [];
                             const updated = existing.map((msg) => {
@@ -848,8 +849,8 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                               return msg;
                             });
                             const savedMsg = updated.find(m => m.id === assistantMessageId);
-                            console.log("[STREAM] Messages after saving content:", updated.length);
-                            console.log("[STREAM] Saved message content length:", savedMsg?.content?.length || 0);
+                            logger.perf("[STREAM] Messages after saving content:", updated.length);
+                            logger.perf("[STREAM] Saved message content length:", savedMsg?.content?.length || 0);
                             // Save to localStorage
                             storage.messages.save(threadId, updated);
                             return { ...prev, [threadId]: updated };
@@ -877,7 +878,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                         throw new Error(formattedError);
                       } else if (data.type === "chunk") {
                         // Log chunk data for debugging
-                        console.log("[STREAM] Chunk received:", data.data?.substring(0, 100));
+                        logger.perf("[STREAM] Chunk received:", data.data?.substring(0, 100));
                       }
                     } catch (e) {
                       console.error("[STREAM] Error parsing line:", line, e);
@@ -885,7 +886,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                     }
                   } else if (line.trim() !== "") {
                     // Log non-data lines for debugging
-                    console.log("[STREAM] Non-data line:", line.substring(0, 100));
+                    logger.perf("[STREAM] Non-data line:", line.substring(0, 100));
                   }
                 }
               }
@@ -893,7 +894,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
               // If stream ended without "done" message, ensure content is saved
               // Also process any remaining buffer
               if (buffer.trim() && accumulatedContent) {
-                console.log("[STREAM] Processing final buffer before saving. Buffer length:", buffer.length);
+                logger.perf("[STREAM] Processing final buffer before saving. Buffer length:", buffer.length);
                 try {
                   // Try to extract any remaining content from buffer
                   const bufferLines = buffer.split("\n");
@@ -907,22 +908,22 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                             ? bufferData.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
                             : bufferData.content;
                           accumulatedContent += processedContent;
-                          console.log("[STREAM] Added final buffer content, new total:", accumulatedContent.length);
+                          logger.perf("[STREAM] Added final buffer content, new total:", accumulatedContent.length);
                         }
                       } catch (e) {
-                        console.log("[STREAM] Could not parse final buffer line:", e);
+                        logger.perf("[STREAM] Could not parse final buffer line:", e);
                       }
                     }
                   }
                 } catch (e) {
-                  console.log("[STREAM] Error processing final buffer:", e);
+                  logger.perf("[STREAM] Error processing final buffer:", e);
                 }
               }
 
               if (streamActive && accumulatedContent) {
-                console.log("[STREAM] Stream ended without done message, saving content. Length:", accumulatedContent.length);
-                console.log("[STREAM] Final content preview:", accumulatedContent.substring(0, 200));
-                console.log("[STREAM] Final content end preview:", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 200)));
+                logger.perf("[STREAM] Stream ended without done message, saving content. Length:", accumulatedContent.length);
+                logger.perf("[STREAM] Final content preview:", accumulatedContent.substring(0, 200));
+                logger.perf("[STREAM] Final content end preview:", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 200)));
                 setMessagesBySession((prev) => {
                   const existing = prev[threadId] ?? [];
                   const updated = existing.map((msg) => {
@@ -933,7 +934,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                     // Garantir que mensagens do usuário nunca sejam modificadas
                     return msg;
                   });
-                  console.log("[STREAM] Final message content length:", updated.find(m => m.id === assistantMessageId)?.content?.length || 0);
+                  logger.perf("[STREAM] Final message content length:", updated.find(m => m.id === assistantMessageId)?.content?.length || 0);
                   // Save to localStorage
                   storage.messages.save(threadId, updated);
                   return { ...prev, [threadId]: updated };
@@ -948,18 +949,18 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
               }
 
               // Final check: ensure content is saved even if stream completed normally
-              console.log("[STREAM] Stream loop ended. Final accumulatedContent length:", accumulatedContent.length);
+              logger.perf("[STREAM] Stream loop ended. Final accumulatedContent length:", accumulatedContent.length);
               if (accumulatedContent) {
-                console.log("[STREAM] Final check - ensuring content is saved. Length:", accumulatedContent.length);
-                console.log("[STREAM] Final content preview (first 300):", accumulatedContent.substring(0, 300));
-                console.log("[STREAM] Final content preview (last 300):", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 300)));
+                logger.perf("[STREAM] Final check - ensuring content is saved. Length:", accumulatedContent.length);
+                logger.perf("[STREAM] Final content preview (first 300):", accumulatedContent.substring(0, 300));
+                logger.perf("[STREAM] Final content preview (last 300):", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 300)));
                 setMessagesBySession((prev) => {
                   const existing = prev[threadId] ?? [];
                   const assistantMsg = existing.find(msg => msg.id === assistantMessageId);
-                  console.log("[STREAM] Current assistant message content length:", assistantMsg?.content?.length || 0);
+                  logger.perf("[STREAM] Current assistant message content length:", assistantMsg?.content?.length || 0);
                   if (!assistantMsg || assistantMsg.content !== accumulatedContent) {
-                    console.log("[STREAM] Content mismatch or missing! Updating...");
-                    console.log("[STREAM] Expected length:", accumulatedContent.length, "Current length:", assistantMsg?.content?.length || 0);
+                    logger.perf("[STREAM] Content mismatch or missing! Updating...");
+                    logger.perf("[STREAM] Expected length:", accumulatedContent.length, "Current length:", assistantMsg?.content?.length || 0);
                     const updated = existing.map((msg) => {
                       // Apenas atualizar a mensagem do assistente com o ID correto
                       if (msg.id === assistantMessageId && msg.role === "assistant") {
@@ -970,7 +971,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                     });
                     // If message doesn't exist, add it
                     if (!assistantMsg) {
-                      console.log("[STREAM] Assistant message not found, creating new one");
+                      logger.perf("[STREAM] Assistant message not found, creating new one");
                       updated.push({
                         id: assistantMessageId,
                         role: "assistant",
@@ -981,12 +982,12 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                       });
                     }
                     const finalMsg = updated.find(m => m.id === assistantMessageId);
-                    console.log("[STREAM] Final message after update - length:", finalMsg?.content?.length || 0);
+                    logger.perf("[STREAM] Final message after update - length:", finalMsg?.content?.length || 0);
                     storage.messages.save(threadId, updated);
-                    console.log("[STREAM] Saved to localStorage. Final message count:", updated.length);
+                    logger.perf("[STREAM] Saved to localStorage. Final message count:", updated.length);
                     return { ...prev, [threadId]: updated };
                   }
-                  console.log("[STREAM] Content already matches, no update needed");
+                  logger.perf("[STREAM] Content already matches, no update needed");
                   return prev;
                 });
               } else {
