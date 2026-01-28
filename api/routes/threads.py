@@ -128,6 +128,9 @@ async def list_threads() -> Dict[str, Any]:
 
     Usamos uma consulta SQL simples para evitar depender de detalhes
     internos da implementação do checkpointer.
+
+    Threads marcadas como arquivadas em `archived_threads` são ocultadas
+    da lista (delete lógico), mas os dados permanecem para auditoria.
     """
     try:
         conn = get_conn()
@@ -137,10 +140,13 @@ async def list_threads() -> Dict[str, Any]:
                 cur.execute(
                     """
                     SELECT
-                        thread_id,
-                        MAX((checkpoint->>'ts')) AS last_ts
-                    FROM checkpoints
-                    GROUP BY thread_id
+                        c.thread_id,
+                        MAX((c.checkpoint->>'ts')) AS last_ts
+                    FROM checkpoints c
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM archived_threads a WHERE a.thread_id = c.thread_id
+                    )
+                    GROUP BY c.thread_id
                     ORDER BY last_ts DESC NULLS LAST
                     """
                 )
@@ -187,11 +193,29 @@ async def get_thread(thread_id: str) -> Dict[str, Any]:
 
 @router.delete("/{thread_id}")
 async def delete_thread(thread_id: str):
-    """Placeholder para deleção de threads.
+    """Delete lógico de threads (arquivamento).
 
-    No v1, não removemos dados do banco (seguindo princípios de auditoria),
-    então este endpoint apenas existe para compatibilidade com o frontend.
+    Em vez de remover dados de checkpoints, marcamos a thread como
+    arquivada na tabela `archived_threads`. Isso preserva auditoria,
+    mas oculta a sessão da lista retornada em /api/v1/threads.
     """
-    # Se no futuro quisermos implementar deleção lógica, este é o lugar.
+    try:
+        conn = get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO archived_threads (thread_id)
+                    VALUES (%s)
+                    ON CONFLICT (thread_id) DO NOTHING
+                    """,
+                    (thread_id,),
+                )
+        finally:
+            conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao arquivar thread {thread_id}: {e}")
+
+    # 204 No Content
     return {}
 

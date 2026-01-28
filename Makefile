@@ -1,4 +1,7 @@
-.PHONY: help install install-frontend dev api studio frontend test setup-db
+.PHONY: help install install-frontend dev api studio frontend test setup-db \
+	status logs-backend logs-frontend logs-postgres \
+	restart-backend restart-frontend restart-postgres \
+	cleanup-checkpoints cleanup-checkpoints-dry-run health
 
 help:
 	@echo "Comandos disponíveis:"
@@ -9,6 +12,16 @@ help:
 	@echo "  make frontend      - Inicia frontend Next.js"
 	@echo "  make studio        - Inicia LangGraph Studio"
 	@echo "  make test          - Executa testes"
+	@echo "  make status        - Mostra status dos containers Docker (backend, frontend, postgres)"
+	@echo "  make logs-backend  - Mostra logs recentes do backend"
+	@echo "  make logs-frontend - Mostra logs recentes do frontend"
+	@echo "  make logs-postgres - Mostra logs recentes do Postgres"
+	@echo "  make restart-backend  - Reinicia o backend"
+	@echo "  make restart-frontend - Reinicia o frontend"
+	@echo "  make restart-postgres - Reinicia o Postgres"
+	@echo "  make cleanup-checkpoints       - Limpa checkpoints antigos (padrão 180 dias)"
+	@echo "  make cleanup-checkpoints-dry-run - Simula limpeza de checkpoints (nenhum dado é apagado)"
+	@echo "  make health       - Verifica /health da API backend"
 
 install:
 	pip install -r requirements.txt
@@ -22,6 +35,7 @@ setup-db:
 	psql -U postgres -d ai_agent_db -f sql/kb/01_init.sql
 	psql -U postgres -d ai_agent_db -f sql/kb/02_indexes.sql
 	psql -U postgres -d ai_agent_db -f sql/kb/03_functions.sql
+	psql -U postgres -d ai_agent_db -f sql/kb/04_archived_threads.sql
 	@echo "Banco de dados configurado!"
 
 dev:
@@ -35,4 +49,45 @@ studio:
 
 test:
 	pytest tests/ -v
+
+status:
+	@echo "Status dos containers Docker:"
+	docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+logs-backend:
+	@echo "Logs do backend (ai_agent_backend):"
+	docker logs ai_agent_backend --tail 100
+
+logs-frontend:
+	@echo "Logs do frontend (ai_agent_frontend):"
+	docker logs ai_agent_frontend --tail 100
+
+logs-postgres:
+	@echo "Logs do Postgres (ai_agent_postgres):"
+	docker logs ai_agent_postgres --tail 100
+
+restart-backend:
+	@echo "Reiniciando backend..."
+	docker compose restart backend
+
+restart-frontend:
+	@echo "Reiniciando frontend..."
+	docker compose restart frontend
+
+restart-postgres:
+	@echo "Reiniciando Postgres..."
+	docker compose restart postgres
+
+cleanup-checkpoints:
+	@echo "Limpando checkpoints antigos (180 dias) dentro do container backend..."
+	docker exec -e PYTHONPATH=/app ai_agent_backend python scripts/cleanup_checkpoints.py --days 180
+
+cleanup-checkpoints-dry-run:
+	@echo "Simulando limpeza de checkpoints antigos (180 dias) dentro do container backend..."
+	docker exec -e PYTHONPATH=/app ai_agent_backend python scripts/cleanup_checkpoints.py --days 180 --dry-run
+
+health:
+	@echo "Verificando /health da API backend..."
+	curl -s http://localhost:8000/health || echo "Falha ao acessar /health"
+	@echo
 
