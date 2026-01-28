@@ -1,19 +1,11 @@
 "use client";
 
-import { FormEvent, useMemo, useState, useEffect, useRef } from "react";
-import clsx from "clsx";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { MessageActions } from "./MessageActions";
 import { Logo } from "./Logo";
-import { AudioRecorderButton } from "./AudioRecorderButton";
-import { ITILBadge, parseITILFromResponse } from "./ITILBadge";
-import { ActionPlan, parseActionPlanFromResponse } from "./ActionPlan";
-import { ThinkingIndicator } from "./ThinkingIndicator";
-import { StructuredResponse, parseStructuredResponse } from "./StructuredResponse";
+import { MessageInput } from "./MessageInput";
+import { MessageItem } from "./MessageItem";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
@@ -41,64 +33,29 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
     enableLinear,
   } = useGenesisUI();
   const messages = useMemo(() => messagesBySession[currentSessionId] ?? [], [messagesBySession, currentSessionId]);
-  const [draft, setDraft] = useState("");
-  const [useStreaming, setUseStreaming] = useState(true);
   const [editingContent, setEditingContent] = useState("");
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
   const lastMessageCountRef = useRef(0);
 
-  async function handleSubmit(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    const trimmed = draft.trim();
-    if (!trimmed || isLoading || isSending) return;
-
-    setDraft("");
+  const handleMessageSubmit = useCallback(async (message: string, streaming: boolean) => {
     setUserHasScrolled(false);
-
-    try {
-      await sendMessage(trimmed, useStreaming);
-    } catch (error) {
-      setDraft(trimmed);
-      console.error("Erro ao enviar mensagem:", error);
-    }
-  }
-
-  // Ref para evitar stale closures no useEffect
-  const draftRef = useRef(draft);
-  const isLoadingRef = useRef(isLoading);
-  const isSendingRef = useRef(isSending);
-
-  // Manter refs atualizados
-  useEffect(() => {
-    draftRef.current = draft;
-  }, [draft]);
-
-  useEffect(() => {
-    isLoadingRef.current = isLoading;
-    isSendingRef.current = isSending;
-  }, [isLoading, isSending]);
+    await sendMessage(message, streaming);
+  }, [sendMessage]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      // Ignore if user is typing in an input/textarea
       const target = event.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
-        // Allow Escape to cancel editing
         if (event.key === "Escape" && editingMessageId) {
           setEditingMessageId(null);
           setEditingContent("");
         }
-        // Allow Ctrl/Cmd+Enter to submit (handled separately in textarea onKeyDown)
         return;
       }
 
-      // Global shortcuts
       if (event.key === "e" || event.key === "E") {
-        // E to edit last user message
         if (!editingMessageId && messages.length > 0) {
           const lastUserMessage = [...messages].reverse().find((msg) => msg.role === "user");
           if (lastUserMessage) {
@@ -107,7 +64,6 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
           }
         }
       } else if (event.key === "Escape") {
-        // Escape to cancel editing
         if (editingMessageId) {
           setEditingMessageId(null);
           setEditingContent("");
@@ -212,9 +168,6 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
           <span className="rounded-md border border-vsa-orange/40 px-3 py-1 text-vsa-orange-light bg-vsa-orange/5">
             Busca Web: <span className={useTavily ? "text-vsa-orange-light" : "text-slate-400"}>{useTavily ? "Ativa" : "Inativa"}</span>
           </span>
-          <span className="rounded-md border border-vsa-blue/40 px-3 py-1 text-vsa-blue-light bg-vsa-blue/5">
-            Streaming: <span className={useStreaming ? "text-vsa-blue-light" : "text-slate-400"}>{useStreaming ? "Ativo" : "Inativo"}</span>
-          </span>
         </div>
       </header>
 
@@ -232,320 +185,53 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               <CardContent>Envie uma mensagem para iniciar a conversa.</CardContent>
             </Card>
           ) : (
-            messages.map((message) => {
-              const isAssistant = message.role === "assistant";
-              const isThinking = message.content === "Pensando...";
-              const isError = message.content.startsWith("Erro:");
-              const isEditing = editingMessageId === message.id;
-              const isUserMessage = message.role === "user";
-
-              // Não renderizar mensagens do assistente vazias (sem conteúdo)
-              // Isso evita mostrar mensagens vazias enquanto o stream está carregando
-              if (isAssistant && !isThinking && !message.content.trim() && !isError) {
-                return null;
-              }
-
-              return (
-                <article
-                  key={message.id}
-                  className={clsx(
-                    "group relative max-w-2xl rounded-2xl border px-5 py-4 text-sm leading-relaxed shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2 duration-300",
-                    isError
-                      ? "border-red-500/40 bg-red-500/10 text-red-100"
-                      : isAssistant
-                        ? "border-white/10 bg-white/10 text-slate-100"
-                        : "ml-auto border-vsa-orange/40 bg-vsa-orange/10 text-vsa-orange-light",
-                    isEditing && "ring-2 ring-vsa-blue/50",
-                  )}
-                >
-                  {isUserMessage && !isEditing && (
-                    <MessageActions
-                      message={message}
-                      onEdit={() => {
-                        setEditingMessageId(message.id);
-                        setEditingContent(message.content);
-                      }}
-                      onResend={() => resendMessage(message.id)}
-                    />
-                  )}
-                  <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-slate-400">
-                    <span>
-                      {message.role === "assistant" ? "Agente" : "Você"}
-                      {message.editedAt && (
-                        <span className="ml-2 text-[9px] italic text-slate-500">(editado)</span>
-                      )}
-                    </span>
-                    <span className="text-slate-500">{new Date(message.timestamp).toLocaleTimeString()}</span>
-                  </div>
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <textarea
-                        value={editingContent}
-                        onChange={(e) => setEditingContent(e.target.value)}
-                        className="w-full resize-none rounded-lg border border-vsa-blue/40 bg-[#0b1526]/90 px-3 py-2 text-sm text-white focus:border-vsa-blue focus:outline-none"
-                        rows={3}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Escape") {
-                            setEditingMessageId(null);
-                            setEditingContent("");
-                          } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                            e.preventDefault();
-                            if (editingContent.trim()) {
-                              editMessage(message.id, editingContent.trim());
-                              setEditingMessageId(null);
-                              setEditingContent("");
-                            }
-                          }
-                        }}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingMessageId(null);
-                            setEditingContent("");
-                          }}
-                          className="border-slate-400/40 text-slate-300"
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => {
-                            if (editingContent.trim()) {
-                              editMessage(message.id, editingContent.trim());
-                              setEditingMessageId(null);
-                              setEditingContent("");
-                            }
-                          }}
-                          disabled={!editingContent.trim()}
-                          className="bg-vsa-orange/20 text-vsa-orange-light hover:bg-vsa-orange/30"
-                        >
-                          Salvar
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={async () => {
-                            if (editingContent.trim()) {
-                              editMessage(message.id, editingContent.trim());
-                              setEditingMessageId(null);
-                              setEditingContent("");
-                              await resendMessage(message.id);
-                            }
-                          }}
-                          disabled={!editingContent.trim() || isSending}
-                          className="bg-emerald-500/20 text-emerald-100 hover:bg-emerald-500/30"
-                        >
-                          Salvar e Reenviar
-                        </Button>
-                      </div>
-                    </div>
-                  ) : isAssistant ? (
-                    isThinking ? (
-                      <ThinkingIndicator autoProgress={true} vsaMode={enableVSA} />
-                    ) : (
-                      <div className="markdown-body">
-                        {/* ITIL Badge - Phase 2 */}
-                        {(() => {
-                          const itilData = parseITILFromResponse(message.content);
-                          return itilData ? (
-                            <div className="mb-4">
-                              <ITILBadge {...itilData} />
-                            </div>
-                          ) : null;
-                        })()}
-                        {/* Action Plan - Task 2.6 */}
-                        {(() => {
-                          const actionPlanData = parseActionPlanFromResponse(message.content);
-                          return actionPlanData ? (
-                            <div className="mb-4">
-                              <ActionPlan {...actionPlanData} />
-                            </div>
-                          ) : null;
-                        })()}
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[]}
-                          components={{
-                            p: ({ children }) => <p className="mb-4 last:mb-0">{children}</p>,
-                            br: () => <br />,
-                            a: ({ ...props }) => (
-                              <a
-                                {...props}
-                                className="font-semibold text-vsa-blue-light underline decoration-vsa-blue/60 underline-offset-4 hover:text-vsa-blue-lighter"
-                                target="_blank"
-                                rel="noreferrer"
-                              />
-                            ),
-                            code: ({ node, className, children, ...props }) => {
-                              const isInline = !className?.includes('language-');
-                              return isInline ? (
-                                <code
-                                  className={clsx(
-                                    "rounded bg-white/10 px-1.5 py-0.5 text-[13px] text-slate-100",
-                                    className,
-                                  )}
-                                  {...props}
-                                >
-                                  {children}
-                                </code>
-                              ) : (
-                                <pre
-                                  className="overflow-x-auto rounded-lg border border-white/10 bg-[#0b1526] p-4 text-[13px] text-slate-100"
-                                >
-                                  <code className={className} {...props}>{children}</code>
-                                </pre>
-                              );
-                            },
-                            li: ({ ...props }) => <li className="pl-1" {...props} />,
-                            h1: ({ ...props }) => <h1 className="mb-4 text-2xl font-bold" {...props} />,
-                            h2: ({ ...props }) => <h2 className="mb-3 mt-4 text-xl font-semibold" {...props} />,
-                            h3: ({ ...props }) => <h3 className="mb-2 mt-3 text-lg font-semibold" {...props} />,
-                            ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc space-y-1" {...props} />,
-                            ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal space-y-1" {...props} />,
-                            blockquote: ({ ...props }) => <blockquote className="mb-4 border-l-4 border-vsa-orange/40 pl-4 italic" {...props} />,
-                            img: ({ src, alt, ...props }) => {
-                              if (!src) return null;
-                              return <img src={src} alt={alt || ""} className="max-w-full rounded-lg my-4" {...props} />;
-                            },
-                            // Table components (Task 2.6 - ITIL structured responses)
-                            table: ({ ...props }) => (
-                              <div className="my-4 overflow-x-auto rounded-lg border border-white/10">
-                                <table className="min-w-full divide-y divide-white/10 text-sm" {...props} />
-                              </div>
-                            ),
-                            thead: ({ ...props }) => <thead className="bg-white/5" {...props} />,
-                            tbody: ({ ...props }) => <tbody className="divide-y divide-white/5 bg-white/[0.02]" {...props} />,
-                            tr: ({ ...props }) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
-                            th: ({ ...props }) => (
-                              <th
-                                className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-300"
-                                {...props}
-                              />
-                            ),
-                            td: ({ ...props }) => (
-                              <td className="px-4 py-3 text-sm text-slate-200" {...props} />
-                            ),
-                          }}
-                        >
-                          {message.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')}
-                        </ReactMarkdown>
-                      </div>
-                    )
-                  ) : (
-                    <p className="whitespace-pre-wrap text-[15px] text-slate-100" style={{ fontFamily: "var(--font-sans)" }}>
-                      {message.content}
-                    </p>
-                  )}
-                  <div className="mt-3 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.35em] text-slate-400">
-                    {message.modelId ? <span>Modelo: {message.modelId}</span> : null}
-                    {message.usedTavily ? <span>Busca Web Ativada</span> : null}
-                  </div>
-                </article>
-              );
-            })
+            messages.map((message) => (
+              <MessageItem
+                key={message.id}
+                message={message}
+                isEditing={editingMessageId === message.id}
+                editingContent={editingContent}
+                enableVSA={enableVSA}
+                onEdit={() => {
+                  setEditingMessageId(message.id);
+                  setEditingContent(message.content);
+                }}
+                onResend={() => resendMessage(message.id)}
+                onEditChange={setEditingContent}
+                onEditSave={() => {
+                  if (editingContent.trim()) {
+                    editMessage(message.id, editingContent.trim());
+                    setEditingMessageId(null);
+                    setEditingContent("");
+                  }
+                }}
+                onEditCancel={() => {
+                  setEditingMessageId(null);
+                  setEditingContent("");
+                }}
+                onEditSaveAndResend={async () => {
+                  if (editingContent.trim()) {
+                    editMessage(message.id, editingContent.trim());
+                    setEditingMessageId(null);
+                    setEditingContent("");
+                    await resendMessage(message.id);
+                  }
+                }}
+                isSending={isSending}
+              />
+            ))
           )}
           <div ref={messagesEndRef} />
         </div>
       </main>
 
-      <footer className="border-t border-white/10 px-10 py-5">
-        <form onSubmit={handleSubmit} className="flex w-full items-start gap-4">
-          <div className="flex-1">
-            <label htmlFor="message-input" className="mb-2 block text-[11px] uppercase tracking-[0.35em] text-slate-400">
-              Entrada de Comando
-            </label>
-            <div className="flex items-start gap-2">
-              <textarea
-                id="message-input"
-                ref={textareaRef}
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder={isLoading ? "Carregando..." : "Digite sua mensagem ou use o microfone..."}
-                className="h-[90px] w-full resize-none rounded-xl border border-white/10 bg-[#0b1526]/90 px-4 py-3 text-sm text-white shadow-[0_0_25px_rgba(62,130,246,0.35)] focus:border-vsa-blue focus:outline-none focus:ring-2 focus:ring-vsa-blue/50"
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                disabled={isLoading || isSending}
-                aria-label="Campo de entrada de mensagem"
-                aria-describedby="message-hint"
-              />
-              <div className="flex items-start pt-2">
-                <AudioRecorderButton
-                  onTranscript={(transcript) => {
-                    if (transcript) {
-                      setDraft((prev) => {
-                        // Verificar se o transcript já está no texto para evitar duplicação
-                        const prevText = prev.trim();
-                        if (prevText && transcript.startsWith(prevText)) {
-                          // O transcript contém o texto anterior + novo texto
-                          // Retornar apenas o transcript completo (já inclui o anterior)
-                          return transcript;
-                        } else if (prevText) {
-                          // Adicionar o novo texto ao existente
-                          return `${prevText} ${transcript}`;
-                        } else {
-                          // Primeiro texto
-                          return transcript;
-                        }
-                      });
-                      // Focar no textarea após atualizar
-                      setTimeout(() => {
-                        textareaRef.current?.focus();
-                        // Mover cursor para o final
-                        if (textareaRef.current) {
-                          const length = textareaRef.current.value.length;
-                          textareaRef.current.setSelectionRange(length, length);
-                        }
-                      }, 0);
-                    }
-                  }}
-                  onError={(error) => {
-                    console.error("Erro de gravação:", error);
-                    // Opcional: mostrar toast ou mensagem de erro
-                  }}
-                  silenceTimeout={3000}
-                />
-              </div>
-            </div>
-            <p id="message-hint" className="sr-only">
-              Pressione Ctrl+Enter ou Cmd+Enter para enviar, ou use o botão de microfone para gravar áudio
-            </p>
-          </div>
-          <div className="flex items-end pt-[30px]">
-            <Button
-              type={isSending ? "button" : "submit"}
-              disabled={isLoading || (!draft.trim() && !isSending)}
-              onClick={isSending ? (e) => {
-                e.preventDefault();
-                cancelMessage();
-                // Restore draft if needed, or just let user continue typing
-                // For now, we just stop the sending process
-                textareaRef.current?.focus();
-              } : undefined}
-              className={clsx(
-                "h-[80px] rounded-lg border px-6 text-sm uppercase tracking-[0.35em] transition focus:outline-none focus:ring-2",
-                isSending
-                  ? "border-red-500/40 bg-red-500/20 text-red-400 hover:border-red-500 hover:bg-red-500/30 focus:ring-red-500/50"
-                  : "border-vsa-orange/40 bg-vsa-orange/20 text-vsa-orange-light hover:border-vsa-orange hover:bg-vsa-orange/30 focus:ring-vsa-orange/50"
-              )}
-              aria-label={isSending ? "Cancelar envio" : "Enviar mensagem"}
-            >
-              {isSending ? "Cancelar" : "Enviar"}
-            </Button>
-          </div>
-        </form>
-        <div className="mt-3 text-[11px] uppercase tracking-[0.3em] text-slate-500">
-          Sessão atual: <span className="text-slate-300">{currentSessionId || "—"}</span>
-        </div>
-      </footer>
+      <MessageInput
+        onSubmit={handleMessageSubmit}
+        isLoading={isLoading}
+        isSending={isSending}
+        onCancel={cancelMessage}
+        currentSessionId={currentSessionId}
+      />
     </div>
   );
 }
