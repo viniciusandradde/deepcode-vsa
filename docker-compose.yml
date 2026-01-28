@@ -87,7 +87,7 @@ services:
       # For remote access: http://10.10.1.105:8000 (or your server IP)
       - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_BASE:-http://localhost:8000}}
-      - NODE_ENV=production
+      - NODE_ENV=development
       - CI=true
     ports:
       - "3000:3000"
