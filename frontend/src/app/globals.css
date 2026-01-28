@@ -29,3 +29,52 @@ body {
   @apply bg-[#0d1426] text-slate-100;
 }
 
+/* PWA Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Prevenir zoom em inputs */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Otimizar sidebar mobile */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Ajustar padding do chat */
+  .chat-container {
+    padding: 1rem 0.5rem;
+  }
+
+  /* Otimizar área de toque */
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* PWA Standalone Mode */
+@media (display-mode: standalone) {
+  /* Adicionar padding para áreas seguras */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevenir seleção de texto durante gestos */
+.prevent-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+

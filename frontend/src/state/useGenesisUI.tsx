@@ -288,6 +288,9 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function loadSessions() {
+    // Ler sessões do localStorage primeiro (para fallback)
+    const storedSessions = storage.sessions.getAll();
+
     try {
       // Fonte primária: API (backend + checkpoints)
       const res = await fetch("/api/threads", { cache: "no-store" });
@@ -342,7 +345,6 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error loading sessions:", error);
       // Fallback to localStorage only
-      const storedSessions = storage.sessions.getAll();
       if (storedSessions.length > 0) {
         setSessions(storedSessions.map((s) => ({
           id: s.id,

@@ -1,0 +1,26 @@
+{
+  "name": "DeepCode VSA - Virtual Support Agent",
+  "short_name": "DeepCode VSA",
+  "description": "Agente Inteligente para Gestão de TI com ITIL",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1426",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/images/vsa-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/vsa-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"]
+}
+

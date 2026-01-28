@@ -5,6 +5,8 @@ import { GenesisUIProvider } from "@/state/useGenesisUI";
 import { ChatPane } from "@/components/app/ChatPane";
 import { Sidebar } from "@/components/app/Sidebar";
 import { ErrorBoundary } from "@/components/app/ErrorBoundary";
+import { InstallPromptBanner } from "@/components/app/InstallPromptBanner";
+import { OfflineBanner } from "@/components/app/OfflineBanner";
 
 export default function Home() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -24,6 +26,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <GenesisUIProvider>
+        <OfflineBanner />
         <div className="flex h-screen">
           <Sidebar collapsed={sidebarCollapsed} />
           <ChatPane 
@@ -31,6 +34,7 @@ export default function Home() {
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
+        <InstallPromptBanner />
       </GenesisUIProvider>
     </ErrorBoundary>
   );

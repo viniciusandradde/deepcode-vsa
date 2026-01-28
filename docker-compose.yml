@@ -88,6 +88,7 @@ services:
       - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_BASE:-http://localhost:8000}}
       - NODE_ENV=development
+      - CI=true
     ports:
       - "3000:3000"
     volumes:
@@ -101,7 +102,7 @@ services:
     networks:
       - ai_agent_network
     restart: unless-stopped
-    command: npm run dev
+    command: pnpm run dev
 
 volumes:
   postgres_data:

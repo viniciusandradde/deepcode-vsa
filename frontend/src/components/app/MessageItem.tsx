@@ -9,19 +9,10 @@ import { MessageActions } from "./MessageActions";
 import { ITILBadge, parseITILFromResponse } from "./ITILBadge";
 import { ActionPlan, parseActionPlanFromResponse } from "./ActionPlan";
 import { ThinkingIndicator } from "./ThinkingIndicator";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-  editedAt?: string;
-  modelId?: string;
-  usedTavily?: boolean;
-}
+import { GenesisMessage } from "@/state/useGenesisUI";
 
 interface MessageItemProps {
-  message: Message;
+  message: GenesisMessage;
   isEditing: boolean;
   editingContent: string;
   enableVSA: boolean;

@@ -2,19 +2,21 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copiar arquivos de dependências
-COPY frontend/package.json frontend/package-lock.json* ./
+# Definir variável de ambiente CI para pnpm
+ENV CI=true
 
-# Instalar dependências com --legacy-peer-deps para resolver conflitos de peer dependencies
-# (React 19 vs @testing-library/react que requer React 18)
-RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; else npm install --legacy-peer-deps; fi
+# Instalar pnpm globalmente
+RUN npm install -g pnpm@10.26.0
 
-# Copiar código do frontend
+# Copiar todo o código do frontend primeiro
 COPY frontend/ .
+
+# Instalar dependências com pnpm
+RUN pnpm install --frozen-lockfile || pnpm install
 
 # Expor porta
 EXPOSE 3000
 
 # Comando padrão (pode ser sobrescrito no docker-compose)
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "run", "dev"]
 

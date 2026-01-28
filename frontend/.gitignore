@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+dist/
+*.log
+
+# PWA files
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/fallback-*.js
+

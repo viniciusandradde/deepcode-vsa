@@ -1,13 +1,21 @@
+import withPWA from "next-pwa";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost"],
+      allowedOrigins: ["localhost", "agente-ai.hospitalevangelico.com.br"],
     },
   },
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+})(nextConfig);
+
 
