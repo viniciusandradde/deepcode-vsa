@@ -426,6 +426,14 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
     await fetchSession(id);
   }, [fetchSession]);
 
+  // ✅ Auto-load messages when currentSessionId changes
+  useEffect(() => {
+    if (currentSessionId && !messagesBySession[currentSessionId]) {
+      console.log(`[useGenesisUI] Auto-loading messages for session: ${currentSessionId}`);
+      fetchSession(currentSessionId).catch(console.error);
+    }
+  }, [currentSessionId, fetchSession, messagesBySession]);
+
   const renameSession = useCallback((id: string, title: string) => {
     setSessions((prev) => prev.map((session) => (session.id === id ? { ...session, title } : session)));
   }, []);
