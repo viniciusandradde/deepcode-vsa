@@ -287,37 +287,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
   async function loadSessions() {
     try {
-      // Load from localStorage first
-      const storedSessions = storage.sessions.getAll();
-      if (storedSessions.length > 0) {
-        const nextSessions: GenesisSession[] = storedSessions.map((s) => ({
-          id: s.id,
-          title: s.title,
-          createdAt: s.createdAt,
-        }));
-        setSessions(nextSessions);
-
-        // Load messages from localStorage
-        const nextMessages: Record<string, GenesisMessage[]> = {};
-        for (const session of nextSessions) {
-          const storedMessages = storage.messages.get(session.id);
-          nextMessages[session.id] = storedMessages.map((msg) => ({
-            id: msg.id,
-            role: msg.role,
-            content: msg.content,
-            timestamp: msg.timestamp,
-            modelId: msg.modelId,
-            usedTavily: msg.usedTavily,
-          }));
-        }
-        setMessagesBySession(nextMessages);
-
-        if (!currentSessionId && nextSessions[0]) {
-          setCurrentSessionId(nextSessions[0].id);
-        }
-      }
-
-      // Also try to load from API
+      // Fonte primária: API (backend + checkpoints)
       const res = await fetch("/api/threads", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
@@ -326,23 +296,26 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
         const apiSessions: GenesisSession[] = threads.map((thread: any) => ({
           id: thread.thread_id || thread.id,
           title: thread.title || `Sessão ${thread.thread_id?.slice(0, 8) || thread.id?.slice(0, 8)}`,
-          createdAt: thread.created_at ? Date.parse(thread.created_at) : Date.now(),
+          createdAt: thread.created_at ? Date.parse(thread.created_at) : Date.now(), // podemos melhorar quando o backend expuser created_at
         }));
 
-        // Merge with stored sessions
-        const allSessions = [...apiSessions, ...storedSessions.filter(s =>
-          !apiSessions.find(api => api.id === s.id)
-        )];
-        setSessions(allSessions);
+        setSessions(apiSessions);
 
-        // Save to localStorage
-        storage.sessions.save(allSessions.map(s => ({
+        // Atualiza cache local para uso offline (opcional)
+        storage.sessions.save(apiSessions.map(s => ({
           id: s.id,
           title: s.title,
           createdAt: s.createdAt,
           lastAccessed: Date.now(),
           messageCount: 0,
         })));
+
+        // Não carregamos mensagens do localStorage, pois o histórico vem da API
+        // via fetchSession(sessionId) quando o usuário seleciona a sessão.
+
+        if (!currentSessionId && apiSessions[0]) {
+          setCurrentSessionId(apiSessions[0].id);
+        }
       } else if (storedSessions.length === 0) {
         // Se não houver sessões, cria uma nova
         const newSessionId = await createSession();
