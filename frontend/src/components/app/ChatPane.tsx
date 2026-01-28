@@ -346,7 +346,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                     </div>
                   ) : isAssistant ? (
                     isThinking ? (
-                      <ThinkingIndicator autoProgress={true} />
+                      <ThinkingIndicator autoProgress={true} vsaMode={enableVSA} />
                     ) : (
                       <div className="markdown-body">
                         {/* ITIL Badge - Phase 2 */}

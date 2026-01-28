@@ -77,6 +77,7 @@ interface ThinkingIndicatorProps {
   currentTool?: string;
   autoProgress?: boolean;
   compact?: boolean;
+  vsaMode?: boolean; // VSA mode shows ITIL phases, simple mode shows just "Pensando..."
 }
 
 export function ThinkingIndicator({
@@ -84,6 +85,7 @@ export function ThinkingIndicator({
   currentTool,
   autoProgress = true,
   compact = false,
+  vsaMode = true, // Default to VSA mode for backward compatibility
 }: ThinkingIndicatorProps) {
   const [internalPhase, setInternalPhase] = useState<ThinkingPhase>("connecting");
   const [dots, setDots] = useState("");
@@ -127,6 +129,31 @@ export function ThinkingIndicator({
   const currentPhase = externalPhase || internalPhase;
   const config = phaseConfig[currentPhase];
   const currentPhaseIndex = phaseOrder.indexOf(currentPhase);
+
+  // Simple mode (non-VSA): Just show "Pensando..." like Claude
+  if (!vsaMode) {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <div className="flex gap-1">
+          <div
+            className="h-2 w-2 rounded-full bg-vsa-blue-light animate-pulse"
+            style={{ animationDelay: "0ms" }}
+          />
+          <div
+            className="h-2 w-2 rounded-full bg-vsa-blue-light animate-pulse"
+            style={{ animationDelay: "150ms" }}
+          />
+          <div
+            className="h-2 w-2 rounded-full bg-vsa-blue-light animate-pulse"
+            style={{ animationDelay: "300ms" }}
+          />
+        </div>
+        <span className="text-slate-300 animate-pulse">
+          Pensando{dots}
+        </span>
+      </div>
+    );
+  }
 
   if (compact) {
     return (
