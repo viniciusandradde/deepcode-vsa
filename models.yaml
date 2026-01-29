@@ -22,10 +22,7 @@
 models:
   # --- Tier VSA (core/config.py) ---
   # fast_model: classificação, GUT
-  - id: meta-llama/llama-3.3-70b-instruct
-    label: Llama 3.3 70B (fast)
-    input_cost: 0.00
-    output_cost: 0.00
+  
 
   # smart_model: RCA, planejamento
   - id: deepseek/deepseek-chat
@@ -51,16 +48,6 @@ models:
     input_cost: 0.00
     output_cost: 0.00
     default: true
-
-  - id: meta-llama/llama-3.3-70b-instruct:free
-    label: Llama 3.3 70B (free)
-    input_cost: 0.00
-    output_cost: 0.00
-
-  - id: tngtech/deepseek-r1t2-chimera:free
-    label: DeepSeek R1T2 Chimera (free)
-    input_cost: 0.00
-    output_cost: 0.00
 
   # --- Outros ---
   - id: google/gemini-2.5-flash

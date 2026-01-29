@@ -647,52 +647,38 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           let buffer = "";
           let accumulatedContent = "";
           const assistantMessageId = `assistant-${Date.now()}`;
+          // Manter "Pensando..." (barra de progresso VSA) até chegar o primeiro conteúdo do LLM
+          let thinkingReplaced = false;
 
-          // Remove "Pensando..." e adiciona mensagem vazia do assistente
-          // IMPORTANTE: Preservar todas as mensagens do usuário e garantir que a mensagem do assistente esteja vazia
-          setMessagesBySession((prev) => {
-            const existing = prev[threadId] ?? [];
-            logger.perf("[STREAM] Before removing thinking, messages count:", existing.length);
-            logger.perf("[STREAM] Messages:", existing.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) })));
-
-            // Remove apenas thinking, preserva tudo mais (incluindo mensagem do usuário)
-            const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
-
-            // Garantir que não há mensagem do assistente com conteúdo incorreto
-            // Se houver alguma mensagem do assistente vazia ou com conteúdo errado, removê-la
-            const cleaned = withoutThinking.filter(msg => {
-              // Manter todas as mensagens do usuário
-              if (msg.role === "user") return true;
-              // Remover mensagens do assistente que estejam vazias ou com conteúdo incorreto
-              // (exceto se for a mensagem que vamos criar)
-              if (msg.role === "assistant" && (!msg.content || msg.content.trim() === "")) {
-                return false; // Remove mensagens vazias antigas
-              }
-              return true;
+          const replaceThinkingWithAssistant = (content: string) => {
+            setMessagesBySession((prev) => {
+              const existing = prev[threadId] ?? [];
+              const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
+              const cleaned = withoutThinking.filter(msg => {
+                if (msg.role === "user") return true;
+                if (msg.role === "assistant" && (!msg.content || msg.content.trim() === "")) return false;
+                return true;
+              });
+              const assistantMessage: GenesisMessage = {
+                id: assistantMessageId,
+                role: "assistant",
+                content,
+                timestamp: Date.now(),
+                modelId: selectedModelId,
+                usedTavily: useTavily,
+              };
+              const updated = [...cleaned, assistantMessage];
+              storage.messages.save(threadId, updated);
+              return { ...prev, [threadId]: updated };
             });
-
-            const assistantMessage: GenesisMessage = {
-              id: assistantMessageId,
-              role: "assistant",
-              content: "", // SEMPRE vazio inicialmente
-              timestamp: Date.now(),
-              modelId: selectedModelId,
-              usedTavily: useTavily,
-            };
-
-            const updated = [...cleaned, assistantMessage];
-            logger.perf("[STREAM] After adding assistant message, messages count:", updated.length);
-            logger.perf("[STREAM] Updated messages:", updated.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 50) || "(vazio)" })));
-
-            return { ...prev, [threadId]: updated };
-          });
+          };
 
           if (reader) {
             let streamActive = true;
             let totalBytesReceived = 0;
             let totalLinesProcessed = 0;
             try {
-              logger.perf("[STREAM] Starting to read stream...");
+              logger.perf("[STREAM] Starting to read stream (thinking message stays until first content)...");
               while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
@@ -757,28 +743,23 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                           accumulatedContent += processedContent;
                         }
                         logger.perf("[STREAM] Content updated, total length:", accumulatedContent.length, "new chunk:", processedContent.length, "is final:", data.final || false);
-                        // Update state immediately
-                        // IMPORTANTE: Garantir que apenas a mensagem do assistente com o ID correto seja atualizada
-                        setMessagesBySession((prev) => {
-                          const existing = prev[threadId] ?? [];
-                          const updated = existing.map((msg) => {
-                            // Apenas atualizar a mensagem do assistente com o ID correto
-                            if (msg.id === assistantMessageId && msg.role === "assistant") {
-                              return { ...msg, content: accumulatedContent };
-                            }
-                            // Garantir que mensagens do usuário nunca sejam modificadas
-                            if (msg.role === "user") {
-                              return msg; // Retornar sem modificações
-                            }
-                            return msg;
+                        // Primeiro conteúdo: trocar "Pensando..." pela mensagem do assistente (barra VSA some só agora)
+                        if (!thinkingReplaced) {
+                          thinkingReplaced = true;
+                          replaceThinkingWithAssistant(accumulatedContent);
+                        } else {
+                          setMessagesBySession((prev) => {
+                            const existing = prev[threadId] ?? [];
+                            const updated = existing.map((msg) => {
+                              if (msg.id === assistantMessageId && msg.role === "assistant") {
+                                return { ...msg, content: accumulatedContent };
+                              }
+                              return msg;
+                            });
+                            storage.messages.save(threadId, updated);
+                            return { ...prev, [threadId]: updated };
                           });
-                          // Save to localStorage on each update to prevent data loss
-                          storage.messages.save(threadId, updated);
-                          return {
-                            ...prev,
-                            [threadId]: updated,
-                          };
-                        });
+                        }
                       } else if (data.type === "chunk" && data.data) {
                         // Try to extract content from chunk data if content type not received
                         logger.perf("[STREAM] Received chunk data, trying to extract content");
@@ -792,23 +773,24 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                             if (contentMatch && contentMatch[1]) {
                               const extractedContent = contentMatch[1];
                               if (extractedContent.length > accumulatedContent.length) {
-                                const newContent = extractedContent.substring(accumulatedContent.length);
                                 accumulatedContent = extractedContent;
-                                logger.perf("[STREAM] Extracted content from chunk:", newContent.length, "chars");
-                                setMessagesBySession((prev) => {
-                                  const existing = prev[threadId] ?? [];
-                                  return {
-                                    ...prev,
-                                    [threadId]: existing.map((msg) => {
-                                      // Apenas atualizar a mensagem do assistente com o ID correto
-                                      if (msg.id === assistantMessageId && msg.role === "assistant") {
-                                        return { ...msg, content: accumulatedContent };
-                                      }
-                                      // Garantir que mensagens do usuário nunca sejam modificadas
-                                      return msg;
-                                    }),
-                                  };
-                                });
+                                logger.perf("[STREAM] Extracted content from chunk:", accumulatedContent.length, "chars");
+                                if (!thinkingReplaced) {
+                                  thinkingReplaced = true;
+                                  replaceThinkingWithAssistant(accumulatedContent);
+                                } else {
+                                  setMessagesBySession((prev) => {
+                                    const existing = prev[threadId] ?? [];
+                                    return {
+                                      ...prev,
+                                      [threadId]: existing.map((msg) =>
+                                        msg.id === assistantMessageId && msg.role === "assistant"
+                                          ? { ...msg, content: accumulatedContent }
+                                          : msg
+                                      ),
+                                    };
+                                  });
+                                }
                               }
                             }
                           }
@@ -851,38 +833,37 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                         // Ensure final content is saved
                         if (accumulatedContent) {
                           logger.perf("[STREAM] Saving final content. Length:", accumulatedContent.length);
-                          logger.perf("[STREAM] Final content preview (first 200):", accumulatedContent.substring(0, 200));
-                          logger.perf("[STREAM] Final content preview (last 200):", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 200)));
-                          setMessagesBySession((prev) => {
-                            const existing = prev[threadId] ?? [];
-                            const updated = existing.map((msg) => {
-                              // Apenas atualizar a mensagem do assistente com o ID correto
-                              if (msg.id === assistantMessageId && msg.role === "assistant") {
-                                return { ...msg, content: accumulatedContent };
-                              }
-                              // Garantir que mensagens do usuário nunca sejam modificadas
-                              return msg;
+                          if (!thinkingReplaced) {
+                            thinkingReplaced = true;
+                            replaceThinkingWithAssistant(accumulatedContent);
+                          } else {
+                            setMessagesBySession((prev) => {
+                              const existing = prev[threadId] ?? [];
+                              const updated = existing.map((msg) =>
+                                msg.id === assistantMessageId && msg.role === "assistant"
+                                  ? { ...msg, content: accumulatedContent }
+                                  : msg
+                              );
+                              storage.messages.save(threadId, updated);
+                              return { ...prev, [threadId]: updated };
                             });
-                            const savedMsg = updated.find(m => m.id === assistantMessageId);
-                            logger.perf("[STREAM] Messages after saving content:", updated.length);
-                            logger.perf("[STREAM] Saved message content length:", savedMsg?.content?.length || 0);
-                            // Save to localStorage
-                            storage.messages.save(threadId, updated);
-                            return { ...prev, [threadId]: updated };
-                          });
+                          }
                         } else {
-                          console.warn("[STREAM] Stream done but no content accumulated!");
-                          // Try to get content from the last message if available
-                          setMessagesBySession((prev) => {
-                            const existing = prev[threadId] ?? [];
-                            const lastAssistant = existing.find(msg => msg.id === assistantMessageId);
-                            if (lastAssistant && !lastAssistant.content) {
-                              console.warn("[STREAM] Assistant message exists but is empty, removing it");
-                              // Remove empty assistant message
-                              return { ...prev, [threadId]: existing.filter(msg => msg.id !== assistantMessageId) };
-                            }
-                            return prev;
-                          });
+                          if (!thinkingReplaced) {
+                            setMessagesBySession((prev) => ({
+                              ...prev,
+                              [threadId]: (prev[threadId] ?? []).filter((m) => m.id !== thinkingMessageId),
+                            }));
+                          } else {
+                            setMessagesBySession((prev) => {
+                              const existing = prev[threadId] ?? [];
+                              const lastAssistant = existing.find((msg) => msg.id === assistantMessageId);
+                              if (lastAssistant && !lastAssistant.content) {
+                                return { ...prev, [threadId]: existing.filter((msg) => msg.id !== assistantMessageId) };
+                              }
+                              return prev;
+                            });
+                          }
                         }
                         // Don't call fetchSession as it might overwrite messages
                         // await fetchSession(threadId);
@@ -937,74 +918,72 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
 
               if (streamActive && accumulatedContent) {
                 logger.perf("[STREAM] Stream ended without done message, saving content. Length:", accumulatedContent.length);
-                logger.perf("[STREAM] Final content preview:", accumulatedContent.substring(0, 200));
-                logger.perf("[STREAM] Final content end preview:", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 200)));
-                setMessagesBySession((prev) => {
-                  const existing = prev[threadId] ?? [];
-                  const updated = existing.map((msg) => {
-                    // Apenas atualizar a mensagem do assistente com o ID correto
-                    if (msg.id === assistantMessageId && msg.role === "assistant") {
-                      return { ...msg, content: accumulatedContent };
-                    }
-                    // Garantir que mensagens do usuário nunca sejam modificadas
-                    return msg;
+                if (!thinkingReplaced) {
+                  replaceThinkingWithAssistant(accumulatedContent);
+                } else {
+                  setMessagesBySession((prev) => {
+                    const existing = prev[threadId] ?? [];
+                    const updated = existing.map((msg) =>
+                      msg.id === assistantMessageId && msg.role === "assistant"
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                    );
+                    storage.messages.save(threadId, updated);
+                    return { ...prev, [threadId]: updated };
                   });
-                  logger.perf("[STREAM] Final message content length:", updated.find(m => m.id === assistantMessageId)?.content?.length || 0);
-                  // Save to localStorage
-                  storage.messages.save(threadId, updated);
-                  return { ...prev, [threadId]: updated };
-                });
+                }
               } else if (streamActive && !accumulatedContent) {
                 console.warn("[STREAM] Stream ended but no content was accumulated!");
-                // Remove empty assistant message
-                setMessagesBySession((prev) => {
-                  const existing = prev[threadId] ?? [];
-                  return { ...prev, [threadId]: existing.filter(msg => msg.id !== assistantMessageId) };
-                });
+                if (!thinkingReplaced) {
+                  setMessagesBySession((prev) => ({
+                    ...prev,
+                    [threadId]: (prev[threadId] ?? []).filter((m) => m.id !== thinkingMessageId),
+                  }));
+                } else {
+                  setMessagesBySession((prev) => {
+                    const existing = prev[threadId] ?? [];
+                    return { ...prev, [threadId]: existing.filter((msg) => msg.id !== assistantMessageId) };
+                  });
+                }
               }
 
               // Final check: ensure content is saved even if stream completed normally
               logger.perf("[STREAM] Stream loop ended. Final accumulatedContent length:", accumulatedContent.length);
               if (accumulatedContent) {
                 logger.perf("[STREAM] Final check - ensuring content is saved. Length:", accumulatedContent.length);
-                logger.perf("[STREAM] Final content preview (first 300):", accumulatedContent.substring(0, 300));
-                logger.perf("[STREAM] Final content preview (last 300):", accumulatedContent.substring(Math.max(0, accumulatedContent.length - 300)));
-                setMessagesBySession((prev) => {
-                  const existing = prev[threadId] ?? [];
-                  const assistantMsg = existing.find(msg => msg.id === assistantMessageId);
-                  logger.perf("[STREAM] Current assistant message content length:", assistantMsg?.content?.length || 0);
-                  if (!assistantMsg || assistantMsg.content !== accumulatedContent) {
-                    logger.perf("[STREAM] Content mismatch or missing! Updating...");
-                    logger.perf("[STREAM] Expected length:", accumulatedContent.length, "Current length:", assistantMsg?.content?.length || 0);
-                    const updated = existing.map((msg) => {
-                      // Apenas atualizar a mensagem do assistente com o ID correto
-                      if (msg.id === assistantMessageId && msg.role === "assistant") {
-                        return { ...msg, content: accumulatedContent };
+                if (!thinkingReplaced) {
+                  replaceThinkingWithAssistant(accumulatedContent);
+                } else {
+                  setMessagesBySession((prev) => {
+                    const existing = prev[threadId] ?? [];
+                    const assistantMsg = existing.find((msg) => msg.id === assistantMessageId);
+                    if (!assistantMsg || assistantMsg.content !== accumulatedContent) {
+                      const updated = existing.map((msg) =>
+                        msg.id === assistantMessageId && msg.role === "assistant"
+                          ? { ...msg, content: accumulatedContent }
+                          : msg
+                      );
+                      if (!assistantMsg) {
+                        updated.push({
+                          id: assistantMessageId,
+                          role: "assistant",
+                          content: accumulatedContent,
+                          timestamp: Date.now(),
+                          modelId: selectedModelId,
+                          usedTavily: useTavily,
+                        });
                       }
-                      // Garantir que mensagens do usuário nunca sejam modificadas
-                      return msg;
-                    });
-                    // If message doesn't exist, add it
-                    if (!assistantMsg) {
-                      logger.perf("[STREAM] Assistant message not found, creating new one");
-                      updated.push({
-                        id: assistantMessageId,
-                        role: "assistant",
-                        content: accumulatedContent,
-                        timestamp: Date.now(),
-                        modelId: selectedModelId,
-                        usedTavily: useTavily,
-                      });
+                      storage.messages.save(threadId, updated);
+                      return { ...prev, [threadId]: updated };
                     }
-                    const finalMsg = updated.find(m => m.id === assistantMessageId);
-                    logger.perf("[STREAM] Final message after update - length:", finalMsg?.content?.length || 0);
-                    storage.messages.save(threadId, updated);
-                    logger.perf("[STREAM] Saved to localStorage. Final message count:", updated.length);
-                    return { ...prev, [threadId]: updated };
-                  }
-                  logger.perf("[STREAM] Content already matches, no update needed");
-                  return prev;
-                });
+                    return prev;
+                  });
+                }
+              } else if (!thinkingReplaced) {
+                setMessagesBySession((prev) => ({
+                  ...prev,
+                  [threadId]: (prev[threadId] ?? []).filter((m) => m.id !== thinkingMessageId),
+                }));
               } else {
                 console.warn("[STREAM] WARNING: Stream completed but accumulatedContent is empty!");
               }
