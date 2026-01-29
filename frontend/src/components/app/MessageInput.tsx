@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState } from "react";
 import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { AudioRecorderButton } from "./AudioRecorderButton";
+import { QuickActionsMenu } from "./QuickActionsMenu";
 
 interface MessageInputProps {
   onSubmit: (message: string, streaming: boolean) => Promise<void>;
@@ -44,6 +45,15 @@ export function MessageInput({
     }
   }
 
+  async function handleQuickAction(command: string) {
+    if (isLoading || isSending) return;
+    try {
+      await onSubmit(command, true);
+    } catch (error) {
+      console.error("Erro ao enviar ação rápida:", error);
+    }
+  }
+
   return (
     <footer className="border-t border-white/10 px-10 py-5">
       <form onSubmit={handleSubmit} className="flex w-full items-start gap-4">
@@ -69,7 +79,11 @@ export function MessageInput({
               aria-label="Campo de entrada de mensagem"
               aria-describedby="message-hint"
             />
-            <div className="flex items-start pt-2">
+            <div className="flex items-center gap-2 pt-2">
+              <QuickActionsMenu
+                onSelect={handleQuickAction}
+                disabled={isLoading || isSending}
+              />
               <AudioRecorderButton
                 onTranscript={(transcript) => {
                   if (transcript) {

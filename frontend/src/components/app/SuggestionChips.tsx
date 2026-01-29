@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 
-interface Suggestion {
+export interface Suggestion {
   id: string;
   command: string;
   label: string;
@@ -19,7 +19,7 @@ interface Suggestion {
   variant: "default" | "warning";
 }
 
-const SUGGESTIONS: Suggestion[] = [
+export const SUGGESTIONS: Suggestion[] = [
   {
     id: "glpi",
     command: "Listar tickets",
