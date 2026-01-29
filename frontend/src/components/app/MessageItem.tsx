@@ -55,12 +55,13 @@ export const MessageItem = memo(function MessageItem({
   return (
     <article
       className={clsx(
-        "group relative max-w-2xl rounded-2xl border px-5 py-4 text-sm leading-relaxed shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2 duration-300",
+        "group relative rounded-2xl border px-5 py-4 text-sm leading-relaxed shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2 duration-300",
+        isAssistant ? "w-full max-w-5xl" : "max-w-2xl ml-auto",
         isError
           ? "border-red-500/40 bg-red-500/10 text-red-100"
           : isAssistant
             ? "border-white/10 bg-white/10 text-slate-100"
-            : "ml-auto border-vsa-orange/40 bg-vsa-orange/10 text-vsa-orange-light",
+            : "border-vsa-orange/40 bg-vsa-orange/10 text-vsa-orange-light",
         isEditing && "ring-2 ring-vsa-blue/50",
       )}
     >
@@ -197,8 +198,8 @@ export const MessageItem = memo(function MessageItem({
                   return <img src={src} alt={alt || ""} className="max-w-full rounded-lg my-4" {...props} />;
                 },
                 table: ({ ...props }) => (
-                  <div className="my-4 overflow-x-auto rounded-lg border border-white/10">
-                    <table className="min-w-full divide-y divide-white/10 text-sm" {...props} />
+                  <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border border-white/10">
+                    <table className="min-w-full table-fixed divide-y divide-white/10 text-sm" {...props} />
                   </div>
                 ),
                 thead: ({ ...props }) => <thead className="bg-white/5" {...props} />,
@@ -206,12 +207,12 @@ export const MessageItem = memo(function MessageItem({
                 tr: ({ ...props }) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
                 th: ({ ...props }) => (
                   <th
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-300"
+                    className="break-words px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-300"
                     {...props}
                   />
                 ),
                 td: ({ ...props }) => (
-                  <td className="px-4 py-3 text-sm text-slate-200" {...props} />
+                  <td className="max-w-0 break-words px-4 py-3 text-sm text-slate-200" {...props} />
                 ),
               }}
             >
