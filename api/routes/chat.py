@@ -53,8 +53,19 @@ def _resolve_fast_model() -> str:
 
 # Router por regras: detecta intenção de relatório para bypass LLM (zero tokens)
 # Padrões específicos para evitar falsos positivos - devem ser comandos simples
+# IMPORTANTE: patterns mais específicos devem vir ANTES dos genéricos
 INTENT_PATTERNS = {
-    # GLPI: "tickets", "chamados", "listar tickets", "glpi", "glpi tickets"
+    # GLPI específico: "chamados novos sem atribuição" (deve vir antes do genérico)
+    "glpi_new_unassigned": re.compile(
+        r"^(chamados?|tickets?)\s+(novos?|abertos?)\s+sem\s+(atribui|tecnico)",
+        re.I
+    ),
+    # GLPI específico: "chamados pendentes antigos" / "pendentes > 7 dias"
+    "glpi_pending_old": re.compile(
+        r"^(chamados?|tickets?)\s+pendentes?\s+(antigos?|velhos?|parados?|mais\s+de|\>\s*\d)",
+        re.I
+    ),
+    # GLPI genérico: "tickets", "chamados", "listar tickets", "glpi", "glpi tickets"
     "glpi_tickets": re.compile(
         r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(os\s+)?(ultimos?\s+)?(\d+\s+)?"
         r"(tickets?|chamados?|glpi)(\s+(do\s+)?glpi|\s+abertos?|\s+novos?|\s+recentes?)?\.?$",
@@ -98,11 +109,35 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
     Returns:
         (markdown_report, success)
     """
-    from core.reports import format_glpi_report, format_zabbix_report, format_linear_report
+    from core.reports import (
+        format_glpi_report,
+        format_zabbix_report,
+        format_linear_report,
+        format_new_unassigned_report,
+        format_pending_old_report,
+    )
     from core.reports.dashboard import format_dashboard_report
     
     try:
-        if intent == "glpi_tickets":
+        if intent == "glpi_new_unassigned":
+            # Chamados novos sem atribuição há mais de 24h
+            from core.tools.glpi import get_client
+            client = get_client()
+            result = await client.get_tickets_new_unassigned(min_age_hours=24, limit=20)
+            if result.success:
+                return format_new_unassigned_report(result.output), True
+            return f"**Erro GLPI:** {result.error}", False
+            
+        elif intent == "glpi_pending_old":
+            # Chamados pendentes há mais de 7 dias
+            from core.tools.glpi import get_client
+            client = get_client()
+            result = await client.get_tickets_pending_old(min_age_days=7, limit=20)
+            if result.success:
+                return format_pending_old_report(result.output), True
+            return f"**Erro GLPI:** {result.error}", False
+            
+        elif intent == "glpi_tickets":
             from core.tools.glpi import get_client
             client = get_client()
             result = await client.get_tickets(limit=15)

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Logo } from "./Logo";
 import { MessageInput } from "./MessageInput";
 import { MessageItem } from "./MessageItem";
+import { SuggestionChips } from "./SuggestionChips";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
@@ -181,9 +182,16 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               <CardContent>Aguarde enquanto conectamos ao servidor.</CardContent>
             </Card>
           ) : messages.length === 0 ? (
-            <Card className="border border-dashed border-white/15 bg-transparent text-center text-slate-400">
-              <CardContent>Envie uma mensagem para iniciar a conversa.</CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center gap-8 py-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-semibold text-white">Como posso ajudar?</h2>
+                <p className="mt-2 text-slate-400">Escolha uma opção ou digite sua pergunta</p>
+              </div>
+              <SuggestionChips
+                onSelect={(cmd) => handleMessageSubmit(cmd, true)}
+                disabled={isSending || isLoading}
+              />
+            </div>
           ) : (
             messages.map((message) => (
               <MessageItem

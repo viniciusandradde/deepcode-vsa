@@ -268,6 +268,104 @@ class GLPIClient:
         except Exception as e:
             return ToolResult.fail(str(e), operation="create_ticket")
 
+    async def get_tickets_new_unassigned(
+        self,
+        min_age_hours: int = 24,
+        limit: int = 20
+    ) -> ToolResult:
+        """Get tickets with status New (1), unassigned, created more than X hours ago.
+        
+        Args:
+            min_age_hours: Minimum age in hours (default 24h)
+            limit: Max results
+        """
+        # First get all new tickets
+        result = await self.get_tickets(status=[1], limit=100)
+        if not result.success:
+            return result
+        
+        from datetime import datetime, timedelta, timezone
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=min_age_hours)
+        
+        filtered = []
+        for t in result.output.get("tickets", []):
+            # Check assignment (users_id_assign == 0 or missing means unassigned)
+            assigned = t.get("users_id_assign") or t.get("_users_id_assign") or 0
+            if assigned != 0:
+                continue
+            
+            # Check creation date
+            date_str = t.get("date") or t.get("date_creation")
+            if date_str:
+                try:
+                    # GLPI returns dates like "2026-01-27 10:30:00"
+                    created = datetime.fromisoformat(date_str.replace(" ", "T"))
+                    if created.tzinfo is None:
+                        created = created.replace(tzinfo=timezone.utc)
+                    if created > cutoff:
+                        continue  # Too recent, skip
+                except (ValueError, TypeError):
+                    pass  # Include if date parsing fails
+            
+            filtered.append(t)
+        
+        return ToolResult.ok(
+            {
+                "tickets": filtered[:limit],
+                "count": len(filtered[:limit]),
+                "total_found": len(filtered),
+                "filter": "new_unassigned_old",
+                "min_age_hours": min_age_hours
+            },
+            operation="get_tickets_new_unassigned"
+        )
+
+    async def get_tickets_pending_old(
+        self,
+        min_age_days: int = 7,
+        limit: int = 20
+    ) -> ToolResult:
+        """Get tickets with status Pending (4) that haven't been updated in X days.
+        
+        Args:
+            min_age_days: Minimum days since last update (default 7)
+            limit: Max results
+        """
+        # First get all pending tickets
+        result = await self.get_tickets(status=[4], limit=100)
+        if not result.success:
+            return result
+        
+        from datetime import datetime, timedelta, timezone
+        cutoff = datetime.now(timezone.utc) - timedelta(days=min_age_days)
+        
+        filtered = []
+        for t in result.output.get("tickets", []):
+            # Check last modification date
+            date_str = t.get("date_mod") or t.get("date")
+            if date_str:
+                try:
+                    modified = datetime.fromisoformat(date_str.replace(" ", "T"))
+                    if modified.tzinfo is None:
+                        modified = modified.replace(tzinfo=timezone.utc)
+                    if modified > cutoff:
+                        continue  # Updated recently, skip
+                except (ValueError, TypeError):
+                    pass  # Include if date parsing fails
+            
+            filtered.append(t)
+        
+        return ToolResult.ok(
+            {
+                "tickets": filtered[:limit],
+                "count": len(filtered[:limit]),
+                "total_found": len(filtered),
+                "filter": "pending_old",
+                "min_age_days": min_age_days
+            },
+            operation="get_tickets_pending_old"
+        )
+
     async def close(self):
         """Close HTTP client."""
         if self._client:
