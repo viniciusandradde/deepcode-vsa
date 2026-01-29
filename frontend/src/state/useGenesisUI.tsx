@@ -727,11 +727,24 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                       const data = JSON.parse(jsonStr);
                       logger.perf("[STREAM] Parsed data type:", data.type, "has content:", !!data.content, "content length:", data.content?.length || 0);
 
-                      if (data.type === "content" && data.content) {
+                      if (data.type === "start") {
+                        // Backend confirmou conexão; nenhuma ação necessária
+                        continue;
+                      }
+                      if (data.type === "content" && data.content !== undefined && data.content !== null) {
+                        // Normalizar content para string (backend já envia string; fallback para listas)
+                        let rawContent = data.content;
+                        if (typeof rawContent !== "string") {
+                          if (Array.isArray(rawContent)) {
+                            rawContent = rawContent.map((b: unknown) =>
+                              typeof b === "string" ? b : (b && typeof b === "object" && "text" in b ? String((b as { text?: string }).text ?? "") : "")
+                            ).join("");
+                          } else {
+                            rawContent = String(rawContent);
+                          }
+                        }
                         // Handle escaped newlines - convert \n to actual newlines
-                        const processedContent = typeof data.content === 'string'
-                          ? data.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
-                          : data.content;
+                        const processedContent = rawContent.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
 
                         // If this is a final content update (complete content), replace instead of append
                         if (data.final === true) {
@@ -996,8 +1009,19 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
                 console.warn("[STREAM] WARNING: Stream completed but accumulatedContent is empty!");
               }
             } catch (streamError) {
+              // Cancelamento pelo usuário: não tratar como erro
+              if (streamError instanceof Error && streamError.name === "AbortError") {
+                setMessagesBySession((prev) => {
+                  const existing = prev[threadId] ?? [];
+                  const filtered = existing.filter((msg) => msg.id !== thinkingMessageId);
+                  const cleaned = filtered.filter(
+                    (msg) => !(msg.role === "assistant" && msg.content === "")
+                  );
+                  return { ...prev, [threadId]: cleaned };
+                });
+                return;
+              }
               console.error("[STREAM] Error reading stream:", streamError);
-              // Don't remove user message on stream error
               throw streamError;
             }
           } else {
@@ -1041,15 +1065,26 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
           await fetchSession(threadId);
         }
       } catch (error) {
+        // Cancelamento pelo usuário (Stop): não exibir erro no chat nem no console
+        if (error instanceof Error && error.name === "AbortError") {
+          setMessagesBySession((prev) => {
+            const existing = prev[threadId] ?? [];
+            const filtered = existing.filter((msg) => msg.id !== thinkingMessageId);
+            const cleaned = filtered.filter(
+              (msg) => !(msg.role === "assistant" && msg.content === "")
+            );
+            return { ...prev, [threadId]: cleaned };
+          });
+          return;
+        }
+
         console.error("Error sending message:", error);
         // Remove only thinking message, preserve user message
         setMessagesBySession((prev) => {
           const existing = prev[threadId] ?? [];
-          // Filter out thinking message but keep user message
-          const filtered = existing.filter(msg => msg.id !== thinkingMessageId);
-          // Also remove empty assistant message if it exists
-          const cleaned = filtered.filter(msg =>
-            !(msg.role === "assistant" && msg.content === "")
+          const filtered = existing.filter((msg) => msg.id !== thinkingMessageId);
+          const cleaned = filtered.filter(
+            (msg) => !(msg.role === "assistant" && msg.content === "")
           );
           return { ...prev, [threadId]: cleaned };
         });

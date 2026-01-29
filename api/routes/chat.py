@@ -24,6 +24,23 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Modelo que suporta tool/function calling no OpenRouter (evita 404 "No endpoints found that support tool use")
+# Ver: https://openrouter.ai/docs/guides/features/tool-calling
+TOOL_CAPABLE_MODEL = os.getenv("TOOL_CAPABLE_MODEL", "google/gemini-2.5-flash")
+
+
+def _resolve_model_for_request(request: ChatRequest, has_tools: bool) -> str:
+    """Quando há ferramentas (GLPI/Zabbix/Linear/Tavily), usa modelo que suporta tool use no OpenRouter."""
+    if has_tools:
+        requested = request.model or os.getenv("DEFAULT_MODEL_NAME", TOOL_CAPABLE_MODEL)
+        logger.info(
+            "[CHAT] Ferramentas ativas: usando modelo compatível com tools %s (solicitado: %s)",
+            TOOL_CAPABLE_MODEL,
+            requested,
+        )
+        return TOOL_CAPABLE_MODEL
+    return request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash")
+
 # Phase 2: ITIL System Prompt for VSA Mode
 VSA_ITIL_SYSTEM_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), um especialista em Gestão de TI com profundo conhecimento em ITIL, GUT Matrix e metodologias de análise.
 
@@ -242,11 +259,14 @@ async def chat(request: ChatRequest):
         if request.enable_linear:
             tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
             logger.info("✅ Linear tools enabled")
-        
+
+        has_tools = bool(tools)
+        model_name = _resolve_model_for_request(request, has_tools)
+
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
             agent = UnifiedAgent(
-                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
                 system_prompt=get_system_prompt(True),  # Use complete ITIL prompt
@@ -256,7 +276,7 @@ async def chat(request: ChatRequest):
             logger.info("🤖 Using UnifiedAgent (ITIL mode)")
         else:
             agent = SimpleAgent(
-                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
                 system_prompt=get_system_prompt(False),
@@ -321,11 +341,14 @@ async def stream_chat(request: ChatRequest):
         if request.enable_linear:
             tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
             logger.info("✅ Linear tools enabled (stream)")
-        
+
+        has_tools = bool(tools)
+        model_name = _resolve_model_for_request(request, has_tools)
+
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
             agent = UnifiedAgent(
-                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
                 system_prompt=get_system_prompt(True),  # Use complete ITIL prompt
@@ -335,7 +358,7 @@ async def stream_chat(request: ChatRequest):
             logger.info("🤖 Using UnifiedAgent (ITIL mode) [stream]")
         else:
             agent = SimpleAgent(
-                model_name=request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash"),
+                model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
                 system_prompt=get_system_prompt(False),
@@ -351,12 +374,28 @@ async def stream_chat(request: ChatRequest):
             }
         }
 
+        def _content_to_str(content):
+            """Normalize chunk content to string (LangChain can send str or list of blocks)."""
+            if isinstance(content, str):
+                return content
+            if isinstance(content, list):
+                parts = []
+                for block in content:
+                    if isinstance(block, str):
+                        parts.append(block)
+                    elif isinstance(block, dict) and "text" in block:
+                        parts.append(block["text"])
+                return "".join(parts)
+            return str(content) if content else ""
+
         async def generate():
             try:
-                # Use astream from SimpleAgent
-                # Important: SimpleAgent's create_agent uses a specific graph structure
+                # Enviar evento "start" imediatamente para o cliente saber que a conexão está viva
+                yield f"data: {json.dumps({'type': 'start', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
+                logger.info("[STREAM] Sent start event, waiting for LLM...")
+
                 from langchain_core.messages import AIMessage, AIMessageChunk
-                
+
                 # Use stream_mode="messages" to get deltas (tokens) for a smoother experience
                 async for chunk, metadata in agent.astream(
                     {"messages": [HumanMessage(content=request.message)]},
@@ -367,16 +406,19 @@ async def stream_chat(request: ChatRequest):
                     if isinstance(chunk, (AIMessage, AIMessageChunk)) and chunk.content:
                         # Only stream AI content, skipping tool calls and metadata
                         if not hasattr(chunk, 'tool_calls') or not chunk.tool_calls:
-                            data = {
-                                "type": "content",
-                                "content": chunk.content,
-                                "thread_id": thread_id,
-                                "model": request.model
-                            }
-                            yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
-                                
+                            content_str = _content_to_str(chunk.content)
+                            if content_str:
+                                data = {
+                                    "type": "content",
+                                    "content": content_str,
+                                    "thread_id": thread_id,
+                                    "model": request.model
+                                }
+                                yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+                logger.info("[STREAM] Sending done event")
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
-                
+
             except Exception as e:
                 logger.error(f"Stream error: {str(e)}", exc_info=True)
                 # Try to extract a clean string from the exception

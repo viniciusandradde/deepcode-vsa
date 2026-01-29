@@ -89,6 +89,8 @@ services:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_BASE:-http://localhost:8000}}
       - NODE_ENV=development
       - CI=true
+      # Desabilitar cache do Next.js em desenvolvimento para evitar problemas de módulos ausentes
+      - NEXT_TELEMETRY_DISABLED=1
     ports:
       - "3000:3000"
     volumes:
@@ -96,13 +98,14 @@ services:
       - ./models.yaml:/app/models.yaml:ro
       - ./models.yaml:/models.yaml:ro
       - /app/node_modules
-      - /app/.next
+      # Remover volume persistente do .next para evitar cache corrompido
+      # Cache será recriado a cada restart
     depends_on:
       - backend
     networks:
       - ai_agent_network
     restart: unless-stopped
-    command: pnpm run dev
+    command: sh -c "rm -rf .next && pnpm run dev"
 
 volumes:
   postgres_data:

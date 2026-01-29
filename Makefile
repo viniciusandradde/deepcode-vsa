@@ -2,7 +2,7 @@
 	build build-backend build-frontend rebuild rebuild-all up down up-build \
 	status logs-backend logs-frontend logs-postgres \
 	restart-backend restart-frontend restart-postgres \
-	cleanup-checkpoints cleanup-checkpoints-dry-run health
+	cleanup-checkpoints cleanup-checkpoints-dry-run health clean-frontend-cache
 
 help:
 	@echo "Comandos disponíveis:"
@@ -34,8 +34,9 @@ help:
 	@echo "  make logs-frontend - Mostra logs recentes do frontend"
 	@echo "  make logs-postgres - Mostra logs recentes do Postgres"
 	@echo "  make restart-backend  - Reinicia o backend"
-	@echo "  make restart-frontend - Reinicia o frontend"
+	@echo "  make restart-frontend - Reinicia o frontend (limpa cache automaticamente)"
 	@echo "  make restart-postgres - Reinicia o Postgres"
+	@echo "  make clean-frontend-cache - Limpa cache do Next.js (.next) no container"
 	@echo ""
 	@echo "Manutenção:"
 	@echo "  make cleanup-checkpoints       - Limpa checkpoints antigos (padrão 180 dias)"
@@ -122,8 +123,13 @@ restart-backend:
 	docker compose restart backend
 
 restart-frontend:
-	@echo "Reiniciando frontend..."
+	@echo "Reiniciando frontend (limpando cache)..."
+	docker exec ai_agent_frontend sh -c "rm -rf .next" 2>/dev/null || true
 	docker compose restart frontend
+
+clean-frontend-cache:
+	@echo "Limpando cache do Next.js (.next) no container frontend..."
+	docker exec ai_agent_frontend sh -c "rm -rf .next" || echo "Container não está rodando ou cache já limpo"
 
 restart-postgres:
 	@echo "Reiniciando Postgres..."

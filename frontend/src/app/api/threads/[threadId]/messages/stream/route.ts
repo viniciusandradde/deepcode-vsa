@@ -41,22 +41,32 @@ export async function POST(
       console.log("[VSA] Mode enabled - GLPI:", body.enable_glpi, "Zabbix:", body.enable_zabbix, "Linear:", body.enable_linear);
     }
 
+    // Timeout para conexão inicial com o backend (120s) - evita hang sem resposta
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120_000);
+
     // Chama a API FastAPI com streaming
-    const res = await fetch(backendUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: body.content,
-        thread_id: threadId,
-        model: body.model,
-        use_tavily: body.useTavily ?? false,
-        // VSA Integration flags (Task 1.1)
-        enable_vsa: body.enable_vsa ?? false,
-        enable_glpi: body.enable_glpi ?? false,
-        enable_zabbix: body.enable_zabbix ?? false,
-        enable_linear: body.enable_linear ?? false,
-      }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(backendUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: body.content,
+          thread_id: threadId,
+          model: body.model,
+          use_tavily: body.useTavily ?? false,
+          // VSA Integration flags (Task 1.1)
+          enable_vsa: body.enable_vsa ?? false,
+          enable_glpi: body.enable_glpi ?? false,
+          enable_zabbix: body.enable_zabbix ?? false,
+          enable_linear: body.enable_linear ?? false,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!res.ok) {
       let errorMessage = `Failed to start stream (${res.status})`;
@@ -138,7 +148,11 @@ export async function POST(
       errorType = error.name;
 
       // Detectar tipos específicos de erro de rede
-      if (error.message.includes("ECONNREFUSED") || error.message.includes("connection refused")) {
+      if (error.name === "AbortError") {
+        errorType = "Timeout";
+        errorMessage = "O backend não respondeu em 120 segundos. Verifique se o serviço está rodando e se a rede está acessível.";
+        errorDetails.suggestion = "Backend demorou demais para responder. Verifique os logs do backend (make logs-backend).";
+      } else if (error.message.includes("ECONNREFUSED") || error.message.includes("connection refused")) {
         errorType = "Connection Refused";
         errorDetails.suggestion = "Backend may not be running or URL is incorrect. Check if backend is accessible at: " + apiBaseUrl;
       } else if (error.message.includes("ETIMEDOUT") || error.message.includes("timeout")) {
