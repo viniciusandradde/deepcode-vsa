@@ -1,5 +1,6 @@
 """Linear.app Integration Tools."""
 
+import json
 from typing import Optional, List
 from langchain.tools import tool
 
@@ -146,4 +147,84 @@ async def linear_add_comment(
     if not result.success:
         return {"error": result.error}
 
+    return result.output
+
+
+@tool
+async def linear_create_project(
+    team_id: str,
+    name: str,
+    description: str = "",
+    summary: str = "",
+    start_date: Optional[str] = None,
+    target_date: Optional[str] = None,
+    priority: int = 0,
+    dry_run: bool = True
+) -> dict:
+    """Create a new project in Linear.
+
+    Args:
+        team_id: Team ID where project will be created (use linear_get_teams to find)
+        name: Project name
+        description: Project description (Markdown)
+        summary: Short summary, max 255 chars
+        start_date: Start date (YYYY-MM-DD)
+        target_date: Target date (YYYY-MM-DD)
+        priority: 0=None, 1=Urgent, 2=High, 3=Medium, 4=Low
+        dry_run: If True (default), simulates creation and returns preview
+
+    Returns:
+        If dry_run=True: preview of what would be created
+        If dry_run=False: created project details with ID and URL
+    """
+    client = get_client()
+    result = await client.create_project(
+        team_id=team_id,
+        name=name,
+        description=description,
+        summary=summary,
+        start_date=start_date,
+        target_date=target_date,
+        priority=priority,
+        dry_run=dry_run
+    )
+    if not result.success:
+        return {"error": result.error}
+    return result.output
+
+
+@tool
+async def linear_create_full_project(
+    team_id: str,
+    project_plan: str,
+    dry_run: bool = True
+) -> dict:
+    """Create a full project in Linear with milestones and tasks.
+
+    Use this when the user wants to create a complete project with phases (milestones)
+    and tasks. First call with dry_run=True to get a preview, then the user confirms
+    and you call again with dry_run=False.
+
+    Args:
+        team_id: Team ID (use linear_get_teams to find)
+        project_plan: JSON string with structure: {
+            "project": {"name", "summary", "description", "startDate", "targetDate", "priority"},
+            "milestones": [{"name", "targetDate", "description"}],
+            "tasks": [{"title", "description", "milestone": "milestone name", "priority"}]
+        }
+        dry_run: If True (default), returns preview without creating. Set False only after user confirms.
+
+    Returns:
+        Preview (dry_run=True) or created project URL and issue list (dry_run=False)
+    """
+    client = get_client()
+    try:
+        plan = json.loads(project_plan) if isinstance(project_plan, str) else project_plan
+    except json.JSONDecodeError as e:
+        return {"error": f"Invalid project_plan JSON: {e}"}
+    if not isinstance(plan, dict):
+        return {"error": "project_plan must be a JSON object"}
+    result = await client.create_project_with_plan(team_id=team_id, plan=plan, dry_run=dry_run)
+    if not result.success:
+        return {"error": result.error}
     return result.output

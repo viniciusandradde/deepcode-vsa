@@ -527,6 +527,310 @@ class LinearClient:
             operation="add_comment"
         )
 
+    async def create_project(
+        self,
+        team_id: str,
+        name: str,
+        description: str = "",
+        summary: str = "",
+        start_date: Optional[str] = None,
+        target_date: Optional[str] = None,
+        priority: int = 0,
+        dry_run: bool = True
+    ) -> ToolResult:
+        """Create a project in Linear.
+
+        Args:
+            team_id: Team ID where project will be created
+            name: Project name
+            description: Project description (Markdown)
+            summary: Short summary (max 255 chars)
+            start_date: Start date (YYYY-MM-DD)
+            target_date: Target date (YYYY-MM-DD)
+            priority: 0=None, 1=Urgent, 2=High, 3=Medium, 4=Low
+            dry_run: If True, simulate without creating
+        """
+        if dry_run:
+            return ToolResult.ok(
+                {
+                    "preview": {
+                        "team_id": team_id,
+                        "name": name,
+                        "description": description,
+                        "summary": summary[:255] if summary else "",
+                        "start_date": start_date,
+                        "target_date": target_date,
+                        "priority": priority,
+                    },
+                    "dry_run": True,
+                    "message": "Project would be created with these values",
+                },
+                operation="create_project"
+            )
+
+        input_parts = [
+            f'teamIds: ["{team_id}"]',
+            f'name: "{_escape_graphql_string(name)}"',
+        ]
+        if description:
+            input_parts.append(f'description: "{_escape_graphql_string(description)}"')
+        if summary:
+            input_parts.append(f'summary: "{_escape_graphql_string(summary[:255])}"')
+        if start_date:
+            input_parts.append(f'startDate: "{start_date}"')
+        if target_date:
+            input_parts.append(f'targetDate: "{target_date}"')
+        if priority is not None and priority >= 0:
+            input_parts.append(f"priority: {priority}")
+
+        input_str = ", ".join(input_parts)
+        mutation = f"""
+        mutation {{
+          projectCreate(input: {{ {input_str} }}) {{
+            success
+            project {{
+              id
+              name
+              url
+              state
+            }}
+          }}
+        }}
+        """
+        result = await self._graphql_query(mutation)
+        if not result.success:
+            return result
+
+        create_result = result.output.get("projectCreate", {})
+        if not create_result.get("success"):
+            return ToolResult.fail("Failed to create project", operation="create_project")
+
+        project = create_result.get("project", {})
+        return ToolResult.ok(
+            {
+                "project_id": project.get("id"),
+                "name": project.get("name"),
+                "url": project.get("url"),
+                "created": True,
+            },
+            operation="create_project"
+        )
+
+    async def create_project_milestone(
+        self,
+        project_id: str,
+        name: str,
+        target_date: Optional[str] = None,
+        description: str = "",
+        dry_run: bool = True
+    ) -> ToolResult:
+        """Create a milestone in a Linear project.
+
+        Args:
+            project_id: Project ID
+            name: Milestone name
+            target_date: Target date (YYYY-MM-DD)
+            description: Optional description
+            dry_run: If True, simulate without creating
+        """
+        if dry_run:
+            return ToolResult.ok(
+                {
+                    "preview": {
+                        "project_id": project_id,
+                        "name": name,
+                        "target_date": target_date,
+                        "description": description,
+                    },
+                    "dry_run": True,
+                    "message": "Milestone would be created",
+                },
+                operation="create_project_milestone"
+            )
+
+        input_parts = [
+            f'projectId: "{project_id}"',
+            f'name: "{_escape_graphql_string(name)}"',
+        ]
+        if target_date:
+            input_parts.append(f'targetDate: "{target_date}"')
+        if description:
+            input_parts.append(f'description: "{_escape_graphql_string(description)}"')
+
+        input_str = ", ".join(input_parts)
+        mutation = f"""
+        mutation {{
+          projectMilestoneCreate(input: {{ {input_str} }}) {{
+            success
+            projectMilestone {{
+              id
+              name
+              targetDate
+            }}
+          }}
+        }}
+        """
+        result = await self._graphql_query(mutation)
+        if not result.success:
+            return result
+
+        create_result = result.output.get("projectMilestoneCreate", {})
+        if not create_result.get("success"):
+            return ToolResult.fail(
+                "Failed to create project milestone",
+                operation="create_project_milestone"
+            )
+
+        milestone = create_result.get("projectMilestone", {})
+        return ToolResult.ok(
+            {
+                "milestone_id": milestone.get("id"),
+                "name": milestone.get("name"),
+                "target_date": milestone.get("targetDate"),
+                "created": True,
+            },
+            operation="create_project_milestone"
+        )
+
+    async def create_project_with_plan(
+        self,
+        team_id: str,
+        plan: dict,
+        dry_run: bool = True
+    ) -> ToolResult:
+        """Create project with milestones and tasks (issues).
+
+        Args:
+            team_id: Team ID
+            plan: Dict with keys project, milestones, tasks (see plan structure)
+            dry_run: If True, return preview only
+        """
+        proj = (plan.get("project") or {}).copy()
+        milestones = plan.get("milestones") or []
+        tasks = plan.get("tasks") or []
+
+        MAX_TASKS = 50
+        if len(tasks) > MAX_TASKS:
+            return ToolResult.fail(
+                f"Too many tasks (max {MAX_TASKS})",
+                operation="create_project_with_plan"
+            )
+
+        if dry_run:
+            return ToolResult.ok(
+                {
+                    "preview": {
+                        "project": proj,
+                        "milestones": milestones,
+                        "tasks": tasks,
+                        "team_id": team_id,
+                    },
+                    "dry_run": True,
+                    "message": "Project plan preview; confirm to create in Linear",
+                },
+                operation="create_project_with_plan"
+            )
+
+        # 1. Create project
+        name = proj.get("name") or "Novo Projeto"
+        description = proj.get("description") or ""
+        summary = proj.get("summary") or ""
+        start_date = proj.get("startDate") or None
+        target_date = proj.get("targetDate") or None
+        priority = proj.get("priority", 0)
+
+        res = await self.create_project(
+            team_id=team_id,
+            name=name,
+            description=description,
+            summary=summary,
+            start_date=start_date,
+            target_date=target_date,
+            priority=priority,
+            dry_run=False
+        )
+        if not res.success:
+            return res
+        project_id = res.output.get("project_id")
+        if not project_id:
+            return ToolResult.fail("Project created but no project_id returned", operation="create_project_with_plan")
+
+        # 2. Create milestones and map name -> id
+        milestone_name_to_id: dict[str, str] = {}
+        for m in milestones:
+            m_name = m.get("name") or ""
+            m_target = m.get("targetDate") or None
+            m_desc = m.get("description") or ""
+            m_res = await self.create_project_milestone(
+                project_id=project_id,
+                name=m_name,
+                target_date=m_target,
+                description=m_desc,
+                dry_run=False
+            )
+            if not m_res.success:
+                return ToolResult.fail(
+                    f"Failed to create milestone '{m_name}': {m_res.error}",
+                    operation="create_project_with_plan"
+                )
+            mid = m_res.output.get("milestone_id")
+            if mid:
+                milestone_name_to_id[m_name] = mid
+
+        # 3. Create issues (tasks) and link to project (and optional milestone)
+        created_issues = []
+        for t in tasks:
+            title = t.get("title") or "Tarefa"
+            t_desc = t.get("description") or ""
+            t_priority = t.get("priority", 3)
+            t_milestone_name = t.get("milestone")
+
+            issue_res = await self.create_issue(
+                team_id=team_id,
+                title=title,
+                description=t_desc,
+                priority=t_priority,
+                dry_run=False
+            )
+            if not issue_res.success:
+                return ToolResult.fail(
+                    f"Failed to create issue '{title}': {issue_res.error}",
+                    operation="create_project_with_plan"
+                )
+            issue_id = issue_res.output.get("issue_id")
+            if not issue_id:
+                continue
+            created_issues.append({"title": title, "issue_id": issue_id, "identifier": issue_res.output.get("identifier")})
+
+            # Link issue to project (issueUpdate with projectId)
+            if project_id and issue_id:
+                update_input = f'id: "{issue_id}", projectId: "{project_id}"'
+                if t_milestone_name and milestone_name_to_id.get(t_milestone_name):
+                    mid = milestone_name_to_id[t_milestone_name]
+                    update_input += f', projectMilestoneId: "{mid}"'
+                update_mutation = f"""
+                mutation {{
+                  issueUpdate(input: {{ {update_input} }}) {{
+                    success
+                    issue {{ id identifier }}
+                  }}
+                }}
+                """
+                upd_res = await self._graphql_query(update_mutation)
+                if not upd_res.success:
+                    pass  # non-fatal: issue exists but not linked to project
+
+        return ToolResult.ok(
+            {
+                "project_id": project_id,
+                "project_url": res.output.get("url") or "",
+                "milestones_created": len(milestone_name_to_id),
+                "issues_created": created_issues,
+                "created": True,
+            },
+            operation="create_project_with_plan"
+        )
+
     async def close(self):
         """Close HTTP client."""
         if self._client:

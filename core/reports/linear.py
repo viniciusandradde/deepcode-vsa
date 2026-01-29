@@ -1,4 +1,4 @@
-"""Linear report formatters: issues to markdown."""
+"""Linear report formatters: issues and project plan preview to markdown."""
 
 from typing import Any
 
@@ -74,3 +74,80 @@ def format_linear_report(data: dict) -> str:
 {format_issues_table(issues)}
 """
     return report
+
+
+def format_project_plan_preview(plan: dict, team_name: str = "") -> str:
+    """Formata preview do plano de projeto para confirmação do usuário.
+
+    Retorna markdown com dados do projeto, milestones em tabela, tarefas
+    agrupadas por milestone e instrução para confirmar criação no Linear.
+    Inclui marcador especial para o frontend exibir botão de confirmação.
+    """
+    proj = plan.get("project") or {}
+    milestones = plan.get("milestones") or []
+    tasks = plan.get("tasks") or []
+
+    priority_labels = {0: "Nenhuma", 1: "Urgente", 2: "Alta", 3: "Normal", 4: "Baixa"}
+    proj_priority = proj.get("priority", 0)
+    proj_priority_str = priority_labels.get(proj_priority, str(proj_priority))
+
+    lines = [
+        "## Preview do Projeto (Linear)",
+        "",
+        "Revise o escopo abaixo. Para criar no Linear, **confirme** usando o botão ou digite **confirmar**.",
+        "",
+        "### Projeto",
+        f"- **Nome:** {proj.get('name', '(sem nome)')}",
+        f"- **Resumo:** {proj.get('summary') or '(não informado)'}",
+        f"- **Prioridade:** {proj_priority_str}",
+        f"- **Início:** {proj.get('startDate') or '(não definido)'}",
+        f"- **Conclusão:** {proj.get('targetDate') or '(não definido)'}",
+        "",
+    ]
+    if team_name:
+        lines.append(f"- **Time:** {team_name}")
+        lines.append("")
+
+    if milestones:
+        lines.append("### Milestones (fases)")
+        lines.append("| Fase | Data alvo |")
+        lines.append("|------|-----------|")
+        for m in milestones:
+            name = m.get("name", "?")
+            target = m.get("targetDate") or "-"
+            lines.append(f"| {name} | {target} |")
+        lines.append("")
+
+    if tasks:
+        lines.append("### Tarefas por milestone")
+        by_milestone: dict[str, list[dict]] = {}
+        for t in tasks:
+            m = t.get("milestone") or "(sem fase)"
+            by_milestone.setdefault(m, []).append(t)
+        for m_name in [m.get("name") for m in milestones] or list(by_milestone.keys()):
+            if m_name not in by_milestone:
+                continue
+            lines.append(f"**{m_name}**")
+            for t in by_milestone[m_name]:
+                title = t.get("title", "?")
+                pri = t.get("priority", 3)
+                lines.append(f"- {title} (prioridade {pri})")
+            lines.append("")
+
+    lines.append("---")
+    lines.append("*Para criar este projeto no Linear, confirme a ação.*")
+    lines.append("")
+    lines.append("<!-- VSA_PROJECT_PREVIEW_CONFIRM -->")
+
+    return "\n".join(lines)
+
+
+def format_project_plan_preview_from_tool_output(tool_output: dict, team_name: str = "") -> str:
+    """Formata preview a partir do retorno da tool linear_create_full_project (dry_run=True)."""
+    preview = tool_output.get("preview") or {}
+    plan = {
+        "project": preview.get("project") or {},
+        "milestones": preview.get("milestones") or [],
+        "tasks": preview.get("tasks") or [],
+    }
+    return format_project_plan_preview(plan, team_name=team_name)

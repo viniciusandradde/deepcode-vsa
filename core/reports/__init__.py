@@ -11,7 +11,12 @@ from .glpi import (
     format_pending_old_report,
 )
 from .zabbix import format_zabbix_report, format_alerts_table
-from .linear import format_linear_report, format_issues_table
+from .linear import (
+    format_linear_report,
+    format_issues_table,
+    format_project_plan_preview,
+    format_project_plan_preview_from_tool_output,
+)
 from .dashboard import format_dashboard_report
 from .itil import format_itil_classification_block
 
@@ -24,6 +29,8 @@ __all__ = [
     "format_alerts_table",
     "format_linear_report",
     "format_issues_table",
+    "format_project_plan_preview",
+    "format_project_plan_preview_from_tool_output",
     "format_dashboard_report",
     "format_itil_classification_block",
 ]

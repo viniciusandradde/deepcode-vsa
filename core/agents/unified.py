@@ -472,6 +472,18 @@ class UnifiedAgent(BaseAgent):
                 for tc in m.tool_calls:
                     tool_calls_by_id[tc.get("id")] = tc.get("name", "")
                 break
+        last_tool_name = tool_calls_by_id.get(getattr(last, "tool_call_id", ""), "")
+        # Single tool: linear_create_full_project preview -> format project plan preview
+        if last_tool_name == "linear_create_full_project":
+            try:
+                import json
+                content = last.content if isinstance(last.content, str) else str(last.content)
+                data = json.loads(content) if content.strip().startswith("{") else None
+                if data and data.get("dry_run") and data.get("preview"):
+                    from core.reports import format_project_plan_preview_from_tool_output
+                    return format_project_plan_preview_from_tool_output(data)
+            except Exception:
+                pass
         report_tools = {"glpi_get_tickets", "zabbix_get_alerts", "linear_get_issues"}
         glpi_data = None
         zabbix_data = None

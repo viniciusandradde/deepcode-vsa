@@ -18,7 +18,14 @@ from core.checkpointing import get_async_checkpointer
 # Integration tools (Task 1.1)
 from core.tools.glpi import glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket
 from core.tools.zabbix import zabbix_get_alerts, zabbix_get_host
-from core.tools.linear import linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams
+from core.tools.linear import (
+    linear_get_issues,
+    linear_get_issue,
+    linear_create_issue,
+    linear_get_teams,
+    linear_create_project,
+    linear_create_full_project,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -228,6 +235,7 @@ Infraestrutura, Rede, Software, Hardware, Segurança, Acesso, Consulta.
 - Use TABELAS MARKDOWN para dados (GLPI, Zabbix, classificação).
 - Seja direto e técnico. Cite IDs reais (Ticket #N, etc).
 - Sem dados: diga "Nenhum registro encontrado" ou "Erro ao consultar".
+- **Criar projeto no Linear:** Use linear_get_teams para obter team_id. Gere o plano (project + milestones + tasks) em JSON e chame linear_create_full_project(team_id, project_plan, dry_run=True). Mostre o preview ao usuário e diga que pode confirmar. Quando o usuário confirmar, chame linear_create_full_project com o mesmo project_plan e dry_run=False.
 
 ## Anti-alucinação
 NUNCA invente dados. IDs, nomes, datas e status vêm EXCLUSIVAMENTE das ferramentas. Se ferramenta falhar, peça ao usuário verificar configurações."""
@@ -309,7 +317,14 @@ async def chat(request: ChatRequest):
         
         # Linear tools
         if request.enable_linear:
-            tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
+            tools.extend([
+                linear_get_issues,
+                linear_get_issue,
+                linear_create_issue,
+                linear_get_teams,
+                linear_create_project,
+                linear_create_full_project,
+            ])
             logger.info("✅ Linear tools enabled")
 
         has_tools = bool(tools)
@@ -438,7 +453,14 @@ async def stream_chat(request: ChatRequest):
         
         # Linear tools
         if request.enable_linear:
-            tools.extend([linear_get_issues, linear_get_issue, linear_create_issue, linear_get_teams])
+            tools.extend([
+                linear_get_issues,
+                linear_get_issue,
+                linear_create_issue,
+                linear_get_teams,
+                linear_create_project,
+                linear_create_full_project,
+            ])
             logger.info("✅ Linear tools enabled (stream)")
 
         has_tools = bool(tools)

@@ -22,6 +22,7 @@ interface MessageItemProps {
   onEditSave: () => void;
   onEditCancel: () => void;
   onEditSaveAndResend: () => Promise<void>;
+  onConfirmLinearProject?: () => void;
   isSending: boolean;
 }
 
@@ -40,12 +41,20 @@ export const MessageItem = memo(function MessageItem({
   onEditSave,
   onEditCancel,
   onEditSaveAndResend,
+  onConfirmLinearProject,
   isSending
 }: MessageItemProps) {
   const isAssistant = message.role === "assistant";
   const isThinking = message.content === "Pensando...";
   const isError = message.content.startsWith("Erro:");
   const isUserMessage = message.role === "user";
+
+  const isProjectPreview =
+    isAssistant &&
+    !isThinking &&
+    !!message.content &&
+    message.content.includes("## Preview do Projeto") &&
+    message.content.includes("VSA_PROJECT_PREVIEW_CONFIRM");
 
   // Don't render empty assistant messages
   if (isAssistant && !isThinking && !message.content.trim() && !isError) {
@@ -218,6 +227,19 @@ export const MessageItem = memo(function MessageItem({
             >
               {message.content.replace(/\\n/g, '\n').replace(/\\t/g, '\t')}
             </ReactMarkdown>
+            {isProjectPreview && onConfirmLinearProject && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={onConfirmLinearProject}
+                  disabled={isSending}
+                  className="bg-emerald-600/80 text-white hover:bg-emerald-500/90"
+                >
+                  Confirmar criação do projeto no Linear
+                </Button>
+              </div>
+            )}
           </div>
         )
       ) : (

@@ -225,6 +225,11 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                     await resendMessage(message.id);
                   }
                 }}
+                onConfirmLinearProject={
+                  enableLinear
+                    ? () => handleMessageSubmit("Confirmar criação do projeto no Linear.", true)
+                    : undefined
+                }
                 isSending={isSending}
               />
             ))

@@ -1,4 +1,4 @@
-.PHONY: help install install-frontend dev api studio frontend test test-integrations setup-db \
+.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db \
 	build build-backend build-frontend rebuild rebuild-all up down up-build \
 	status logs-backend logs-frontend logs-postgres \
 	restart-backend restart-frontend restart-postgres \
@@ -27,7 +27,8 @@ help:
 	@echo "  make frontend      - Inicia frontend Next.js (local)"
 	@echo "  make studio        - Inicia LangGraph Studio"
 	@echo "  make test          - Executa testes"
-	@echo "  make test-integrations - Testa APIs de integração (GLPI, Zabbix, Linear)"
+	@echo "  make test-integrations   - Testa APIs de integração (GLPI, Zabbix, Linear)"
+	@echo "  make test-linear-project - Testa criação de projetos no Linear (dry_run)"
 	@echo ""
 	@echo "Docker:"
 	@echo "  make status        - Mostra status dos containers Docker"
@@ -106,6 +107,10 @@ test:
 test-integrations:
 	@echo "Testando APIs de integração (GLPI, Zabbix, Linear)..."
 	uv run python scripts/test_integrations.py
+
+test-linear-project:
+	@echo "Testando criação de projetos no Linear (dry_run)..."
+	uv run python scripts/test_linear_project.py
 
 status:
 	@echo "Status dos containers Docker:"
