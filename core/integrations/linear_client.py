@@ -25,6 +25,26 @@ class ToolResult:
         return cls(False, {}, operation, error)
 
 
+def _escape_graphql_string(s: str) -> str:
+    """Escape string para uso em query GraphQL.
+    
+    Escapa caracteres especiais que quebram a sintaxe GraphQL:
+    - Barras invertidas (\\)
+    - Aspas duplas (")
+    - Quebras de linha (\\n, \\r)
+    - Tabs (\\t)
+    """
+    if not s:
+        return ""
+    return (
+        s.replace("\\", "\\\\")  # barra invertida primeiro
+         .replace('"', '\\"')    # aspas duplas
+         .replace("\n", "\\n")   # quebra de linha
+         .replace("\r", "\\r")   # carriage return
+         .replace("\t", "\\t")   # tab
+    )
+
+
 class LinearClient:
     """Linear.app GraphQL API client.
 
@@ -311,11 +331,11 @@ class LinearClient:
             label_ids: Optional list of label IDs
             dry_run: If True, simulate without creating
         """
-        # Build input object
+        # Build input object (escape strings para evitar erro de sintaxe GraphQL)
         input_parts = [
             f'teamId: "{team_id}"',
-            f'title: "{title}"',
-            f'description: "{description}"',
+            f'title: "{_escape_graphql_string(title)}"',
+            f'description: "{_escape_graphql_string(description)}"',
             f'priority: {priority}'
         ]
 
@@ -474,7 +494,7 @@ class LinearClient:
         mutation {{
           commentCreate(input: {{
             issueId: "{issue_id}"
-            body: "{body}"
+            body: "{_escape_graphql_string(body)}"
           }}) {{
             success
             comment {{
