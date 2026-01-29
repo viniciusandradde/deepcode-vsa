@@ -15,7 +15,7 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, TypedDict
 from enum import Enum
 
 from dotenv import load_dotenv
-from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import AnyMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
@@ -194,25 +194,27 @@ class UnifiedAgent(BaseAgent):
         openrouter_api_key: Optional[str] = None,
         openrouter_base_url: str = DEFAULT_OPENROUTER_BASE_URL,
         temperature: float = 0.2,
+        fast_model_name: Optional[str] = None,
     ):
         """Initialize unified agent.
         
         Args:
-            model_name: Model identifier (e.g., "google/gemini-2.5-flash")
-            tools: List of tools available to the agent
-            system_prompt: Custom system prompt (optional)
-            enable_itil: Enable ITIL classification
-            enable_planning: Enable multi-step planning
-            enable_confirmation: Enable confirmation for write operations
-            checkpointer: LangGraph checkpointer for persistence
-            openrouter_api_key: OpenRouter API key
-            openrouter_base_url: OpenRouter base URL
-            temperature: Model temperature
+            model_name: Model for executor (must support tools when tools are used).
+            tools: List of tools available to the agent.
+            system_prompt: Custom system prompt (optional).
+            enable_itil: Enable ITIL classification.
+            enable_planning: Enable multi-step planning.
+            enable_confirmation: Enable confirmation for write operations.
+            checkpointer: LangGraph checkpointer for persistence.
+            openrouter_api_key: OpenRouter API key.
+            openrouter_base_url: OpenRouter base URL.
+            temperature: Model temperature.
+            fast_model_name: Optional cheaper model for router/classifier (tiered).
         """
         api_key = openrouter_api_key or os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             raise RuntimeError("Defina OPENROUTER_API_KEY para inicializar o agente.")
-        
+
         # Default system prompt
         if system_prompt is None:
             data_atual = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y")
@@ -222,21 +224,32 @@ class UnifiedAgent(BaseAgent):
                 "Você pode ajudar com tickets GLPI, alertas Zabbix, issues Linear e buscas na web. "
                 "Seja direto, profissional e proativo nas soluções."
             )
-        
+
         model = ChatOpenAI(
             model=model_name,
             temperature=temperature,
             openai_api_key=api_key,
             openai_api_base=openrouter_base_url,
         )
-        
+
+        # Tiered: cheap model for router/classifier when provided
+        self._fast_model = None
+        if fast_model_name and fast_model_name != model_name:
+            self._fast_model = ChatOpenAI(
+                model=fast_model_name,
+                temperature=0.1,
+                openai_api_key=api_key,
+                openai_api_base=openrouter_base_url,
+            )
+            dbg(f"Tiered: fast_model={fast_model_name} for router/classifier")
+
         super().__init__(
             model=model,
             tools=tools,
             system_prompt=system_prompt,
             name="UnifiedAgent"
         )
-        
+
         self.model_name = model_name
         self.enable_itil = enable_itil
         self.enable_planning = enable_planning
@@ -338,9 +351,10 @@ class UnifiedAgent(BaseAgent):
         user_content = last_message.content
         dbg(f"Routing message: {user_content[:100]}...")
         
-        # Use LLM to classify intent
+        # Use LLM to classify intent (tiered: fast model if available)
+        model = self._fast_model if self._fast_model else self.model
         try:
-            response = self.model.invoke([
+            response = model.invoke([
                 SystemMessage(content=ROUTER_SYSTEM_PROMPT),
                 HumanMessage(content=user_content)
             ])
@@ -380,9 +394,11 @@ class UnifiedAgent(BaseAgent):
             return {}
         
         user_content = last_message.content
-        
+
+        # Tiered: fast model if available
+        model = self._fast_model if self._fast_model else self.model
         try:
-            response = self.model.invoke([
+            response = model.invoke([
                 SystemMessage(content=CLASSIFIER_SYSTEM_PROMPT),
                 HumanMessage(content=user_content)
             ])
@@ -442,12 +458,74 @@ class UnifiedAgent(BaseAgent):
         # For now, return empty plan - will be enhanced
         return {"plan": [], "current_step": 0}
     
+    def _try_format_tool_results_as_report(self, messages: List[AnyMessage]) -> Optional[str]:
+        """If last messages are tool results from GLPI/Zabbix/Linear, format with core.reports (no LLM)."""
+        if not messages:
+            return None
+        last = messages[-1]
+        if not isinstance(last, ToolMessage):
+            return None
+        # Find AIMessage with tool_calls that preceded these ToolMessages
+        tool_calls_by_id = {}
+        for m in reversed(messages):
+            if isinstance(m, AIMessage) and getattr(m, "tool_calls", None):
+                for tc in m.tool_calls:
+                    tool_calls_by_id[tc.get("id")] = tc.get("name", "")
+                break
+        report_tools = {"glpi_get_tickets", "zabbix_get_alerts", "linear_get_issues"}
+        glpi_data = None
+        zabbix_data = None
+        linear_data = None
+        for m in messages:
+            if isinstance(m, ToolMessage):
+                name = tool_calls_by_id.get(getattr(m, "tool_call_id", ""), "")
+                if name not in report_tools:
+                    return None
+                try:
+                    import json
+                    content = m.content if isinstance(m.content, str) else str(m.content)
+                    data = json.loads(content) if content.strip().startswith("{") else None
+                    if not data:
+                        return None
+                    if name == "glpi_get_tickets":
+                        glpi_data = data
+                    elif name == "zabbix_get_alerts":
+                        zabbix_data = data
+                    elif name == "linear_get_issues":
+                        linear_data = data
+                except Exception:
+                    return None
+        if not glpi_data and not zabbix_data and not linear_data:
+            return None
+        try:
+            from core.reports import format_glpi_report, format_zabbix_report, format_linear_report
+            from core.reports.dashboard import format_dashboard_report
+            parts = []
+            if glpi_data:
+                parts.append(format_glpi_report(glpi_data))
+            if zabbix_data:
+                parts.append(format_zabbix_report(zabbix_data))
+            if linear_data:
+                parts.append(format_linear_report(linear_data))
+            if len(parts) == 1:
+                return parts[0]
+            return format_dashboard_report(glpi_data=glpi_data, zabbix_data=zabbix_data, linear_data=linear_data)
+        except Exception as e:
+            dbg(f"Report format failed: {e}")
+            return None
+
     def _executor_node(self, state: UnifiedAgentState) -> Dict[str, Any]:
         """Execute actions using tools."""
         dbg("Executor node executing...")
-        
+
         messages = state.get("messages", [])
-        
+
+        # If we have ToolMessages from report tools, format with code (no LLM)
+        report_md = self._try_format_tool_results_as_report(messages)
+        if report_md:
+            dbg("Using report formatter (no LLM) for tool results")
+            return {"messages": [AIMessage(content=report_md)]}
+
         # Build context message with ITIL info
         context_parts = []
         if state.get("task_category"):
@@ -456,19 +534,19 @@ class UnifiedAgent(BaseAgent):
             context_parts.append(f"Prioridade: {state['priority'].upper()}")
         if state.get("gut_score"):
             context_parts.append(f"GUT Score: {state['gut_score']}")
-        
+
         # Bind tools to model
         if self.tools:
             model_with_tools = self.model.bind_tools(self.tools)
         else:
             model_with_tools = self.model
-        
+
         # Prepare messages with system prompt
         full_messages = [SystemMessage(content=self.system_prompt)]
         if context_parts:
             full_messages.append(SystemMessage(content="\n".join(context_parts)))
         full_messages.extend(messages)
-        
+
         try:
             response = model_with_tools.invoke(full_messages)
             dbg(f"Executor response: {response.content[:100] if response.content else 'tool_calls'}...")

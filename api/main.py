@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import chat, rag, agents, threads
+from api.routes import chat, rag, agents, threads, reports
 from core.checkpointing import initialize_checkpointer, cleanup_checkpointer
 
 # Configure LangSmith tracing
@@ -68,6 +68,7 @@ app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(rag.router, prefix="/api/v1/rag", tags=["rag"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["agents"])
 app.include_router(threads.router, prefix="/api/v1/threads", tags=["threads"])
+app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
 
 
 @app.get("/")

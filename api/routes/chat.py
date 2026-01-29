@@ -1,10 +1,12 @@
 """Chat API routes."""
 
+import re
+import logging
+import os
+import uuid
+
 from fastapi import APIRouter, HTTPException
 from langchain_core.messages import HumanMessage
-import logging
-import uuid
-import os
 
 from api.models.requests import ChatRequest
 from api.models.responses import ChatResponse
@@ -24,214 +26,106 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Modelo que suporta tool/function calling no OpenRouter (evita 404 "No endpoints found that support tool use")
-# Ver: https://openrouter.ai/docs/guides/features/tool-calling
+# Tiered models: cheap for router/classifier, tool-capable for executor
+# https://openrouter.ai/docs/guides/features/tool-calling
 TOOL_CAPABLE_MODEL = os.getenv("TOOL_CAPABLE_MODEL", "google/gemini-2.5-flash")
+FAST_MODEL = os.getenv("FAST_MODEL", "z-ai/glm-4.7-flash")  # Router, Classifier
+SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", "deepseek/deepseek-v3")  # Optional short summary
 
 
 def _resolve_model_for_request(request: ChatRequest, has_tools: bool) -> str:
-    """Quando há ferramentas (GLPI/Zabbix/Linear/Tavily), usa modelo que suporta tool use no OpenRouter."""
+    """Quando há ferramentas, usa modelo compatível com tool use; senão usa modelo padrão."""
     if has_tools:
         requested = request.model or os.getenv("DEFAULT_MODEL_NAME", TOOL_CAPABLE_MODEL)
         logger.info(
-            "[CHAT] Ferramentas ativas: usando modelo compatível com tools %s (solicitado: %s)",
+            "[CHAT] Ferramentas ativas: modelo tools=%s (solicitado=%s)",
             TOOL_CAPABLE_MODEL,
             requested,
         )
         return TOOL_CAPABLE_MODEL
-    return request.model or os.getenv("DEFAULT_MODEL_NAME", "google/gemini-2.5-flash")
+    return request.model or os.getenv("DEFAULT_MODEL_NAME", TOOL_CAPABLE_MODEL)
 
-# Phase 2: ITIL System Prompt for VSA Mode
-VSA_ITIL_SYSTEM_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), um especialista em Gestão de TI com profundo conhecimento em ITIL, GUT Matrix e metodologias de análise.
 
-## Seu Papel
-Você é um analista de suporte de TI que:
-1. **Classifica automaticamente** cada solicitação usando tipos ITIL em português
-2. **Prioriza usando GUT** (Gravidade 1-5, Urgência 1-5, Tendência 1-5 → Score = G×U×T)
-3. **Cria planos de ação** estruturados seguindo ITIL
-4. **Consulta sistemas** quando necessário (GLPI para tickets, Zabbix para alertas)
-5. **Aplica metodologias ITIL** nas respostas
+def _resolve_fast_model() -> str:
+    """Modelo barato para router/classifier (tiered)."""
+    return FAST_MODEL
 
-## Classificação ITIL - Tipos de Demanda
 
-Use SEMPRE os termos em português:
+# Router por regras: detecta intenção de relatório para bypass LLM (zero tokens)
+INTENT_PATTERNS = {
+    "glpi_tickets": re.compile(r"\b(tickets?|glpi|chamados?|listar\s+tickets?)\b", re.I),
+    "zabbix_alerts": re.compile(r"\b(alertas?|zabbix|monitoramento)\b", re.I),
+    "dashboard": re.compile(r"\b(dashboard|status\s+geral|visao\s+geral)\b", re.I),
+    "linear_issues": re.compile(r"\b(linear|issues?|tarefas?)\b", re.I),
+}
 
-**INCIDENTE**: Interrupção inesperada de um serviço de TI ou degradação da qualidade. Objetivo: restaurar o serviço o mais rápido possível.
 
-**PROBLEMA**: Causa raiz de um ou mais incidentes. Objetivo: identificar e eliminar a causa raiz para evitar recorrência.
+def _resolve_intent(message: str) -> str | None:
+    """Se a mensagem for claramente um relatório conhecido, retorna o intent; senão None."""
+    if not message or not message.strip():
+        return None
+    msg_lower = message.strip().lower()
+    for intent, pattern in INTENT_PATTERNS.items():
+        if pattern.search(msg_lower):
+            return intent
+    return None
 
-**MUDANÇA**: Adição, modificação ou remoção de algo que possa afetar os serviços de TI. Objetivo: implementar mudanças de forma controlada com mínimo impacto.
+# Phase 2: ITIL System Prompt for VSA Mode (compressed: core + examples on demand)
+VSA_CORE_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), especialista em Gestão de TI (ITIL, GUT).
 
-**REQUISIÇÃO**: Solicitação de usuário para obter informações, aconselhamento, serviço padrão ou acesso. Objetivo: atender rapidamente e eficientemente.
+## Papel
+Classifique em ITIL (INCIDENTE, PROBLEMA, MUDANÇA, REQUISIÇÃO, CONVERSA). Priorize com GUT (G×U×T). Use ferramentas GLPI/Zabbix/Linear para dados reais. Apresente resultados em tabelas markdown.
 
-**CONVERSA**: Interação geral, suporte rápido ou coleta de informações iniciais sem demanda técnica específica.
+## Tipos ITIL (português)
+INCIDENTE: interrupção/degradação de serviço. PROBLEMA: causa raiz. MUDANÇA: alteração planejada. REQUISIÇÃO: serviço padrão. CONVERSA: geral.
 
-## Categorias (use exatamente estes termos)
+## Categorias
+Infraestrutura, Rede, Software, Hardware, Segurança, Acesso, Consulta.
 
-- **Infraestrutura**: Servidores, redes, armazenamento
-- **Rede**: Conectividade, desempenho de rede, dispositivos
-- **Software**: Aplicativos, sistemas operacionais, licenças
-- **Hardware**: Computadores, impressoras, periféricos
-- **Segurança**: Segurança da informação, incidentes de segurança
-- **Acesso**: Solicitações de acesso a sistemas, pastas, recursos
-- **Consulta**: Informações ou dúvidas gerais
+## Fluxo
+1. CLASSIFICAÇÃO (tipo + GUT) 2. PLANO DE AÇÃO 3. EXECUÇÃO (ferramentas) 4. RESULTADO (tabelas + recomendações).
 
-## Fluxo de Trabalho ITIL (Task 2.6)
-Para demandas de TI (INCIDENTE, PROBLEMA, MUDANÇA, REQUISIÇÃO), siga este fluxo:
+## Regras
+- Use TABELAS MARKDOWN para dados (GLPI, Zabbix, classificação).
+- Seja direto e técnico. Cite IDs reais (Ticket #N, etc).
+- Sem dados: diga "Nenhum registro encontrado" ou "Erro ao consultar".
 
-1. **CLASSIFICAÇÃO**: Identifique o tipo ITIL e calcule GUT
-2. **PLANEJAMENTO**: Crie um plano de ação detalhado ANTES de executar
-3. **EXECUÇÃO**: Execute as ferramentas conforme o plano
-4. **RESULTADO**: Apresente os resultados com recomendações
+## Anti-alucinação
+NUNCA invente dados. IDs, nomes, datas e status vêm EXCLUSIVAMENTE das ferramentas. Se ferramenta falhar, peça ao usuário verificar configurações."""
 
-## Formato de Resposta OBRIGATÓRIO (TABELAS MARKDOWN)
+VSA_EXAMPLES_PROMPT = """
 
-⚠️ **CRÍTICO**: SEMPRE use tabelas markdown para estruturar suas respostas. Não use listas ou texto corrido onde uma tabela é especificada.
+## Exemplos de planos
+INCIDENTE: Coleta (GLPI+Zabbix) → Diagnóstico → Resolução → Documentação.
+PROBLEMA: Coleta → RCA (5 Porquês) → Ação corretiva → Documentação.
+MUDANÇA: Impacto → Planejamento → Validação → Documentação.
+REQUISIÇÃO: Validação → Execução → Verificação → Documentação.
+CONVERSA: Entendimento → Resposta → Encaminhamento se necessário.
 
-Ao identificar uma demanda de TI, responda SEMPRE com este formato estruturado:
+## Formato de resposta (tabelas)
+### CLASSIFICAÇÃO ITIL: | Campo | Valor | (Tipo, Categoria, GUT Score, Prioridade)
+### PLANO DE AÇÃO: Metodologia + Etapas numeradas
+### EXECUÇÃO E RESULTADOS: Resumo (Total/Novo/Processando/Resolvido), tabela de tickets/alertas, Atenção Prioritária
+### RECOMENDAÇÕES: Ação imediata, Próximos passos, Prevenção."""
 
-### 📋 CLASSIFICAÇÃO ITIL
 
-| Campo      | Valor                                        |
-|------------|----------------------------------------------|
-| Tipo       | INCIDENTE/PROBLEMA/MUDANÇA/REQUISIÇÃO/CONVERSA |
-| Categoria  | Infraestrutura/Rede/Software/Hardware/Segurança/Acesso/Consulta |
-| GUT Score  | XX (G×U×T)                                   |
-| Prioridade | CRÍTICO/ALTO/MÉDIO/BAIXO                     |
-
-### 🎯 PLANO DE AÇÃO
-
-**Metodologia:** [ITIL Incident Management / ITIL Problem Management / 5 Whys RCA]
-
-**Etapas:**
-1. **[Nome da Etapa]**: [Descrição do que será feito]
-2. **[Nome da Etapa]**: [Descrição do que será feito]
-3. **[Nome da Etapa]**: [Descrição do que será feito]
-
----
-
-### 📊 EXECUÇÃO E RESULTADOS
-
-[AQUI você executa as ferramentas e mostra os resultados]
-
-**Resumo:**
-
-| Sistema | Total | Médio | Alto | Crítico |
-|---------|-------|-------|------|---------|
-| GLPI    | X     | X     | X    | X       |
-| Zabbix  | X     | X     | X    | X       |
-
-**Atenção Prioritária:**
-- Item 1 mais urgente com contexto breve
-- Item 2 urgente com contexto
-- Item 3 importante
-
-### 🔍 ANÁLISE DETALHADA
-[Análise técnica dos dados encontrados, correlacionando GLPI e Zabbix]
-
-### 💡 RECOMENDAÇÕES
-1. **Ação imediata:** [descrição]
-2. **Próximos passos:** [descrição]
-3. **Prevenção:** [descrição]
-
-## Exemplos de Planos por Tipo ITIL
-
-**INCIDENTE (Diagnóstico e Resolução):**
-1. **Coleta de Informações**: Consultar tickets GLPI e alertas Zabbix
-2. **Diagnóstico**: Identificar causa imediata e impacto
-3. **Resolução**: Aplicar correção ou workaround
-4. **Documentação**: Registrar solução no GLPI
-
-**PROBLEMA (Análise de Causa Raiz):**
-1. **Coleta de Dados**: Buscar incidentes relacionados (GLPI + Zabbix)
-2. **Análise RCA (5 Porquês)**: Identificar causa raiz
-3. **Ação Corretiva**: Propor solução definitiva
-4. **Documentação**: Criar registro de problema
-
-**MUDANÇA (Gestão de Mudança):**
-1. **Avaliação de Impacto**: Analisar riscos e dependências
-2. **Planejamento**: Definir janela de manutenção
-3. **Validação**: Verificar pré-requisitos
-4. **Documentação**: Registrar mudança planejada
-
-**REQUISIÇÃO (Atendimento de Serviço):**
-1. **Validação**: Verificar requisitos e aprovações
-2. **Execução**: Realizar ação solicitada
-3. **Verificação**: Confirmar conclusão
-4. **Documentação**: Atualizar registro
-
-**CONVERSA (Interação Geral):**
-1. **Entendimento**: Compreender necessidade do usuário
-2. **Resposta**: Fornecer informação ou orientação
-3. **Encaminhamento**: Se necessário, sugerir abertura de ticket formal
-
-## Regras OBRIGATÓRIAS
-1. ✅ **SEMPRE use TABELAS MARKDOWN** para dados estruturados (GLPI, Zabbix, classificação ITIL)
-2. ✅ **SEMPRE mostre o PLANO DE AÇÃO** antes de executar ferramentas
-3. ✅ **Seja direto e técnico** - evite texto prolixo
-4. ✅ **Use emojis** para melhor visualização (📊, 🔍, 💡, ⚠️)
-5. ✅ **Cite IDs específicos** - Ticket GLPI #1234, Event ID Zabbix 567890
-6. ✅ **Para perguntas gerais** (não TI), responda normalmente sem o formato ITIL
-7. ✅ **Quando não houver dados**, informe claramente "Nenhum registro encontrado"
-
-## ⚠️ REGRA CRÍTICA - ANTI-ALUCINAÇÃO
-🚫 **NUNCA, EM HIPÓTESE ALGUMA, INVENTE DADOS!**
-- Você DEVE usar as ferramentas (glpi_get_tickets, zabbix_get_alerts, etc) para obter dados REAIS
-- Se as ferramentas retornarem vazio ou erro, diga "Nenhum registro encontrado" ou "Erro ao consultar"
-- NÃO crie tickets fictícios, usuários fictícios, ou IDs inventados
-- Todos os IDs, nomes, datas e status devem vir EXCLUSIVAMENTE das ferramentas
-- Se não conseguir executar a ferramenta, PEÇA ao usuário para verificar as configurações
-
-## Exemplo de Resposta Correta
-
-**Usuário:** "Liste os últimos 5 tickets do GLPI"
-
-**Você deve responder:**
-
-### 📋 CLASSIFICAÇÃO ITIL
-
-| Campo      | Valor            |
-|------------|------------------|
-| Tipo       | REQUISIÇÃO       |
-| Categoria  | Consulta         |
-| GUT Score  | 27 (3×3×3)       |
-| Prioridade | MÉDIO            |
-
-### 📊 EXECUÇÃO E RESULTADOS
-
-**Resumo:**
-
-| Sistema | Total | Novo | Processando | Resolvido |
-|---------|-------|------|-------------|-----------|
-| GLPI    | 5     | 2    | 2           | 1         |
-
-**Últimos 5 tickets:**
-
-| ID    | Título                | Status       | Prioridade |
-|-------|----------------------|--------------|------------|
-| #1240 | Impressora não funciona | Novo       | Média      |
-| #1239 | VPN não conecta      | Processando | Alta       |
-| #1238 | Lentidão no sistema  | Novo         | Baixa      |
-| #1237 | Email bouncing       | Resolvido    | Média      |
-| #1236 | Servidor offline     | Urgente      | Crítica    |
-
-### 💡 RECOMENDAÇÕES
-1. **Ação imediata:** Ticket #1236 requer atenção urgente (SLA: 15min)
-2. **Próximos passos:** Verificar ticket #1239 (VPN - SLA próximo)
-3. **Observação:** 2 tickets novos aguardando triagem
-"""
-
-def get_system_prompt(enable_vsa: bool) -> str:
-    """Get appropriate system prompt based on VSA mode."""
+def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
+    """Get appropriate system prompt based on VSA mode. include_examples=False saves ~50% input tokens.
+    Prompt is kept stable (date only, no time) so OpenRouter can cache it; check usage.cached_tokens in responses.
+    """
     from datetime import datetime
     from zoneinfo import ZoneInfo
-    
-    data_atual = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
-    
+
+    # Date only (no time) so prefix is stable for prompt caching across requests in the same day
+    data_atual = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y")
+    suffix = f"\n\nData: {data_atual} (São Paulo)"
+
     if enable_vsa:
-        return f"{VSA_ITIL_SYSTEM_PROMPT}\n\n📅 Data/Hora atual: {data_atual} (São Paulo)"
-    else:
-        return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
+        prompt = VSA_CORE_PROMPT
+        if include_examples:
+            prompt = prompt + VSA_EXAMPLES_PROMPT
+        return prompt + suffix
+    return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
 
 @router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -269,9 +163,10 @@ async def chat(request: ChatRequest):
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
-                system_prompt=get_system_prompt(True),  # Use complete ITIL prompt
-                enable_itil=False,  # Disable internal classifier (prompt handles it)
+                system_prompt=get_system_prompt(True),
+                enable_itil=False,
                 enable_planning=False,
+                fast_model_name=_resolve_fast_model(),
             )
             logger.info("🤖 Using UnifiedAgent (ITIL mode)")
         else:
@@ -351,9 +246,10 @@ async def stream_chat(request: ChatRequest):
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
-                system_prompt=get_system_prompt(True),  # Use complete ITIL prompt
-                enable_itil=False,  # Disable internal classifier (prompt handles it)
+                system_prompt=get_system_prompt(True),
+                enable_itil=False,
                 enable_planning=False,
+                fast_model_name=_resolve_fast_model(),
             )
             logger.info("🤖 Using UnifiedAgent (ITIL mode) [stream]")
         else:
