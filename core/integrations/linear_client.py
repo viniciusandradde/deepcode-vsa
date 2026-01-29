@@ -78,10 +78,20 @@ class LinearClient:
             return ToolResult.ok(data.get("data", {}), operation="graphql_query")
 
         except httpx.HTTPStatusError as e:
-            return ToolResult.fail(
-                f"HTTP Error: {e.response.status_code}",
-                operation="graphql_query"
-            )
+            detail = ""
+            try:
+                body = e.response.json() if e.response.headers.get("content-type", "").startswith("application/json") else {}
+                detail = body.get("errors", body.get("message", e.response.text or ""))
+                if isinstance(detail, list):
+                    detail = "; ".join(str(x) for x in detail[:3])
+            except Exception:
+                detail = e.response.text[:200] if e.response.text else ""
+            msg = f"HTTP Error: {e.response.status_code}"
+            if detail:
+                msg += f" — {detail}"
+            if e.response.status_code == 401:
+                msg += " (verifique LINEAR_API_KEY em .env e em https://linear.app/settings/api)"
+            return ToolResult.fail(msg, operation="graphql_query")
         except Exception as e:
             return ToolResult.fail(str(e), operation="graphql_query")
 

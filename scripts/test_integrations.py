@@ -154,6 +154,8 @@ async def test_linear():
 
         if not result.success:
             print(f"❌ Falha ao buscar teams: {result.error}")
+            if "401" in str(result.error):
+                print("   Dica: Verifique LINEAR_API_KEY em .env (gerar em https://linear.app/settings/api)")
             return False
 
         teams = result.output.get('teams', [])
