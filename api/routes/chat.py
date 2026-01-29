@@ -52,11 +52,32 @@ def _resolve_fast_model() -> str:
 
 
 # Router por regras: detecta intenção de relatório para bypass LLM (zero tokens)
+# Padrões específicos para evitar falsos positivos - devem ser comandos simples
 INTENT_PATTERNS = {
-    "glpi_tickets": re.compile(r"\b(tickets?|glpi|chamados?|listar\s+tickets?)\b", re.I),
-    "zabbix_alerts": re.compile(r"\b(alertas?|zabbix|monitoramento)\b", re.I),
-    "dashboard": re.compile(r"\b(dashboard|status\s+geral|visao\s+geral)\b", re.I),
-    "linear_issues": re.compile(r"\b(linear|issues?|tarefas?)\b", re.I),
+    # GLPI: "tickets", "chamados", "listar tickets", "glpi", "glpi tickets"
+    "glpi_tickets": re.compile(
+        r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(os\s+)?(ultimos?\s+)?(\d+\s+)?"
+        r"(tickets?|chamados?|glpi)(\s+(do\s+)?glpi|\s+abertos?|\s+novos?|\s+recentes?)?\.?$",
+        re.I
+    ),
+    # Zabbix: "alertas", "alertas zabbix", "zabbix alertas", "problemas zabbix"
+    "zabbix_alerts": re.compile(
+        r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(os\s+)?(ultimos?\s+)?(\d+\s+)?"
+        r"(alertas?|problemas?|zabbix|alarmes?)(\s+(do\s+)?zabbix|\s+ativos?|\s+criticos?)?\.?$",
+        re.I
+    ),
+    # Dashboard: "dashboard", "visão geral", "status geral", "resumo"
+    "dashboard": re.compile(
+        r"^(mostrar?|ver|exibir)?\s*(o\s+)?"
+        r"(dashboard|status\s*geral|visao\s*geral|resumo(\s+geral)?|painel)\.?$",
+        re.I
+    ),
+    # Linear: "issues", "issues linear", "tarefas", "backlog"
+    "linear_issues": re.compile(
+        r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(as\s+)?(ultimas?\s+)?(\d+\s+)?"
+        r"(issues?|tarefas?|linear|backlog)(\s+(do\s+)?linear)?\.?$",
+        re.I
+    ),
 }
 
 
@@ -69,6 +90,77 @@ def _resolve_intent(message: str) -> str | None:
         if pattern.search(msg_lower):
             return intent
     return None
+
+
+async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
+    """Gera relatório via código (sem LLM) baseado no intent detectado.
+    
+    Returns:
+        (markdown_report, success)
+    """
+    from core.reports import format_glpi_report, format_zabbix_report, format_linear_report
+    from core.reports.dashboard import format_dashboard_report
+    
+    try:
+        if intent == "glpi_tickets":
+            from core.tools.glpi import get_client
+            client = get_client()
+            result = await client.get_tickets(limit=15)
+            if result.success:
+                return format_glpi_report(result.output), True
+            return f"**Erro GLPI:** {result.error}", False
+            
+        elif intent == "zabbix_alerts":
+            from core.tools.zabbix import get_client
+            client = get_client()
+            result = await client.get_problems(limit=15, severity=3)
+            if result.success:
+                data = {"problems": result.output, "count": len(result.output), "min_severity": 3}
+                return format_zabbix_report(data), True
+            return f"**Erro Zabbix:** {result.error}", False
+            
+        elif intent == "linear_issues":
+            from core.tools.linear import get_client
+            client = get_client()
+            result = await client.get_issues(limit=15)
+            if result.success:
+                return format_linear_report(result.output), True
+            return f"**Erro Linear:** {result.error}", False
+            
+        elif intent == "dashboard":
+            # Dashboard combina GLPI + Zabbix
+            glpi_data = None
+            zabbix_data = None
+            
+            try:
+                from core.tools.glpi import get_client as get_glpi_client
+                client = get_glpi_client()
+                result = await client.get_tickets(limit=10)
+                if result.success:
+                    glpi_data = result.output
+                else:
+                    glpi_data = {"error": result.error}
+            except Exception as e:
+                glpi_data = {"error": str(e)}
+            
+            try:
+                from core.tools.zabbix import get_client as get_zabbix_client
+                client = get_zabbix_client()
+                result = await client.get_problems(limit=10, severity=3)
+                if result.success:
+                    zabbix_data = {"problems": result.output, "count": len(result.output), "min_severity": 3}
+                else:
+                    zabbix_data = {"error": result.error}
+            except Exception as e:
+                zabbix_data = {"error": str(e)}
+            
+            return format_dashboard_report(glpi_data=glpi_data, zabbix_data=zabbix_data), True
+        
+        return None, False
+        
+    except Exception as e:
+        logger.exception("Report generation failed for intent %s: %s", intent, e)
+        return f"**Erro ao gerar relatório:** {e}", False
 
 # Phase 2: ITIL System Prompt for VSA Mode (compressed: core + examples on demand)
 VSA_CORE_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), especialista em Gestão de TI (ITIL, GUT).
@@ -131,6 +223,25 @@ def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
 async def chat(request: ChatRequest):
     """Chat endpoint - synchronous."""
     try:
+        # Generate thread_id if not provided
+        thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
+
+        # === RULE-BASED ROUTER: Zero LLM tokens for known report intents ===
+        # Check if message matches a known report pattern (GLPI, Zabbix, Linear, Dashboard)
+        intent = _resolve_intent(request.message)
+        if intent:
+            logger.info("📊 [RULE-ROUTER] Intent detectado: %s (bypass LLM)", intent)
+            report_md, success = await _generate_report_by_intent(intent)
+            if success and report_md:
+                return ChatResponse(
+                    response=report_md,
+                    thread_id=thread_id,
+                    model="rule-based"  # Indicates no LLM was used
+                )
+            # If report generation failed, fall through to LLM
+            logger.warning("⚠️ Report generation failed, falling back to LLM")
+
+        # === LLM PATH: Use agent for complex/unknown intents ===
         # Get checkpointer (initialized via lifespan)
         checkpointer = get_async_checkpointer()
 
@@ -178,9 +289,6 @@ async def chat(request: ChatRequest):
             )
             logger.info("🤖 Using SimpleAgent")
         
-        # Generate thread_id if not provided
-        thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
-        
         # Invoke agent
         config = {
             "configurable": {
@@ -213,6 +321,55 @@ async def stream_chat(request: ChatRequest):
     from fastapi.responses import StreamingResponse
     import json
 
+    # Generate thread_id if not provided
+    thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
+
+    # === RULE-BASED ROUTER: Zero LLM tokens for known report intents ===
+    intent = _resolve_intent(request.message)
+    if intent:
+        logger.info("📊 [RULE-ROUTER/STREAM] Intent detectado: %s (bypass LLM)", intent)
+        
+        async def generate_report_stream():
+            """Stream do relatório gerado por código (simula streaming)."""
+            try:
+                # Enviar evento start
+                yield f"data: {json.dumps({'type': 'start', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
+                
+                report_md, success = await _generate_report_by_intent(intent)
+                
+                if success and report_md:
+                    # Envia conteúdo em chunks para simular streaming
+                    # Divide em partes menores para UX melhor
+                    chunk_size = 200
+                    for i in range(0, len(report_md), chunk_size):
+                        chunk = report_md[i:i + chunk_size]
+                        data = {
+                            "type": "content",
+                            "content": chunk,
+                            "thread_id": thread_id,
+                            "model": "rule-based"
+                        }
+                        yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                else:
+                    # Erro: envia como conteúdo normal
+                    data = {
+                        "type": "content",
+                        "content": report_md or "Erro ao gerar relatório",
+                        "thread_id": thread_id,
+                        "model": "rule-based"
+                    }
+                    yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                
+                # Evento done
+                yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
+                
+            except Exception as e:
+                logger.exception("Report stream error: %s", e)
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+        
+        return StreamingResponse(generate_report_stream(), media_type="text/event-stream")
+
+    # === LLM PATH: Use agent for complex/unknown intents ===
     try:
         # Get checkpointer (initialized via lifespan)
         checkpointer = get_async_checkpointer()
@@ -260,9 +417,6 @@ async def stream_chat(request: ChatRequest):
                 system_prompt=get_system_prompt(False),
             )
             logger.info("🤖 Using SimpleAgent [stream]")
-        
-        # Generate thread_id if not provided
-        thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
         
         config = {
             "configurable": {
