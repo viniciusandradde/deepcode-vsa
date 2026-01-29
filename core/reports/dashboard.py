@@ -9,6 +9,8 @@ def format_dashboard_report(
     glpi_data: dict | None = None,
     zabbix_data: dict | None = None,
     linear_data: dict | None = None,
+    glpi_base_url: str | None = None,
+    zabbix_base_url: str | None = None,
 ) -> str:
     """Gera relatório dashboard combinando GLPI, Zabbix e opcionalmente Linear."""
     sections = []
@@ -16,10 +18,10 @@ def format_dashboard_report(
     sections.append("## Dashboard - Visão geral\n")
 
     if glpi_data is not None:
-        sections.append(format_glpi_report(glpi_data))
+        sections.append(format_glpi_report(glpi_data, glpi_base_url=glpi_base_url))
 
     if zabbix_data is not None:
-        sections.append(format_zabbix_report(zabbix_data))
+        sections.append(format_zabbix_report(zabbix_data, zabbix_base_url=zabbix_base_url))
 
     if linear_data is not None:
         sections.append(format_linear_report(linear_data))

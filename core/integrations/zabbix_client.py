@@ -85,12 +85,13 @@ class ZabbixClient:
         except Exception as e:
             return ToolResult.fail(str(e), operation=method)
 
-    async def get_problems(self, limit: int = 50, severity: int = 3) -> ToolResult:
+    async def get_problems(self, limit: int = 50, severity: int = 3, with_hosts: bool = True) -> ToolResult:
         """Get active problems.
 
         Args:
             limit: Max records
             severity: Min severity (0-5) - Note: applied as filter after retrieval
+            with_hosts: If True, enriches each problem with host name via trigger.get
         """
         params = {
             "output": "extend",
@@ -107,6 +108,28 @@ class ZabbixClient:
             problems = result.output if isinstance(result.output, list) else []
             filtered = [p for p in problems if int(p.get('severity', 0)) >= severity]
             result.output = filtered
+
+        # Enrich with host names via trigger.get (problem.get does not return hosts)
+        if result.success and with_hosts and result.output:
+            problems = result.output if isinstance(result.output, list) else []
+            trigger_ids = list({str(p.get("objectid")) for p in problems if p.get("objectid")})
+            if trigger_ids:
+                trig_result = await self._rpc_call("trigger.get", {
+                    "triggerids": trigger_ids,
+                    "output": ["triggerid"],
+                    "selectHosts": ["name"],
+                })
+                if trig_result.success and isinstance(trig_result.output, list):
+                    # Map triggerid -> host name (first host)
+                    trigger_to_host: dict[str, str] = {}
+                    for t in trig_result.output:
+                        tid = t.get("triggerid")
+                        hosts = t.get("hosts") or []
+                        name = (hosts[0].get("name") or "") if hosts else ""
+                        if tid:
+                            trigger_to_host[str(tid)] = name
+                    for p in problems:
+                        p["host_name"] = trigger_to_host.get(str(p.get("objectid")), "")
 
         return result
 

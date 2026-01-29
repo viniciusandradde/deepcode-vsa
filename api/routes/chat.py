@@ -109,6 +109,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
     Returns:
         (markdown_report, success)
     """
+    from core.config import get_settings
     from core.reports import (
         format_glpi_report,
         format_zabbix_report,
@@ -117,43 +118,45 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
         format_pending_old_report,
     )
     from core.reports.dashboard import format_dashboard_report
-    
+
     try:
+        settings = get_settings()
+        glpi_base_url = settings.glpi.base_url if settings.glpi.enabled else None
+        zabbix_base_url = settings.zabbix.base_url if settings.zabbix.enabled else None
+
         if intent == "glpi_new_unassigned":
-            # Chamados novos sem atribuição há mais de 24h
             from core.tools.glpi import get_client
             client = get_client()
             result = await client.get_tickets_new_unassigned(min_age_hours=24, limit=20)
             if result.success:
-                return format_new_unassigned_report(result.output), True
+                return format_new_unassigned_report(result.output, glpi_base_url=glpi_base_url), True
             return f"**Erro GLPI:** {result.error}", False
-            
+
         elif intent == "glpi_pending_old":
-            # Chamados pendentes há mais de 7 dias
             from core.tools.glpi import get_client
             client = get_client()
             result = await client.get_tickets_pending_old(min_age_days=7, limit=20)
             if result.success:
-                return format_pending_old_report(result.output), True
+                return format_pending_old_report(result.output, glpi_base_url=glpi_base_url), True
             return f"**Erro GLPI:** {result.error}", False
-            
+
         elif intent == "glpi_tickets":
             from core.tools.glpi import get_client
             client = get_client()
             result = await client.get_tickets(limit=15)
             if result.success:
-                return format_glpi_report(result.output), True
+                return format_glpi_report(result.output, glpi_base_url=glpi_base_url), True
             return f"**Erro GLPI:** {result.error}", False
-            
+
         elif intent == "zabbix_alerts":
             from core.tools.zabbix import get_client
             client = get_client()
             result = await client.get_problems(limit=15, severity=3)
             if result.success:
                 data = {"problems": result.output, "count": len(result.output), "min_severity": 3}
-                return format_zabbix_report(data), True
+                return format_zabbix_report(data, zabbix_base_url=zabbix_base_url), True
             return f"**Erro Zabbix:** {result.error}", False
-            
+
         elif intent == "linear_issues":
             from core.tools.linear import get_client
             client = get_client()
@@ -161,12 +164,11 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             if result.success:
                 return format_linear_report(result.output), True
             return f"**Erro Linear:** {result.error}", False
-            
+
         elif intent == "dashboard":
-            # Dashboard combina GLPI + Zabbix
             glpi_data = None
             zabbix_data = None
-            
+
             try:
                 from core.tools.glpi import get_client as get_glpi_client
                 client = get_glpi_client()
@@ -177,7 +179,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
                     glpi_data = {"error": result.error}
             except Exception as e:
                 glpi_data = {"error": str(e)}
-            
+
             try:
                 from core.tools.zabbix import get_client as get_zabbix_client
                 client = get_zabbix_client()
@@ -188,9 +190,14 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
                     zabbix_data = {"error": result.error}
             except Exception as e:
                 zabbix_data = {"error": str(e)}
-            
-            return format_dashboard_report(glpi_data=glpi_data, zabbix_data=zabbix_data), True
-        
+
+            return format_dashboard_report(
+                glpi_data=glpi_data,
+                zabbix_data=zabbix_data,
+                glpi_base_url=glpi_base_url,
+                zabbix_base_url=zabbix_base_url,
+            ), True
+
         return None, False
         
     except Exception as e:

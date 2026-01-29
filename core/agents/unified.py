@@ -498,18 +498,28 @@ class UnifiedAgent(BaseAgent):
         if not glpi_data and not zabbix_data and not linear_data:
             return None
         try:
+            from core.config import get_settings
             from core.reports import format_glpi_report, format_zabbix_report, format_linear_report
             from core.reports.dashboard import format_dashboard_report
+            settings = get_settings()
+            glpi_base_url = settings.glpi.base_url if settings.glpi.enabled else None
+            zabbix_base_url = settings.zabbix.base_url if settings.zabbix.enabled else None
             parts = []
             if glpi_data:
-                parts.append(format_glpi_report(glpi_data))
+                parts.append(format_glpi_report(glpi_data, glpi_base_url=glpi_base_url))
             if zabbix_data:
-                parts.append(format_zabbix_report(zabbix_data))
+                parts.append(format_zabbix_report(zabbix_data, zabbix_base_url=zabbix_base_url))
             if linear_data:
                 parts.append(format_linear_report(linear_data))
             if len(parts) == 1:
                 return parts[0]
-            return format_dashboard_report(glpi_data=glpi_data, zabbix_data=zabbix_data, linear_data=linear_data)
+            return format_dashboard_report(
+                glpi_data=glpi_data,
+                zabbix_data=zabbix_data,
+                linear_data=linear_data,
+                glpi_base_url=glpi_base_url,
+                zabbix_base_url=zabbix_base_url,
+            )
         except Exception as e:
             dbg(f"Report format failed: {e}")
             return None

@@ -31,10 +31,26 @@ def _safe_get(obj: dict, key: str, default: Any = "") -> Any:
     return val
 
 
-def format_tickets_table(tickets: list[dict], limit: int = 10) -> str:
-    """Formata lista de tickets como tabela markdown."""
+def _glpi_frontend_base(base_url: str | None) -> str:
+    """Remove /apirest.php da URL da API para obter a base do frontend GLPI."""
+    if not base_url or not base_url.strip():
+        return ""
+    base = base_url.rstrip("/")
+    if "/apirest.php" in base:
+        base = base.split("/apirest.php")[0].rstrip("/")
+    return base
+
+
+def format_tickets_table(
+    tickets: list[dict],
+    limit: int = 10,
+    glpi_base_url: str | None = None,
+) -> str:
+    """Formata lista de tickets como tabela markdown (ID com link para o ticket no GLPI)."""
     if not tickets:
         return "Nenhum ticket encontrado."
+
+    base = _glpi_frontend_base(glpi_base_url)
 
     lines = [
         "| ID | Título | Status | Prioridade |",
@@ -47,12 +63,13 @@ def format_tickets_table(tickets: list[dict], limit: int = 10) -> str:
         priority_id = _safe_get(t, "priority")
         status = STATUS_LABELS.get(status_id, str(status_id)) if status_id else "?"
         priority = PRIORITY_LABELS.get(priority_id, str(priority_id)) if priority_id else "?"
-        lines.append(f"| #{tid} | {name} | {status} | {priority} |")
+        id_cell = f"[#{tid}]({base}/front/ticket.form.php?id={tid})" if base and tid != "?" else f"#{tid}"
+        lines.append(f"| {id_cell} | {name} | {status} | {priority} |")
 
     return "\n".join(lines)
 
 
-def format_glpi_report(data: dict) -> str:
+def format_glpi_report(data: dict, glpi_base_url: str | None = None) -> str:
     """Relatório completo GLPI a partir do dict retornado por glpi_get_tickets."""
     if data.get("error"):
         return f"**Erro ao consultar GLPI:** {data['error']}"
@@ -75,15 +92,21 @@ def format_glpi_report(data: dict) -> str:
 
 **Últimos tickets:**
 
-{format_tickets_table(tickets)}
+{format_tickets_table(tickets, glpi_base_url=glpi_base_url)}
 """
     return report
 
 
-def format_tickets_table_with_date(tickets: list[dict], limit: int = 15) -> str:
-    """Formata lista de tickets como tabela markdown incluindo data de criação."""
+def format_tickets_table_with_date(
+    tickets: list[dict],
+    limit: int = 15,
+    glpi_base_url: str | None = None,
+) -> str:
+    """Formata lista de tickets como tabela markdown incluindo data (ID com link para o GLPI)."""
     if not tickets:
         return "Nenhum ticket encontrado."
+
+    base = _glpi_frontend_base(glpi_base_url)
 
     lines = [
         "| ID | Título | Criado em | Prioridade |",
@@ -103,12 +126,13 @@ def format_tickets_table_with_date(tickets: list[dict], limit: int = 15) -> str:
                 pass
         priority_id = _safe_get(t, "priority")
         priority = PRIORITY_LABELS.get(priority_id, str(priority_id)) if priority_id else "?"
-        lines.append(f"| #{tid} | {name} | {date_str} | {priority} |")
+        id_cell = f"[#{tid}]({base}/front/ticket.form.php?id={tid})" if base and tid != "?" else f"#{tid}"
+        lines.append(f"| {id_cell} | {name} | {date_str} | {priority} |")
 
     return "\n".join(lines)
 
 
-def format_new_unassigned_report(data: dict) -> str:
+def format_new_unassigned_report(data: dict, glpi_base_url: str | None = None) -> str:
     """Relatório de tickets novos sem atribuição há mais de 24h."""
     if data.get("error"):
         return f"**Erro ao consultar GLPI:** {data['error']}"
@@ -130,14 +154,14 @@ Nenhum chamado novo sem atribuição há mais de {min_hours}h.
 
 **Atenção:** {total_found} chamado(s) aguardando atribuição!
 
-{format_tickets_table_with_date(tickets)}
+{format_tickets_table_with_date(tickets, glpi_base_url=glpi_base_url)}
 
 **Ação recomendada:** Atribuir técnico responsável para cada chamado listado acima.
 """
     return report
 
 
-def format_pending_old_report(data: dict) -> str:
+def format_pending_old_report(data: dict, glpi_base_url: str | None = None) -> str:
     """Relatório de tickets pendentes há mais de 7 dias."""
     if data.get("error"):
         return f"**Erro ao consultar GLPI:** {data['error']}"
@@ -159,7 +183,7 @@ Nenhum chamado pendente há mais de {min_days} dias.
 
 **Atenção:** {total_found} chamado(s) parado(s) há muito tempo!
 
-{format_tickets_table_with_date(tickets)}
+{format_tickets_table_with_date(tickets, glpi_base_url=glpi_base_url)}
 
 **Ação recomendada:** 
 - Verificar se há bloqueio ou dependência externa

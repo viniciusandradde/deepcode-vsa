@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Query
 
+from core.config import get_settings
 from core.reports import (
     format_glpi_report,
     format_zabbix_report,
@@ -38,7 +39,9 @@ async def get_glpi_tickets_report(
             data = {"error": result.error}
         else:
             data = result.output
-        markdown = format_glpi_report(data)
+        settings = get_settings()
+        glpi_base_url = settings.glpi.base_url if settings.glpi.enabled else None
+        markdown = format_glpi_report(data, glpi_base_url=glpi_base_url)
         return {"markdown": markdown, "data": data}
     except Exception as e:
         logger.exception("GLPI report failed: %s", e)
@@ -60,7 +63,9 @@ async def get_zabbix_alerts_report(
             data = {"error": result.error}
         else:
             data = {"problems": result.output, "count": len(result.output), "min_severity": min_severity}
-        markdown = format_zabbix_report(data)
+        settings = get_settings()
+        zabbix_base_url = settings.zabbix.base_url if settings.zabbix.enabled else None
+        markdown = format_zabbix_report(data, zabbix_base_url=zabbix_base_url)
         return {"markdown": markdown, "data": data}
     except Exception as e:
         logger.exception("Zabbix report failed: %s", e)
@@ -127,7 +132,16 @@ async def get_dashboard_report(
         errors.append(f"Zabbix: {e}")
         zabbix_data = {"error": str(e)}
 
-    markdown = format_dashboard_report(glpi_data=glpi_data, zabbix_data=zabbix_data, linear_data=linear_data)
+    settings = get_settings()
+    glpi_base_url = settings.glpi.base_url if settings.glpi.enabled else None
+    zabbix_base_url = settings.zabbix.base_url if settings.zabbix.enabled else None
+    markdown = format_dashboard_report(
+        glpi_data=glpi_data,
+        zabbix_data=zabbix_data,
+        linear_data=linear_data,
+        glpi_base_url=glpi_base_url,
+        zabbix_base_url=zabbix_base_url,
+    )
     return {
         "markdown": markdown,
         "data": {"glpi": glpi_data, "zabbix": zabbix_data},
