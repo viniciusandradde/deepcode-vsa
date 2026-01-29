@@ -20,37 +20,68 @@
 
 # Modelos disponíveis:
 models:
+  # --- Tier VSA (core/config.py) ---
+  # fast_model: classificação, GUT
+  - id: meta-llama/llama-3.3-70b-instruct
+    label: Llama 3.3 70B (fast)
+    input_cost: 0.00
+    output_cost: 0.00
+
+  # smart_model: RCA, planejamento
+  - id: deepseek/deepseek-chat
+    label: DeepSeek Chat (smart)
+    input_cost: 0.14
+    output_cost: 0.28
+
+  # premium_model: fallback, tarefas críticas
+  - id: anthropic/claude-3.5-sonnet
+    label: Claude 3.5 Sonnet (premium)
+    input_cost: 3.00
+    output_cost: 15.00
+
+  # creative_model: relatórios, resumos
+  - id: minimax/minimax-m2-her
+    label: MiniMax M2 Her (creative)
+    input_cost: 0.26
+    output_cost: 1.02
+
+  # --- Top 3 Free (para teste) ---
+  - id: z-ai/glm-4.5-air:free
+    label: GLM 4.5 Air (free)
+    input_cost: 0.00
+    output_cost: 0.00
+    default: true
+
+  - id: meta-llama/llama-3.3-70b-instruct:free
+    label: Llama 3.3 70B (free)
+    input_cost: 0.00
+    output_cost: 0.00
+
+  - id: tngtech/deepseek-r1t2-chimera:free
+    label: DeepSeek R1T2 Chimera (free)
+    input_cost: 0.00
+    output_cost: 0.00
+
+  # --- Outros ---
   - id: google/gemini-2.5-flash
     label: Gemini 2.5 Flash
-    input_cost: 0.30    # USD por 1M tokens de entrada
-    output_cost: 2.50   # USD por 1M tokens de saída
+    input_cost: 0.30
+    output_cost: 2.50
 
   - id: openrouter/auto
     label: Auto Router
     input_cost: 0.00
     output_cost: 0.00
-    
 
   - id: z-ai/glm-4.7-flash
     label: GLM 4.7 Flash
     input_cost: 0.07
     output_cost: 0.40
-    
-  - id: z-ai/glm-4.5-air:free
-    label: GLM 4.5 Air:free
-    input_cost: 0.00
-    output_cost: 0.00
-    default: true  # Modelo padrão
 
   - id: deepseek/deepseek-v3
     label: DeepSeek V3
     input_cost: 0.28
     output_cost: 0.40
-    
-  - id: minimax/minimax-m2-her
-    label: MiniMax M2 Her
-    input_cost: 0.26
-    output_cost: 1.02
 
   - id: liquid/lfm-2.5-1.2b-thinking:free
     label: Liquid LFM 1.2B (Free)

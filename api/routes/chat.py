@@ -26,29 +26,34 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Tiered models: cheap for router/classifier, tool-capable for executor
+# Tiered models: vêm de core/config.py (LLMSettings); env pode sobrescrever
 # https://openrouter.ai/docs/guides/features/tool-calling
-TOOL_CAPABLE_MODEL = os.getenv("TOOL_CAPABLE_MODEL", "google/gemini-2.5-flash")
-FAST_MODEL = os.getenv("FAST_MODEL", "z-ai/glm-4.7-flash")  # Router, Classifier
-SUMMARY_MODEL = os.getenv("SUMMARY_MODEL", "deepseek/deepseek-v3")  # Optional short summary
+
+
+def _get_tool_capable_default() -> str:
+    """Default para chamadas com ferramentas: TOOL_CAPABLE_MODEL ou config smart_model."""
+    from core.config import get_settings
+    return os.getenv("TOOL_CAPABLE_MODEL") or get_settings().llm.smart_model
 
 
 def _resolve_model_for_request(request: ChatRequest, has_tools: bool) -> str:
-    """Quando há ferramentas, usa modelo compatível com tool use; senão usa modelo padrão."""
+    """Modelo da requisição: respeita request.model; senão DEFAULT_MODEL_NAME ou default do tier."""
+    default = os.getenv("DEFAULT_MODEL_NAME") or _get_tool_capable_default()
+    chosen = request.model or default
     if has_tools:
-        requested = request.model or os.getenv("DEFAULT_MODEL_NAME", TOOL_CAPABLE_MODEL)
         logger.info(
-            "[CHAT] Ferramentas ativas: modelo tools=%s (solicitado=%s)",
-            TOOL_CAPABLE_MODEL,
-            requested,
+            "[CHAT] Ferramentas ativas: modelo=%s (solicitado=%s, default tools=%s)",
+            chosen,
+            request.model or "(não informado)",
+            _get_tool_capable_default(),
         )
-        return TOOL_CAPABLE_MODEL
-    return request.model or os.getenv("DEFAULT_MODEL_NAME", TOOL_CAPABLE_MODEL)
+    return chosen
 
 
 def _resolve_fast_model() -> str:
-    """Modelo barato para router/classifier (tiered)."""
-    return FAST_MODEL
+    """Modelo barato para router/classifier (tiered): FAST_MODEL ou config fast_model."""
+    from core.config import get_settings
+    return os.getenv("FAST_MODEL") or get_settings().llm.fast_model
 
 
 # Router por regras: detecta intenção de relatório para bypass LLM (zero tokens)
