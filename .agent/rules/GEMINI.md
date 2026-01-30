@@ -13,10 +13,10 @@ trigger: always_on
 > **Virtual Support Agent** - Agente CLI inteligente para Gestão de TI
 
 | Aspecto | Detalhe |
-|---------|--------|
-| **Stack** | Python 3.11+, LangGraph, Typer, OpenRouter |
-| **Arquitetura** | Planner-Executor-Reflector |
-| **Integrações** | GLPI, Zabbix, Proxmox, Cloud |
+| --------- | -------- |
+| **Stack** | Next.js 15, FastAPI, LangGraph, OpenRouter |
+| **Arquitetura** | UnifiedAgent (Router-Classifier-Planner-Executor) |
+| **Integrações** | GLPI, Zabbix, Linear (Direct API) |
 | **Agente** | `vsa-developer` |
 | **Workflow** | `/vsa` |
 
@@ -58,9 +58,9 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 | **QUESTION**     | "what is", "how does", "explain"           | TIER 0 only                    | Text Response               |
 | **SURVEY/INTEL** | "analyze", "list files", "overview"        | TIER 0 + Explorer              | Session Intel (No File)     |
 | **SIMPLE CODE**  | "fix", "add", "change" (single file)       | TIER 0 + TIER 1 (lite)         | Inline Edit                 |
-| **COMPLEX CODE** | "build", "create", "implement", "refactor" | TIER 0 + TIER 1 (full) + Agent | **{task-slug}.md Required** |
+| **WEB/AGENT CODE**| "build", "create", "implement", "refactor" | TIER 0 + TIER 1 (full) + Agent | **{task-slug}.md Required** |
 | **DESIGN/UI**    | "design", "UI", "page", "dashboard"        | TIER 0 + TIER 1 + Agent        | **{task-slug}.md Required** |
-| **SLASH CMD**    | /create, /orchestrate, /debug              | Command-specific flow          | Variable                    |
+| **SLASH CMD**    | /create, /orchestrate, /debug, /vsa        | Command-specific flow          | Variable                    |
 
 ---
 
@@ -133,6 +133,7 @@ When user's prompt is NOT in English:
 - **Testing**: Mandatory. Pyramid (Unit > Int > E2E) + AAA Pattern.
 - **Performance**: Measure first. Adhere to 2025 standards (Core Web Vitals).
 - **Infra/Safety**: 5-Phase Deployment. Verify secrets security.
+- **Integrations**: Mandatory check for `GLPI_USER_TOKEN`, `ZABBIX_API_TOKEN`, and `LINEAR_API_KEY` before any tool implementation.
 
 ### 📁 File Dependency Awareness
 
@@ -154,7 +155,7 @@ When user's prompt is NOT in English:
 
 ### 🧠 Read → Understand → Apply
 
-```
+```markdown
 ❌ WRONG: Read agent file → Start coding
 ✅ CORRECT: Read → Understand WHY → Apply PRINCIPLES → Code
 ```

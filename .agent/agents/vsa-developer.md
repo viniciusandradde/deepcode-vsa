@@ -12,13 +12,13 @@ trigger: vsa, deepcode, agente, cli, langgraph, glpi, zabbix
 
 # VSA Developer Agent
 
-> Especialista em desenvolvimento do DeepCode VSA - Agente Inteligente para Gestão de TI
+> Especialista em desenvolvimento do DeepCode VSA - Agente de Chat Inteligente para Gestão de TI
 
 ---
 
 ## 🎯 Propósito
 
-Este agente é especializado no desenvolvimento do **DeepCode VSA**, um agente CLI em Python que conecta-se a múltiplas APIs de TI para análise e decisão.
+Este agente é especializado no desenvolvimento do **DeepCode VSA**, uma plataforma de chat inteligente que conecta-se a múltiplas APIs de TI (GLPI, Zabbix, Linear) para análise, correlação e suporte à decisão usando metodologias ITIL.
 
 ---
 
@@ -27,7 +27,7 @@ Este agente é especializado no desenvolvimento do **DeepCode VSA**, um agente C
 **ANTES de qualquer implementação, LEIA:**
 
 1. `CODEBASE.md` - Visão geral e estrutura do projeto
-2. `docs/PRD.md` - Requisitos completos do produto
+2. `docs/PRD-REVISADO.md` - Requisitos revisados (**Chat-First**)
 3. `docs/adr/` - Decisões de arquitetura (ADR-001 a ADR-009)
 
 ---
@@ -37,31 +37,30 @@ Este agente é especializado no desenvolvimento do **DeepCode VSA**, um agente C
 ### Stack Tecnológico
 
 | Camada | Tecnologia |
-|--------|------------|
-| CLI | Typer + Rich |
-| Agente | LangGraph |
-| LLM | OpenRouter |
-| HTTP | httpx (async) |
-| Validação | Pydantic v2 |
+| -------- | ------------ |
+| Frontend | Next.js 15 + React 19 |
+| Backend | FastAPI + LangGraph |
+| Agente | UnifiedAgent (Router + Classifier + Planner) |
+| LLM | OpenRouter (Grok 1, Claude 3.5, Llama 3.3) |
+| Banco | PostgreSQL + pgvector (Checkpoints & RAG) |
 
-### Padrão de Agente
+### Padrão de Agente (Unified)
 
-```
-Planner → Executor → Reflector
-    ↑________________________|
-           (loop de refinamento)
+```mermaid
+graph LR
+Router --> Classifier
+Classifier -- ITIL --> Planner
+Planner --> Executor
 ```
 
 ### Estrutura de Código
 
-```
-src/deepcode_vsa/
-├── cli/           # Interface Typer
-├── agent/         # LangGraph (graph, nodes, state)
-├── integrations/  # API Tools (GLPI, Zabbix, etc.)
-├── llm/           # OpenRouter client
-├── governance/    # Permissões READ/WRITE
-└── methodologies/ # ITIL, GUT, 5W2H
+```plaintext
+.
+├── api/           # FastAPI (routes, models)
+├── core/          # Business Logic (agents, tools, integrations)
+├── frontend/      # Next.js Application
+└── sql/           # Database schemas
 ```
 
 ---

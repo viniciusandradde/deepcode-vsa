@@ -1,17 +1,14 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  
   // == Theme & Model Configuration ==
   "theme": "opencode",
   "model": "anthropic/claude-sonnet-4-20250514",
   "autoupdate": "notify",
-  
   // == Compaction Settings ==
   "compaction": {
     "auto": true,
     "prune": true
   },
-
   // == File Watcher Ignore Patterns ==
   "watcher": {
     "ignore": [
@@ -28,7 +25,6 @@
       ".ruff_cache/**"
     ]
   },
-
   // == Tool Permissions ==
   "permission": {
     "read": "allow",
@@ -45,14 +41,13 @@
     "bash": "ask",
     "lsp": "allow"
   },
-
   // == Custom Agents ==
   "agent": {
     // Override Build agent with project context
     "build": {
       "mode": "primary",
       "model": "anthropic/claude-sonnet-4-20250514",
-      "prompt": "{file:./AGENTS.md}",
+      "prompt": "You are a specialist in project planning and architecture.",
       "tools": {
         "write": true,
         "edit": true,
@@ -64,7 +59,7 @@
     "plan": {
       "mode": "primary",
       "model": "anthropic/claude-sonnet-4-20250514",
-      "prompt": "{file:./AGENTS.md}",
+      "prompt": "You are a specialist in analyzing project requirements.",
       "tools": {
         "write": false,
         "edit": false,
@@ -77,7 +72,7 @@
       "description": "Specialized agent for DeepCode VSA development with LangGraph, Python async patterns, and API integrations",
       "mode": "subagent",
       "model": "anthropic/claude-sonnet-4-20250514",
-      "prompt": "You are a specialist in developing the DeepCode VSA (Virtual Support Agent) project. Focus on:\n\n- Python 3.11+ with async/await patterns\n- LangGraph for agent orchestration (Planner-Executor-Reflector pattern)\n- Pydantic v2 for data validation\n- httpx for async HTTP calls\n- Typer + Rich for CLI\n- API-First architecture with Tool Registry\n- Governance: READ=automatic, WRITE=controlled, DELETE=blocked\n\nAlways read CODEBASE.md and docs/PRD.md for context. Follow ADRs in docs/adr/.\n\nKey patterns:\n1. All I/O operations MUST be async\n2. All data models MUST use Pydantic\n3. All API integrations MUST follow APITool contract\n4. Never implement DELETE operations\n5. WRITE operations require dry_run=True first",
+      "prompt": "You are a specialist in developing the DeepCode VSA (Virtual Support Agent) project. Focus on:\n\n- Next.js 15 for the Chat-First frontend interface\n- FastAPI + LangGraph for the backend agent orchestration\n- Python 3.11+ with async/await patterns\n- Pydantic v2 for data validation\n- Direct API integrations (GLPI, Zabbix, Linear) - NO MCP\n- UnifiedAgent architecture (Router-Classifier-Planner-Executor)\n- Governance: READ=automatic, WRITE=controlled, DELETE=blocked\n\nAlways read CODEBASE.md and docs/PRD-REVISADO.md for context. Follow ADRs in docs/adr/.",
       "tools": {
         "write": true,
         "edit": true,
@@ -125,7 +120,6 @@
       }
     }
   },
-
   // == Experimental Features ==
   "experimental": {
     "lsp": true
