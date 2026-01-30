@@ -6,19 +6,19 @@
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-display: ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
-  
+
   /* VSA Brand Colors - Orange */
   --vsa-orange-dark: #FF6B35;
   --vsa-orange: #FF8C42;
   --vsa-orange-light: #FFB347;
   --vsa-orange-lighter: #FFA726;
-  
+
   /* VSA Brand Colors - Blue */
   --vsa-blue-dark: #1E3A8A;
   --vsa-blue: #3B82F6;
   --vsa-blue-light: #60A5FA;
   --vsa-blue-lighter: #3B9EFF;
-  
+
   /* VSA Gradients */
   --vsa-orange-gradient: linear-gradient(135deg, #FF6B35 0%, #FF8C42 50%, #FFB347 100%);
   --vsa-blue-gradient: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #60A5FA 100%);
@@ -31,6 +31,7 @@ body {
 
 /* PWA Mobile Optimizations */
 @media (max-width: 768px) {
+
   /* Prevenir zoom em inputs */
   input,
   textarea,
@@ -63,6 +64,7 @@ body {
 
 /* PWA Standalone Mode */
 @media (display-mode: standalone) {
+
   /* Adicionar padding para áreas seguras */
   body {
     padding-top: env(safe-area-inset-top);
@@ -76,5 +78,3 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
 }
-
-
