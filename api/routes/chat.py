@@ -26,6 +26,7 @@ from core.tools.linear import (
     linear_create_project,
     linear_create_full_project,
 )
+from core.tools.planning import PLANNING_TOOLS
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -326,6 +327,11 @@ async def chat(request: ChatRequest):
                 linear_create_full_project,
             ])
             logger.info("✅ Linear tools enabled")
+        
+        # Planning tools
+        if request.enable_planning:
+            tools.extend(PLANNING_TOOLS)
+            logger.info("✅ Planning tools enabled")
 
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
@@ -462,6 +468,11 @@ async def stream_chat(request: ChatRequest):
                 linear_create_full_project,
             ])
             logger.info("✅ Linear tools enabled (stream)")
+        
+        # Planning tools
+        if request.enable_planning:
+            tools.extend(PLANNING_TOOLS)
+            logger.info("✅ Planning tools enabled (stream)")
 
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)

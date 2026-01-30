@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import clsx from "clsx";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -31,14 +32,25 @@ export function SettingsPanel() {
 
   return (
     <>
-      <Button
-        onClick={() => setIsOpen(!isOpen)}
-        variant="outline"
-        size="sm"
-        className="mb-4 border-vsa-blue/40 text-vsa-blue-light hover:bg-vsa-blue/10"
-      >
-        {isOpen ? "Ocultar" : "Mostrar"} Configurações
-      </Button>
+      <div className="flex flex-col gap-2 mb-4">
+        <Button
+          onClick={() => setIsOpen(!isOpen)}
+          variant="outline"
+          size="sm"
+          className="border-vsa-blue/40 text-vsa-blue-light hover:bg-vsa-blue/10"
+        >
+          {isOpen ? "Ocultar" : "Mostrar"} Configurações
+        </Button>
+        <Link href="/planning">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full border-vsa-orange/40 text-vsa-orange hover:bg-vsa-orange/10"
+          >
+            Planejamento de Projetos
+          </Button>
+        </Link>
+      </div>
 
       {isOpen && (
         <Card className="mb-4 border-white/10 bg-white/5">

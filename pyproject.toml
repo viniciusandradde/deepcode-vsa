@@ -28,6 +28,10 @@ dependencies = [
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
     "python-dotenv>=1.0.0",
+    
+    # Document Processing
+    "pypdf>=4.0.0",
+    "python-multipart>=0.0.9",  # For file uploads
 ]
 
 [project.optional-dependencies]

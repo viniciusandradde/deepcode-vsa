@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     enable_glpi: bool = False
     enable_zabbix: bool = False
     enable_linear: bool = False
+    enable_planning: bool = False  # Planning/NotebookLM tools
     dry_run: bool = True  # Safe by default
 
 

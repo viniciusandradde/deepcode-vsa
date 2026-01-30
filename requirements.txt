@@ -14,3 +14,7 @@ pydantic>=2.12.4
 httpx
 pydantic-settings
 pydantic-settings>=2.0.0
+
+# Document Processing
+pypdf>=4.0.0
+python-multipart>=0.0.9

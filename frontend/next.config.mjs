@@ -9,6 +9,16 @@ const nextConfig = {
       allowedOrigins: ["localhost", "agente-ai.hospitalevangelico.com.br"],
     },
   },
+  // Proxy para API backend - necessário quando acessado via domínio/proxy reverso
+  async rewrites() {
+    const backendUrl = process.env.API_BASE_URL || "http://backend:8000";
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+    ];
+  },
   // Desabilitar cache em desenvolvimento para evitar problemas de módulos ausentes
   ...(process.env.NODE_ENV === "development" && {
     webpack: (config, { dev, isServer }) => {

@@ -158,3 +158,8 @@ health:
 	curl -s http://localhost:8000/health || echo "Falha ao acessar /health"
 	@echo
 
+setup-planning-db:
+	@echo "Aplicando schema de planning no PostgreSQL..."
+	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/05_planning_schema.sql
+	@echo "✅ Schema de planning aplicado com sucesso!"
+
