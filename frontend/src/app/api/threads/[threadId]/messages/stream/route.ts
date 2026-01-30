@@ -15,6 +15,7 @@ interface PostPayload {
   enable_glpi?: boolean;
   enable_zabbix?: boolean;
   enable_linear?: boolean;
+  enable_planning?: boolean;
 }
 
 export async function POST(
@@ -38,7 +39,7 @@ export async function POST(
 
     // Log VSA flags
     if (body.enable_vsa) {
-      console.log("[VSA] Mode enabled - GLPI:", body.enable_glpi, "Zabbix:", body.enable_zabbix, "Linear:", body.enable_linear);
+      console.log("[VSA] Mode enabled - GLPI:", body.enable_glpi, "Zabbix:", body.enable_zabbix, "Linear:", body.enable_linear, "Planning:", body.enable_planning);
     }
 
     // Timeout para conexão inicial com o backend (120s) - evita hang sem resposta
@@ -61,6 +62,7 @@ export async function POST(
           enable_glpi: body.enable_glpi ?? false,
           enable_zabbix: body.enable_zabbix ?? false,
           enable_linear: body.enable_linear ?? false,
+          enable_planning: body.enable_planning ?? false,
         }),
         signal: controller.signal,
       });

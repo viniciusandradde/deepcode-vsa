@@ -8,7 +8,7 @@
 [![LangGraph](https://img.shields.io/badge/LangGraph-Latest-orange.svg)](https://langchain-ai.github.io/langgraph/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue.svg)](https://www.postgresql.org/)
 
-**Status:** 🚀 MVP v1.0 em desenvolvimento (65% completo) | **Última Atualização:** 2026-01-28
+**Status:** 🚀 MVP v1.0 em desenvolvimento (~75% completo) | **Última Atualização:** 2026-01-29
 
 ---
 
@@ -54,6 +54,15 @@
 - 🟡 **RCA (5 Whys)** - Em desenvolvimento
 - 🟡 **5W2H** - Em desenvolvimento
 
+### 📁 Planejamento de Projetos (estilo NotebookLM)
+
+- ✅ **Projetos** - Criar e listar projetos de planejamento
+- ✅ **Documentos** - Upload de PDF, MD e TXT por projeto
+- ✅ **Análise com IA** - Análise de documentos com Gemini (resumo, riscos, etapas e orçamento sugeridos)
+- ✅ **Aplicar sugestões** - Inserir etapas e itens de orçamento a partir da análise
+- ✅ **Sync Linear** - Sincronizar projeto com milestones no Linear.app
+- ✅ **Chat** - Ative o toggle "Planejamento" nas configurações para listar/criar projetos e analisar via chat
+
 ### 💬 Interface de Chat
 
 - ✅ **Chat Multi-Modelo** - Seleção de modelos via OpenRouter
@@ -89,7 +98,7 @@ DeepCode VSA
 ├── Frontend (Next.js 15 + React 19)
 │   ├── Chat Interface (Markdown + Streaming SSE)
 │   ├── Session Management (Sidebar)
-│   ├── Settings Panel (VSA, GLPI, Zabbix, Linear toggles)
+│   ├── Settings Panel (VSA, GLPI, Zabbix, Linear, Planejamento toggles)
 │   └── State Management (Context API)
 │
 ├── Backend (FastAPI + LangGraph)
@@ -97,7 +106,8 @@ DeepCode VSA
 │   │   ├── /api/v1/chat (sync + streaming)
 │   │   ├── /api/v1/rag (search + ingestion)
 │   │   ├── /api/v1/agents (management)
-│   │   └── /api/v1/threads (session management)
+│   │   ├── /api/v1/threads (session management)
+│   │   └── /api/v1/planning (projetos, documentos, análise, sync Linear)
 │   │
 │   ├── Agents (LangGraph)
 │   │   ├── SimpleAgent (create_agent)
@@ -117,7 +127,8 @@ DeepCode VSA
 └── Database (PostgreSQL 16 + pgvector)
     ├── kb_docs / kb_chunks (RAG)
     ├── checkpoints / writes (LangGraph)
-    └── archived_threads (Session management)
+    ├── archived_threads (Session management)
+    └── planning_projects / planning_stages / planning_documents / planning_budget_items
 ```
 
 ---
@@ -151,7 +162,10 @@ cp .env.example .env
 # 4. Subir containers
 docker compose up -d
 
-# 5. Acessar frontend
+# 5. (Opcional) Se for usar Planejamento de Projetos, aplicar schema no banco
+make setup-planning-db
+
+# 6. Acessar frontend
 open http://localhost:3000
 ```
 
@@ -165,8 +179,8 @@ uvicorn api.main:app --reload --port 8000
 
 # Frontend
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ---

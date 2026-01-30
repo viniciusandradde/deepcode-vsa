@@ -32,6 +32,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
     enableGLPI,
     enableZabbix,
     enableLinear,
+    enablePlanning,
   } = useGenesisUI();
   const messages = useMemo(() => messagesBySession[currentSessionId] ?? [], [messagesBySession, currentSessionId]);
   const [editingContent, setEditingContent] = useState("");
@@ -161,6 +162,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               {enableGLPI && <span className="text-purple-400">GLPI</span>}
               {enableZabbix && <span className="text-orange-400">Zabbix</span>}
               {enableLinear && <span className="text-blue-400">Linear</span>}
+              {enablePlanning && <span className="text-orange-400">Planejamento</span>}
             </span>
           )}
           <span className="rounded-md border border-vsa-blue/40 px-3 py-1 text-vsa-blue-light bg-vsa-blue/5">

@@ -1,8 +1,23 @@
 """Linear.app Integration Tools."""
 
 import json
+import re
 from typing import Optional, List
 from langchain.tools import tool
+
+
+def _normalize_project_plan_json(raw: str) -> str:
+    """Extract and normalize JSON string from project_plan (handles empty and markdown-wrapped)."""
+    if raw is None:
+        return ""
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    # Extract from markdown code block if present (LLM sometimes returns ```json ... ```)
+    code_block = re.search(r"```(?:json)?\s*([\s\S]*?)```", s)
+    if code_block:
+        s = code_block.group(1).strip()
+    return s
 
 from ..integrations.linear_client import LinearClient
 from ..config import get_settings
@@ -218,8 +233,15 @@ async def linear_create_full_project(
         Preview (dry_run=True) or created project URL and issue list (dry_run=False)
     """
     client = get_client()
+    # Normalize: handle None, empty string, and markdown-wrapped JSON
+    raw = project_plan if isinstance(project_plan, str) else ""
+    normalized = _normalize_project_plan_json(raw)
+    if not normalized:
+        return {
+            "error": "project_plan está vazio ou ausente. O plano deve ser um JSON com 'project', 'milestones' e 'tasks'. Gere o plano antes de confirmar a criação."
+        }
     try:
-        plan = json.loads(project_plan) if isinstance(project_plan, str) else project_plan
+        plan = json.loads(normalized)
     except json.JSONDecodeError as e:
         return {"error": f"Invalid project_plan JSON: {e}"}
     if not isinstance(plan, dict):

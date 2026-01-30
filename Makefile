@@ -1,4 +1,4 @@
-.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db \
+.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db setup-planning-db \
 	build build-backend build-frontend rebuild rebuild-all up down up-build \
 	status logs-backend logs-frontend logs-postgres \
 	restart-backend restart-frontend restart-postgres \
@@ -11,6 +11,7 @@ help:
 	@echo "  make install       - Instala dependências Python"
 	@echo "  make install-frontend - Instala dependências do frontend (pnpm)"
 	@echo "  make setup-db      - Configura banco de dados (executa scripts SQL)"
+	@echo "  make setup-planning-db - Aplica schema de planning (projetos/etapas/orcamento)"
 	@echo ""
 	@echo "Build:"
 	@echo "  make build         - Build de todos os containers (backend + frontend)"

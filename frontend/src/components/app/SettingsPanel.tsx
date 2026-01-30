@@ -24,6 +24,8 @@ export function SettingsPanel() {
     setEnableZabbix,
     enableLinear,
     setEnableLinear,
+    enablePlanning,
+    setEnablePlanning,
   } = useGenesisUI();
   const [isOpen, setIsOpen] = useState(false);
   const [enableStreaming, setEnableStreaming] = useState(true);
@@ -126,6 +128,21 @@ export function SettingsPanel() {
                       }}
                     />
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm text-slate-300">📁 Planejamento</span>
+                      <p className="text-xs text-slate-500">Projetos, documentos e análise no chat</p>
+                    </div>
+                    <Switch
+                      checked={enablePlanning}
+                      label=""
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setEnablePlanning(!enablePlanning);
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -188,7 +205,8 @@ export function SettingsPanel() {
                     VSA: {[
                       enableGLPI && "GLPI",
                       enableZabbix && "Zabbix",
-                      enableLinear && "Linear"
+                      enableLinear && "Linear",
+                      enablePlanning && "Planejamento"
                     ].filter(Boolean).join(", ") || "Nenhum"}
                   </p>
                 )}

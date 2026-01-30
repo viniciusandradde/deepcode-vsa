@@ -33,18 +33,20 @@ export default function PlanningPage() {
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("[Planning] Fetching from:", `/api/v1/planning/projects`);
       const res = await fetch(`/api/v1/planning/projects`);
       if (!res.ok) {
-        console.error("[Planning] Fetch failed:", res.status, res.statusText);
+        if (process.env.NODE_ENV === "development") {
+          console.error("[Planning] Fetch failed:", res.status, res.statusText);
+        }
         throw new Error(`Erro ao carregar projetos: ${res.status}`);
       }
       const data: ProjectListResponse = await res.json();
-      console.log("[Planning] Loaded projects:", data.projects.length);
       setProjects(data.projects);
       setError(null);
     } catch (e) {
-      console.error("[Planning] Error:", e);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[Planning] Error:", e);
+      }
       setError(e instanceof Error ? e.message : "Erro desconhecido");
     } finally {
       setLoading(false);

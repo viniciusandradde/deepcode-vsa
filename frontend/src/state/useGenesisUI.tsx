@@ -216,6 +216,8 @@ interface GenesisUIState {
   setEnableZabbix: (value: boolean) => void;
   enableLinear: boolean;
   setEnableLinear: (value: boolean) => void;
+  enablePlanning: boolean;
+  setEnablePlanning: (value: boolean) => void;
   sessions: GenesisSession[];
   currentSessionId: string;
   createSession: () => Promise<string | undefined>;
@@ -246,6 +248,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   const [enableGLPI, setEnableGLPI] = useLocalStorageState('vsa_enableGLPI', false);
   const [enableZabbix, setEnableZabbix] = useLocalStorageState('vsa_enableZabbix', false);
   const [enableLinear, setEnableLinear] = useLocalStorageState('vsa_enableLinear', false);
+  const [enablePlanning, setEnablePlanning] = useLocalStorageState('vsa_enablePlanning', false);
   const [sessions, setSessions] = useState<GenesisSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const [messagesBySession, setMessagesBySession] = useState<Record<string, GenesisMessage[]>>({});
@@ -591,6 +594,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
               enable_glpi: enableGLPI,
               enable_zabbix: enableZabbix,
               enable_linear: enableLinear,
+              enable_planning: enablePlanning,
             }),
           });
 
@@ -1178,6 +1182,8 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       setEnableZabbix,
       enableLinear,
       setEnableLinear,
+      enablePlanning,
+      setEnablePlanning,
       sessions,
       currentSessionId,
       createSession,
@@ -1203,6 +1209,7 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
       enableGLPI,
       enableZabbix,
       enableLinear,
+      enablePlanning,
       sessions,
       currentSessionId,
       messagesBySession,

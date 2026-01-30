@@ -48,8 +48,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AI Agent + RAG API",
-    description="API for AI agents with RAG capabilities",
+    title="DeepCode VSA API",
+    description="API do Agente de Suporte Virtual para Gestão de TI: chat, planejamento de projetos (NotebookLM-like), integrações GLPI/Zabbix/Linear e RAG.",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -75,7 +75,7 @@ app.include_router(planning.router, prefix="/api/v1/planning", tags=["planning"]
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {"message": "AI Agent + RAG API", "version": "1.0.0"}
+    return {"message": "DeepCode VSA API", "version": "1.0.0"}
 
 
 @app.get("/health")

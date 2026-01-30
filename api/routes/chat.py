@@ -1,5 +1,6 @@
 """Chat API routes."""
 
+import asyncio
 import re
 import logging
 import os
@@ -236,7 +237,7 @@ Infraestrutura, Rede, Software, Hardware, Segurança, Acesso, Consulta.
 - Use TABELAS MARKDOWN para dados (GLPI, Zabbix, classificação).
 - Seja direto e técnico. Cite IDs reais (Ticket #N, etc).
 - Sem dados: diga "Nenhum registro encontrado" ou "Erro ao consultar".
-- **Criar projeto no Linear:** Use linear_get_teams para obter team_id. Gere o plano (project + milestones + tasks) em JSON e chame linear_create_full_project(team_id, project_plan, dry_run=True). Mostre o preview ao usuário e diga que pode confirmar. Quando o usuário confirmar, chame linear_create_full_project com o mesmo project_plan e dry_run=False.
+- **Criar projeto no Linear:** Use linear_get_teams para obter team_id. Gere o plano (project + milestones + tasks) em JSON e chame linear_create_full_project(team_id, project_plan, dry_run=True). Mostre o preview ao usuário e diga que pode confirmar. Na confirmação do usuário, você DEVE chamar linear_create_full_project novamente com o MESMO JSON de project_plan que usou no preview (copie o JSON exato da sua resposta anterior). Nunca chame com project_plan vazio.
 
 ## Anti-alucinação
 NUNCA invente dados. IDs, nomes, datas e status vêm EXCLUSIVAMENTE das ferramentas. Se ferramenta falhar, peça ao usuário verificar configurações."""
@@ -431,6 +432,9 @@ async def stream_chat(request: ChatRequest):
                 # Evento done
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
                 
+            except asyncio.CancelledError:
+                logger.debug("Report stream cancelled (client disconnected)")
+                raise
             except Exception as e:
                 logger.exception("Report stream error: %s", e)
                 yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
@@ -549,6 +553,10 @@ async def stream_chat(request: ChatRequest):
                 logger.info("[STREAM] Sending done event")
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
 
+            except asyncio.CancelledError:
+                # Client disconnected or request cancelled - do not log as error
+                logger.debug("Stream cancelled (client disconnected)")
+                raise
             except Exception as e:
                 logger.error(f"Stream error: {str(e)}", exc_info=True)
                 # Try to extract a clean string from the exception

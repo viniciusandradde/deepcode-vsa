@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
 from psycopg.rows import dict_row
 
 from api.models.planning import (
@@ -693,15 +693,12 @@ async def apply_analysis_suggestions(
     project_id: UUID,
     stages: bool = True,
     budget: bool = True,
-    request: AnalyzeDocsResponse = None,
+    body: AnalyzeDocsResponse = Body(...),
 ):
     """Apply suggestions from analysis to the project.
     
     Creates stages and budget items based on analysis results.
     """
-    if not request:
-        raise HTTPException(status_code=400, detail="Forneça o resultado da análise")
-    
     try:
         created_stages = []
         created_budget = []
@@ -717,8 +714,8 @@ async def apply_analysis_suggestions(
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
                 
                 # Create stages
-                if stages and request.suggested_stages:
-                    for i, stage in enumerate(request.suggested_stages):
+                if stages and body.suggested_stages:
+                    for i, stage in enumerate(body.suggested_stages):
                         cur.execute(
                             """
                             INSERT INTO planning_stages 
@@ -728,15 +725,15 @@ async def apply_analysis_suggestions(
                             """,
                             (
                                 str(project_id), stage.title, stage.description,
-                                i, stage.estimated_days
+                                i, stage.estimated_days if stage.estimated_days is not None else 0,
                             )
                         )
                         row = cur.fetchone()
                         created_stages.append(row)
                 
                 # Create budget items
-                if budget and request.suggested_budget:
-                    for item in request.suggested_budget:
+                if budget and body.suggested_budget:
+                    for item in body.suggested_budget:
                         cur.execute(
                             """
                             INSERT INTO planning_budget_items 
@@ -746,7 +743,7 @@ async def apply_analysis_suggestions(
                             """,
                             (
                                 str(project_id), item.category, item.description,
-                                item.estimated_cost
+                                item.estimated_cost,
                             )
                         )
                         row = cur.fetchone()

@@ -77,6 +77,9 @@ pip install -e ".[dev]"
 # Setup database (requires PostgreSQL with pgvector)
 make setup-db
 
+# Apply planning schema (tabelas de projetos/etapas/orçamento)
+make setup-planning-db
+
 # Install frontend dependencies
 make install-frontend
 ```
@@ -402,21 +405,28 @@ See `docs/adr/` for complete decision records:
 ### Core Application
 - `api/main.py` - FastAPI application entry point
 - `api/routes/chat.py` - Chat endpoints (sync + streaming)
+- `api/routes/planning.py` - Planning API (projetos, documentos, análise, sync Linear)
 - `core/agents/vsa.py` - VSA agent with ITIL methodologies (not yet integrated)
 - `core/agents/simple.py` - Simple agent (currently used in chat)
 - `core/agents/workflow.py` - Workflow agent with intent detection
+- `core/agents/planning.py` - Planning agent (análise de documentos estilo NotebookLM)
 - `core/config.py` - Application settings and configuration
+- `core/tools/planning.py` - LangChain tools de planejamento para o chat
 
 ### Integrations
 - `core/integrations/glpi_client.py` - GLPI REST API client (✅ functional)
 - `core/integrations/zabbix_client.py` - Zabbix JSON-RPC client (✅ functional)
+- `core/integrations/linear_client.py` - Linear GraphQL client (✅ functional)
 - `core/tools/glpi.py` - LangChain tools for GLPI (✅ ready)
 - `core/tools/zabbix.py` - LangChain tools for Zabbix (✅ ready)
+- `core/tools/linear.py` - LangChain tools for Linear (✅ ready)
 
 ### Frontend
 - `frontend/src/components/app/ChatPane.tsx` - Main chat interface
 - `frontend/src/state/useGenesisUI.tsx` - State management (Context API)
 - `frontend/src/components/app/Sidebar.tsx` - Session management sidebar
+- `frontend/src/app/planning/page.tsx` - Lista de projetos de planejamento
+- `frontend/src/app/planning/[id]/page.tsx` - Detalhe do projeto (upload, análise, etapas, orçamento)
 
 ### Documentation
 - `docs/PRD.md` - Original PRD (CLI-focused, **outdated**)
@@ -539,6 +549,8 @@ ZABBIX_API_TOKEN=your_api_token
 - `linear_create_issue` - LangChain tool wrapper (respects dry_run)
 - `linear_get_teams` - LangChain tool wrapper
 - `linear_add_comment` - LangChain tool wrapper
+- `linear_create_project` - Criação de projeto no Linear
+- `linear_create_full_project` - Criação de projeto com milestones e issues
 
 **Configuration:** Set in `.env`
 ```bash
@@ -559,6 +571,16 @@ LINEAR_API_KEY=lin_api_your_key_here
 4. Test with: "Liste issues do Linear", "Criar issue no time de infra"
 
 **See detailed examples:** `docs/EXEMPLOS-LINEAR-INTEGRACAO.md`
+
+### Planning (NotebookLM-like) (✅ Ready)
+
+Planejamento de projetos com upload de documentos (PDF, MD, TXT), análise com IA (Gemini), etapas e orçamento sugeridos, aplicação de sugestões e sincronização com Linear.
+
+- **API:** `api/routes/planning.py` - CRUD projetos, documentos, etapas, orçamento; `POST /projects/{id}/analyze`; `POST /projects/{id}/apply-suggestions`; `POST /projects/{id}/sync-linear`
+- **Modelos:** `api/models/planning.py`
+- **Schema:** `sql/kb/05_planning_schema.sql` - Tabelas `planning_projects`, `planning_stages`, `planning_documents`, `planning_budget_items`
+- **Setup:** `make setup-planning-db` - Aplica o schema de planning no PostgreSQL
+- **Chat:** Ative o toggle "Planejamento" nas configurações para usar as tools de planejamento no chat (listar/criar projetos, analisar, sincronizar com Linear)
 
 ### Integration Architecture Pattern
 
@@ -604,19 +626,20 @@ User Message → Chat Endpoint → Agent (with tools) → Tool Call → Client �
 **✅ Working Components:**
 - Chat web interface (Next.js 15 + React 19)
 - FastAPI backend with streaming SSE
-- SimpleAgent and WorkflowAgent (functional)
-- GLPI Client + Tools (ready, not integrated to chat)
-- Zabbix Client + Tools (ready, not integrated to chat)
-- PostgreSQL + pgvector for RAG
+- SimpleAgent, WorkflowAgent and UnifiedAgent (functional)
+- GLPI, Zabbix e Linear integrados ao chat (toggles nas configurações)
+- Criação de projetos no Linear com milestones (linear_create_full_project)
+- Planning (NotebookLM-like): projetos, documentos, análise com IA, etapas/orçamento sugeridos, sync Linear
+- Proxy rewrites no Next.js para `/api/v1/*` (acesso via domínio sem expor porta 8000)
+- PostgreSQL + pgvector para RAG e checkpoints
 - Multi-model support via OpenRouter
 
 **🟡 In Progress:**
-- VSAAgent (implemented, needs chat integration)
-- ITIL methodologies application (designed, not implemented)
+- VSAAgent (implemented, UnifiedAgent em uso no chat)
+- ITIL methodologies application (designed, em uso via UnifiedAgent)
 
 **❌ Not Started:**
 - CLI interface (deferred to v2.0)
-- VSA integration in chat
 - Automatic GLPI/Zabbix correlation
 - GUT score calculation in chat flow
 
