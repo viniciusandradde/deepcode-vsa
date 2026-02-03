@@ -24,7 +24,7 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
         aria-hidden="true"
       />
       <div
-        className="relative z-50 w-full max-w-md rounded-xl border-2 border-slate-200 bg-white p-6 shadow-2xl"
+        className="relative z-50 w-full max-w-md rounded-xl border-2 border-slate-300 bg-white p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide text-slate-900">

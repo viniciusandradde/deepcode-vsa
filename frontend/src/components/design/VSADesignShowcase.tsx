@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { Switch } from "@/components/ui/switch";
 
 type TabId = "colors" | "typography" | "components" | "shadows";
 
@@ -92,18 +94,30 @@ const shadowColored = [
 
 export default function VSADesignShowcase() {
   const [activeTab, setActiveTab] = useState<TabId>("colors");
+  const [switchDemoOn, setSwitchDemoOn] = useState(true);
 
   return (
     <div className="min-h-screen bg-vsa-soft font-body">
-      <header className="bg-white border-b border-vsa-gray-200 py-4 px-8 flex items-center justify-between shadow-vsa-sm">
+      <header className="bg-white border-b border-vsa-gray-300 py-4 px-8 flex items-center justify-between shadow-vsa-sm">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-vsa-xl bg-vsa-brand flex items-center justify-center text-white font-bold text-xl shadow-vsa-brand">
+          <Link
+            href="/"
+            className="w-12 h-12 rounded-vsa-xl bg-vsa-brand flex items-center justify-center text-white font-bold text-xl shadow-vsa-brand hover:shadow-vsa-orange transition-all"
+            title="Voltar ao Chat"
+            aria-label="Voltar ao Chat"
+          >
             V
-          </div>
+          </Link>
           <div>
             <h1 className="text-xl font-bold text-vsa-gradient m-0">VSA Design System</h1>
             <p className="text-[13px] text-vsa-gray-500 m-0">Soluções em Tecnologia</p>
           </div>
+          <Link
+            href="/"
+            className="vsa-btn vsa-btn-outline text-sm py-2 px-4 rounded-lg"
+          >
+            Voltar ao Chat
+          </Link>
         </div>
         <div className="vsa-status vsa-status-online py-2 px-4 bg-vsa-success-light rounded-full text-[13px] text-vsa-success-dark font-medium">
           <span className="vsa-status-dot" />
@@ -111,7 +125,7 @@ export default function VSADesignShowcase() {
         </div>
       </header>
 
-      <nav className="bg-white border-b border-vsa-gray-200 px-8 flex gap-1">
+      <nav className="bg-white border-b border-vsa-gray-300 px-8 flex gap-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -128,7 +142,7 @@ export default function VSADesignShowcase() {
         ))}
       </nav>
 
-      <main className="p-8 max-w-[1400px] mx-auto">
+      <main className="vsa-main-background min-h-[60vh] p-8 max-w-[1400px] mx-auto">
         {activeTab === "colors" && (
           <div>
             <h2 className="text-2xl font-semibold text-vsa-gray-900 mb-6">Paleta de Cores</h2>
@@ -158,7 +172,7 @@ export default function VSADesignShowcase() {
                     <div key={shade.name} className="text-center">
                         <div
                           className={`w-20 h-20 rounded-vsa-xl shadow-vsa-sm mb-2 ${
-                            shade.name === "50" || shade.name === "100" ? "border border-vsa-gray-200" : "border-0"
+                            shade.name === "50" || shade.name === "100" ? "border border-vsa-gray-400" : "border-0"
                           }`}
                           style={{ backgroundColor: shade.hex }}
                         />
@@ -237,7 +251,7 @@ export default function VSADesignShowcase() {
                 {typeScale.map((item) => (
                   <div
                     key={item.name}
-                    className="flex items-baseline gap-6 pb-4 border-b border-vsa-gray-200"
+                    className="flex items-baseline gap-6 pb-4 border-b border-vsa-gray-300"
                   >
                     <span
                       className="flex-1 text-vsa-gray-900"
@@ -299,6 +313,54 @@ export default function VSADesignShowcase() {
             </section>
 
             <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
+              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Cards</h3>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+                <div className="vsa-card">
+                  <p className="font-semibold text-vsa-gray-900 m-0 mb-2">Card padrão</p>
+                  <p className="text-sm text-vsa-gray-600 m-0">Borda neutra, hover suave.</p>
+                </div>
+                <div className="vsa-card-gradient">
+                  <p className="font-semibold text-vsa-gray-900 m-0 mb-2">Card com borda gradiente</p>
+                  <p className="text-sm text-vsa-gray-600 m-0">Hover revela borda laranja/azul.</p>
+                </div>
+                <div className="vsa-card-active">
+                  <p className="font-semibold text-vsa-gray-900 m-0 mb-2">Card ativo</p>
+                  <p className="text-sm text-vsa-gray-600 m-0">Seleção / destaque.</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
+              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Sessões (Sidebar)</h3>
+              <div className="flex gap-4 flex-wrap">
+                <div className="vsa-session">
+                  <p className="vsa-session-title m-0">Sessão inativa</p>
+                  <p className="vsa-session-subtitle m-0">Última atividade há 2h</p>
+                </div>
+                <div className="vsa-session vsa-session-active">
+                  <p className="vsa-session-title m-0">Sessão ativa</p>
+                  <p className="vsa-session-subtitle m-0">Agora</p>
+                </div>
+                <div className="vsa-session">
+                  <span className="vsa-session-badge">3</span>
+                  <p className="vsa-session-title m-0">Sessão com badge</p>
+                  <p className="vsa-session-subtitle m-0">3 mensagens</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
+              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Switch (Toggle)</h3>
+              <div className="flex flex-wrap gap-6 items-center">
+                <Switch checked={!switchDemoOn} label="Desligado" onClick={() => setSwitchDemoOn(true)} />
+                <Switch checked={switchDemoOn} label="Ligado (laranja VSA)" onClick={() => setSwitchDemoOn(!switchDemoOn)} />
+              </div>
+              <p className="text-xs text-vsa-gray-500 mt-4 m-0">
+                Quando ligado: borda e fundo laranja VSA (#F7941D), sombra laranja.
+              </p>
+            </section>
+
+            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
               <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Badges</h3>
               <div className="flex gap-3 flex-wrap">
                 <span className="vsa-badge vsa-badge-orange">Laranja</span>
@@ -314,7 +376,7 @@ export default function VSADesignShowcase() {
               <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Inputs</h3>
               <div className="grid gap-4 max-w-[400px]">
                 <input type="text" placeholder="Digite sua mensagem ou use o microfone..." className="vsa-input" />
-                <input type="text" placeholder="Input com foco (clique)" className="vsa-input focus:border-vsa-blue-500" />
+                <input type="text" placeholder="Input com foco laranja (clique)" className="vsa-input focus:border-vsa-orange-500 focus:ring-2 focus:ring-vsa-orange/20" />
                 <input type="text" placeholder="Input com erro" className="vsa-input vsa-input-error" />
               </div>
             </section>

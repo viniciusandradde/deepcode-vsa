@@ -115,7 +115,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
   return (
     <>
       <aside className={clsx(
-        "flex h-screen flex-col border-r-2 border-slate-200 bg-white text-slate-900 shadow-sm transition-all duration-300",
+        "flex h-screen flex-col border-r-2 border-slate-300 bg-white text-slate-900 shadow-sm transition-all duration-300",
         collapsed ? "w-20 p-4" : "w-80 p-7 gap-8"
       )}>
         {!collapsed ? (
@@ -143,11 +143,11 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             <section className="space-y-3">
               <header className="text-xs uppercase tracking-[0.35em] text-slate-500">Seleção de Modelo</header>
               {isLoading ? (
-                <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-3 text-sm text-slate-500 shadow-sm">
+                <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 text-sm text-slate-500 shadow-sm">
                   Carregando modelos...
                 </div>
               ) : models.length === 0 ? (
-                <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-3 text-sm text-slate-500 shadow-sm">
+                <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 text-sm text-slate-500 shadow-sm">
                   Nenhum modelo disponível
                 </div>
               ) : (
@@ -184,7 +184,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                   "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
                   selectedModelId
                     ? "border-vsa-orange/50 bg-vsa-orange/10 text-slate-900"
-                    : "border-2 border-slate-200 bg-white text-slate-500"
+                    : "border-2 border-slate-300 bg-white text-slate-500"
                 )}
                 title={models.find(m => m.id === selectedModelId)?.label || "Modelo"}
               >
@@ -198,7 +198,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                   "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
                   useTavily
                     ? "border-vsa-orange/50 bg-vsa-orange/10 text-slate-900"
-                    : "border-2 border-slate-200 bg-white text-slate-500"
+                    : "border-2 border-slate-300 bg-white text-slate-500"
                 )}
                 title={useTavily ? "Busca Web habilitada" : "Busca Web desabilitada"}
               >
@@ -216,9 +216,9 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
               <Button
                 onClick={() => createSession().catch(console.error)}
                 size="sm"
-                variant="outline"
+                variant="primary"
                 disabled={isLoading}
-                className="border-slate-300 text-slate-700 hover:border-vsa-orange/60 hover:text-slate-900"
+                className="shadow-vsa-orange/50"
               >
                 Nova Sessão
               </Button>
@@ -228,7 +228,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             <button
               onClick={() => createSession().catch(console.error)}
               disabled={isLoading}
-              className="w-12 h-12 rounded-lg border border-slate-300 bg-white text-slate-600 hover:border-vsa-orange/60 hover:text-slate-900 flex items-center justify-center transition-colors disabled:opacity-50"
+              className="w-12 h-12 rounded-lg border-2 border-vsa-orange/40 bg-vsa-orange text-white hover:bg-vsa-orange-600 hover:border-vsa-orange-600 hover:shadow-vsa-orange flex items-center justify-center transition-colors disabled:opacity-50"
               title="Nova Sessão"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -241,11 +241,11 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             collapsed ? "" : "-mr-3 pr-3"
           )}>
             {isLoading ? (
-              <div className="space-y-2 rounded-md border-2 border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 shadow-sm">
+              <div className="space-y-2 rounded-md border-2 border-slate-300 bg-slate-50 p-3 text-xs text-slate-500 shadow-sm">
                 Carregando sessões…
               </div>
             ) : sessions.length === 0 ? (
-              <div className="space-y-2 rounded-md border-2 border-slate-200 bg-slate-50 p-3 text-xs text-slate-500 shadow-sm">
+              <div className="space-y-2 rounded-md border-2 border-slate-300 bg-slate-50 p-3 text-xs text-slate-500 shadow-sm">
                 Nenhuma sessão. Clique em "Nova Sessão" para começar.
               </div>
             ) : (
@@ -273,7 +273,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                           "w-12 h-12 rounded-lg border flex items-center justify-center transition-all relative",
                           active
                             ? "border-vsa-orange/60 bg-vsa-orange/10 text-slate-900 shadow-[0_0_12px_rgba(255,140,66,0.18)]"
-                            : "border-2 border-slate-200 bg-white text-slate-700 hover:border-vsa-orange/40 hover:bg-slate-50",
+                            : "border-2 border-slate-300 bg-white text-slate-700 hover:border-vsa-orange/40 hover:bg-slate-50",
                         )}
                         title={`${session.title} (${messageCount} mensagens)`}
                         aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
@@ -292,7 +292,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                           "group relative flex items-center gap-2 rounded-xl border px-3 py-2 transition-all animate-in fade-in slide-in-from-left-2 duration-200",
                           active
                             ? "border-vsa-orange/60 bg-vsa-orange/10 text-slate-900 shadow-[0_0_12px_rgba(255,140,66,0.18)]"
-                            : "border-2 border-slate-200 bg-white text-slate-700 hover:border-vsa-orange/40 hover:bg-slate-50",
+                            : "border-2 border-slate-300 bg-white text-slate-700 hover:border-vsa-orange/40 hover:bg-slate-50",
                         )}
                       >
                         <button
@@ -322,7 +322,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                                     setEditingSessionId(null);
                                   }
                                 }}
-                                className="w-full rounded bg-white px-1 py-0.5 text-sm font-semibold text-slate-900 outline-none border-2 border-slate-200 shadow-sm"
+                                className="w-full rounded bg-white px-1 py-0.5 text-sm font-semibold text-slate-900 outline-none border-2 border-slate-300 shadow-sm"
                               />
                             ) : (
                               <span

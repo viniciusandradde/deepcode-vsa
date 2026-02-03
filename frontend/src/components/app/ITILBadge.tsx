@@ -109,7 +109,7 @@ export function ITILBadge({
     }
 
     return (
-        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-slate-50 border-2 border-slate-200 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-slate-50 border-2 border-slate-300 shadow-sm">
             {/* ITIL Type Badge */}
             <span
                 className={`px-3 py-1 rounded-md text-slate-900 text-xs font-semibold ${config.color} transition-colors shadow-sm`}

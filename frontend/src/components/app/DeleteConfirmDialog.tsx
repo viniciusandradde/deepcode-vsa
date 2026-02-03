@@ -32,7 +32,7 @@ export function DeleteConfirmDialog({
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="border-slate-300 text-slate-700 hover:border-slate-400"
+            className="border-slate-500 text-slate-700 hover:border-slate-500"
           >
             Cancelar
           </Button>

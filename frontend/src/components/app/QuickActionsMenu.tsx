@@ -16,7 +16,7 @@ export function QuickActionsMenu({ onSelect, disabled }: QuickActionsMenuProps) 
       <PopoverButton
         disabled={disabled}
         className={clsx(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-vsa-orange/60 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-vsa-orange/40",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border-2 border-slate-300 bg-white text-slate-500 shadow-sm transition hover:border-vsa-orange hover:bg-vsa-orange/5 hover:text-vsa-orange-600 focus:outline-none focus:ring-2 focus:ring-vsa-orange/40",
           disabled && "cursor-not-allowed opacity-50"
         )}
         aria-label="Ações rápidas"
@@ -25,7 +25,7 @@ export function QuickActionsMenu({ onSelect, disabled }: QuickActionsMenuProps) 
       </PopoverButton>
       <PopoverPanel
         anchor="bottom end"
-        className="z-50 mt-2 w-72 rounded-xl border-2 border-slate-200 bg-white p-2 shadow-xl"
+        className="z-50 mt-2 w-72 rounded-xl border-2 border-slate-300 bg-white p-2 shadow-xl"
       >
         {({ close }) => (
           <>
@@ -45,7 +45,7 @@ export function QuickActionsMenu({ onSelect, disabled }: QuickActionsMenuProps) 
                       "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition",
                       suggestion.variant === "warning"
                         ? "text-slate-900 hover:bg-amber-50"
-                        : "text-slate-700 hover:bg-slate-50"
+                        : "text-slate-700 hover:bg-vsa-orange/5 hover:text-vsa-orange-700"
                     )}
                   >
                     <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">

@@ -65,11 +65,11 @@ export function Select({
         disabled={disabled}
         className={clsx(
           "flex w-full items-center justify-between rounded-lg border-2 px-3 py-2.5 text-left transition-all shadow-sm",
-          "border-slate-200 bg-white text-slate-900",
-          "hover:border-vsa-orange/50 hover:bg-slate-50",
+          "border-slate-300 bg-white text-slate-900",
+          "hover:border-vsa-orange hover:bg-vsa-orange/5",
           "focus:outline-none focus:ring-2 focus:ring-vsa-orange/40 focus:ring-offset-2 focus:ring-offset-white",
           disabled && "cursor-not-allowed opacity-50",
-          isOpen && "border-vsa-orange/60 bg-vsa-orange/10",
+          isOpen && "border-vsa-orange bg-vsa-orange/10 shadow-vsa-orange",
         )}
       >
         <div className="flex flex-col">
@@ -101,7 +101,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border-2 border-slate-200 bg-white shadow-xl ring-1 ring-black/10">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border-2 border-slate-300 bg-white shadow-xl ring-1 ring-black/10">
           <div className="max-h-60 overflow-auto p-1">
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -114,10 +114,10 @@ export function Select({
                     setIsOpen(false);
                   }}
                   className={clsx(
-                    "flex w-full flex-col rounded-md px-3 py-2.5 text-left transition-all",
+                    "flex w-full flex-col rounded-md px-3 py-2.5 text-left transition-all border-2",
                     isSelected
-                      ? "bg-vsa-orange/10 text-slate-900 border border-vsa-orange/30"
-                      : "text-slate-700 hover:bg-slate-50 hover:border-slate-200 border-2 border-transparent",
+                      ? "bg-vsa-orange/10 text-vsa-orange-700 border-vsa-orange/40"
+                      : "text-slate-700 border-transparent hover:bg-vsa-orange/5 hover:border-vsa-orange/20",
                   )}
                 >
                   <span className="text-sm font-semibold uppercase" style={{ fontFamily: "var(--font-sans)" }}>

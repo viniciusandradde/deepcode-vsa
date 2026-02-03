@@ -12,7 +12,7 @@ export function Badge({ variant = "default", className, ...props }: BadgeProps) 
         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium shadow-sm",
         variant === "default"
           ? "bg-slate-100 text-slate-700"
-          : "border-2 border-slate-300 text-slate-700",
+          : "border-2 border-slate-400 text-slate-700",
         className,
       )}
       {...props}

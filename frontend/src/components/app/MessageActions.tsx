@@ -26,7 +26,7 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
   return (
     <div
       className={clsx(
-        "absolute right-2 top-2 flex gap-1 rounded-md border-2 border-slate-200 bg-white/95 p-1 shadow-md transition-opacity",
+        "absolute right-2 top-2 flex gap-1 rounded-md border-2 border-slate-300 bg-white/95 p-1 shadow-md transition-opacity",
         isHovered ? "opacity-100" : "opacity-0",
       )}
       onMouseEnter={() => setIsHovered(true)}

@@ -80,7 +80,7 @@ export const MessageItem = memo(function MessageItem({
         isError
           ? "border-red-300 bg-red-50 text-slate-900"
           : isAssistant
-            ? "border-slate-200 bg-white text-slate-900"
+            ? "border-slate-400 bg-white text-slate-900"
             : "border-vsa-orange/40 bg-vsa-orange/10 text-slate-900",
         isEditing && "ring-2 ring-vsa-orange/40",
       )}
@@ -106,7 +106,7 @@ export const MessageItem = memo(function MessageItem({
             <textarea
               value={editingContent}
               onChange={(e) => onEditChange(e.target.value)}
-            className="w-full resize-none rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
+            className="w-full resize-none rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
               rows={3}
             autoFocus
             onKeyDown={(e) => {
@@ -125,7 +125,7 @@ export const MessageItem = memo(function MessageItem({
               variant="outline"
               size="sm"
               onClick={onEditCancel}
-              className="border-slate-300 text-slate-700"
+              className="border-slate-400 text-slate-700"
             >
               Cancelar
             </Button>
@@ -202,7 +202,7 @@ export const MessageItem = memo(function MessageItem({
                     </code>
                   ) : (
                     <pre
-                      className="overflow-x-auto rounded-lg border-2 border-slate-200 bg-slate-50 p-4 text-[13px] text-slate-800 shadow-sm"
+                      className="overflow-x-auto rounded-lg border-2 border-slate-400 bg-slate-50 p-4 text-[13px] text-slate-800 shadow-sm"
                     >
                       <code className={className} {...props}>{children}</code>
                     </pre>
@@ -220,7 +220,7 @@ export const MessageItem = memo(function MessageItem({
                   return <img src={src} alt={alt || ""} className="max-w-full rounded-lg my-4" {...props} />;
                 },
                 table: ({ ...props }) => (
-                  <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border-2 border-slate-200 shadow-sm">
+                  <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border-2 border-slate-400 shadow-sm">
                     <table className="min-w-full table-auto divide-y divide-slate-200 text-sm" {...props} />
                   </div>
                 ),

@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <Card className="m-4 border-2 border-red-200 bg-red-50 shadow-sm">
+        <Card className="m-4 border-2 border-red-300 bg-red-50 shadow-sm">
           <CardHeader>
             <h2 className="text-lg font-semibold text-slate-900">Algo deu errado</h2>
           </CardHeader>
@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.reload();
               }}
               variant="outline"
-              className="border-red-200 text-slate-900 hover:bg-red-100"
+              className="border-red-300 text-slate-900 hover:bg-red-100"
             >
               Recarregar Página
             </Button>

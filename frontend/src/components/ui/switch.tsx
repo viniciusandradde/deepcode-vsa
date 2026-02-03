@@ -18,7 +18,7 @@ export function Switch({ checked, label, className, ...props }: SwitchProps) {
       <span
         className={clsx(
           "relative inline-flex h-6 w-12 flex-shrink-0 items-center rounded-full border-2 transition-colors",
-          checked ? "border-vsa-orange/60 bg-vsa-orange/80" : "border-slate-300 bg-slate-200",
+          checked ? "border-vsa-orange-600 bg-vsa-orange shadow-vsa-orange" : "border-slate-400 bg-slate-300",
         )}
       >
         <span

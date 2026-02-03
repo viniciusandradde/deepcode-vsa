@@ -119,13 +119,13 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
   }, [currentSessionId]);
 
   return (
-    <div className="flex h-screen flex-1 flex-col bg-[#F5F6F8]">
-      <header className="flex h-20 items-center justify-between border-b-2 border-slate-200 px-10 text-slate-900 bg-white shadow-sm">
+    <div className="flex h-screen flex-1 flex-col min-w-0">
+      <header className="flex h-20 shrink-0 items-center justify-between border-b-2 border-slate-400 px-6 md:px-10 text-slate-900 bg-white shadow-sm">
         <div className="flex items-center gap-4">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="p-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 shadow-sm hover:border-vsa-orange/60 hover:text-slate-900 transition-colors"
+              className="p-2 rounded-lg border-2 border-slate-400 bg-white text-slate-600 shadow-sm hover:border-vsa-orange hover:bg-vsa-orange/5 hover:text-slate-900 transition-colors"
               aria-label={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
               title={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
             >
@@ -150,7 +150,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
         </div>
         <div className="flex items-center gap-4 text-[11px] uppercase tracking-wide">
           {enableVSA ? (
-            <span className="rounded-md border-2 border-slate-300 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
+            <span className="rounded-md border-2 border-slate-400 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse" />
               VSA Ativo
               {enableGLPI && <span className="text-slate-900">GLPI</span>}
@@ -159,7 +159,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               {enablePlanning && <span className="text-slate-900">Planejamento</span>}
             </span>
           ) : (
-            <span className="rounded-md border-2 border-slate-300 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
+            <span className="rounded-md border-2 border-slate-400 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
               <span className="h-2 w-2 rounded-full bg-slate-400" />
               VSA Inativo
             </span>
@@ -167,18 +167,25 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
         </div>
       </header>
 
-      <main ref={mainRef} className="relative flex flex-1 flex-col gap-5 overflow-y-auto px-10 py-8">
+      <main
+        ref={mainRef}
+        className="vsa-main-background relative flex flex-1 flex-col gap-5 overflow-y-auto px-6 md:px-10 py-6 md:py-8 min-h-0"
+      >
         <div className="relative flex-1 space-y-4">
           {isLoading ? (
-            <Card className="border-2 border-slate-200 bg-white text-center text-slate-600">
+            <Card className="border-2 border-slate-400 bg-white text-center text-slate-600">
               <CardHeader>Carregando sessões</CardHeader>
               <CardContent>Aguarde enquanto conectamos ao servidor.</CardContent>
             </Card>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-8 py-8">
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold text-slate-900">Como posso ajudar?</h2>
-                <p className="mt-2 text-slate-600">Escolha uma opção ou digite sua pergunta</p>
+              <div className="text-center px-4">
+                <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 drop-shadow-sm">
+                  Como posso ajudar?
+                </h2>
+                <p className="mt-2 text-slate-700 font-medium">
+                  Escolha uma opção ou digite sua pergunta
+                </p>
               </div>
               <SuggestionChips
                 onSelect={(cmd) => handleMessageSubmit(cmd, true)}

@@ -216,7 +216,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="min-h-screen bg-[#F5F6F8] text-slate-900">
       {/* Header */}
-      <div className="border-b-2 border-slate-200 bg-white px-6 py-4 shadow-sm">
+      <div className="border-b-2 border-slate-400 bg-white px-6 py-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
@@ -242,7 +242,7 @@ export default function ProjectDetailPage() {
               </a>
             )}
             <Link href="/">
-              <Button variant="outline" size="sm" className="border-slate-300 text-slate-700">
+              <Button variant="outline" size="sm" className="border-slate-400 text-slate-700">
                 Chat VSA
               </Button>
             </Link>
@@ -266,7 +266,7 @@ export default function ProjectDetailPage() {
               <CardContent>
                 {/* Upload Area */}
                 <div
-                  className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center mb-4 hover:border-vsa-orange/50 transition-colors cursor-pointer"
+                  className="border-2 border-dashed border-slate-400 rounded-lg p-4 text-center mb-4 hover:border-vsa-orange/50 transition-colors cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -304,7 +304,7 @@ export default function ProjectDetailPage() {
                   {project.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border-2 border-slate-200 shadow-sm"
+                      className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border-2 border-slate-400 shadow-sm"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-900 truncate">{doc.file_name}</p>
@@ -336,7 +336,7 @@ export default function ProjectDetailPage() {
                   <select
                     value={focusArea}
                     onChange={(e) => setFocusArea(e.target.value)}
-                    className="px-3 py-2 bg-white border-2 border-slate-300 rounded-lg text-slate-900 shadow-sm"
+                    className="px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-slate-900 shadow-sm"
                   >
                     <option value="Geral">Análise Geral</option>
                     <option value="Riscos">Foco em Riscos</option>
@@ -362,13 +362,13 @@ export default function ProjectDetailPage() {
 
                 {analysis && (
                   <div className="space-y-4">
-                    <div className="p-4 bg-slate-50 border-2 border-slate-200 rounded-lg shadow-sm">
+                    <div className="p-4 bg-slate-50 border-2 border-slate-400 rounded-lg shadow-sm">
                       <h3 className="text-sm font-semibold text-slate-900 mb-2">Resumo Executivo</h3>
                       <p className="text-sm text-slate-700">{analysis.executive_summary}</p>
                     </div>
 
                     {analysis.critical_points.length > 0 && (
-                      <div className="p-4 bg-slate-50 border-2 border-slate-200 rounded-lg shadow-sm">
+                      <div className="p-4 bg-slate-50 border-2 border-slate-400 rounded-lg shadow-sm">
                         <h3 className="text-sm font-semibold text-slate-900 mb-2">Pontos Críticos</h3>
                         <ul className="text-sm text-slate-900 list-disc list-inside space-y-1">
                           {analysis.critical_points.map((p, i) => (
@@ -379,7 +379,7 @@ export default function ProjectDetailPage() {
                     )}
 
                     {analysis.risks.length > 0 && (
-                      <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg shadow-sm">
+                      <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg shadow-sm">
                         <h3 className="text-sm font-semibold text-slate-900 mb-2">Riscos Identificados</h3>
                         <ul className="text-sm text-slate-900 list-disc list-inside space-y-1">
                           {analysis.risks.map((r, i) => (
@@ -413,7 +413,7 @@ export default function ProjectDetailPage() {
             {/* Tabs: Stages & Budget */}
             <Card>
               <CardHeader>
-                <div className="flex gap-4 border-b-2 border-slate-200 pb-2">
+                <div className="flex gap-4 border-b-2 border-slate-400 pb-2">
                   <button
                     onClick={() => setActiveTab("stages")}
                     className={`pb-2 text-sm font-medium transition-colors ${
@@ -447,7 +447,7 @@ export default function ProjectDetailPage() {
                       project.stages.map((stage) => (
                         <div
                           key={stage.id}
-                          className="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg flex items-center gap-3 shadow-sm"
+                          className="p-3 bg-slate-50 border-2 border-slate-400 rounded-lg flex items-center gap-3 shadow-sm"
                         >
                           <span className="text-xs text-slate-500 w-6">{stage.order_index + 1}</span>
                           <div className="flex-1">
@@ -489,7 +489,7 @@ export default function ProjectDetailPage() {
                         {project.budget_items.map((item) => (
                           <div
                             key={item.id}
-                            className="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg flex items-center gap-3 shadow-sm"
+                            className="p-3 bg-slate-50 border-2 border-slate-400 rounded-lg flex items-center gap-3 shadow-sm"
                           >
                             <span className="text-xs text-slate-500 uppercase w-20">
                               {item.category}
@@ -502,7 +502,7 @@ export default function ProjectDetailPage() {
                             </span>
                           </div>
                         ))}
-                        <div className="pt-2 border-t-2 border-slate-200 flex justify-between text-sm">
+                        <div className="pt-2 border-t-2 border-slate-400 flex justify-between text-sm">
                           <span className="text-slate-600">Total Estimado:</span>
                           <span className="text-slate-900 font-semibold">
                             {formatCurrency(project.total_budget_estimated)}

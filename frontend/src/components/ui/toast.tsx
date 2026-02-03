@@ -24,7 +24,7 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
   const typeStyles = {
     success: "bg-emerald-50 border-emerald-200 text-slate-900",
     error: "bg-red-50 border-red-200 text-slate-900",
-    info: "bg-slate-50 border-slate-200 text-slate-900",
+    info: "bg-slate-50 border-slate-300 text-slate-900",
   };
 
   return (

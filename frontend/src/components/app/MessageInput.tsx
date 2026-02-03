@@ -55,7 +55,7 @@ export function MessageInput({
   }
 
   return (
-    <footer className="border-t-2 border-slate-200 bg-white px-10 py-5 shadow-sm">
+    <footer className="border-t-2 border-slate-300 bg-white px-10 py-5 shadow-sm">
       <form onSubmit={handleSubmit} className="flex w-full items-start gap-4">
         <div className="flex-1">
           <div className="flex items-start gap-2">
@@ -65,7 +65,7 @@ export function MessageInput({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder={isLoading ? "Carregando..." : "Digite sua mensagem ou use o microfone..."}
-              className="h-[90px] w-full resize-none rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none focus:ring-2 focus:ring-vsa-orange/40"
+              className="h-[90px] w-full resize-none rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none focus:ring-2 focus:ring-vsa-orange/40"
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -118,17 +118,22 @@ export function MessageInput({
           <Button
             type={isSending ? "button" : "submit"}
             disabled={isLoading || (!draft.trim() && !isSending)}
-            onClick={isSending ? (e) => {
-              e.preventDefault();
-              onCancel();
-              textareaRef.current?.focus();
-            } : undefined}
-              className={clsx(
-                "h-[80px] rounded-lg border-2 px-6 text-sm transition shadow-sm focus:outline-none focus:ring-2",
-                isSending
-                  ? "border-red-500/40 bg-red-100 text-slate-900 hover:border-red-500 hover:bg-red-200 focus:ring-red-500/50"
-                  : "border-vsa-orange/40 bg-vsa-orange/15 text-slate-900 hover:border-vsa-orange hover:bg-vsa-orange/25 focus:ring-vsa-orange/50"
-              )}
+            onClick={
+              isSending
+                ? (e) => {
+                    e.preventDefault();
+                    onCancel();
+                    textareaRef.current?.focus();
+                  }
+                : undefined
+            }
+            variant={isSending ? "outline" : "primary"}
+            className={clsx(
+              "h-[80px] rounded-xl px-6 text-sm font-semibold uppercase tracking-wide shadow-md focus:outline-none focus:ring-2",
+              isSending
+                ? "border-2 border-red-400 bg-red-50 text-red-800 hover:border-red-500 hover:bg-red-100 focus:ring-red-500/50"
+                : "bg-vsa-orange text-white border-vsa-orange-600/30 hover:bg-vsa-orange-600 hover:shadow-vsa-orange"
+            )}
             aria-label={isSending ? "Cancelar envio" : "Enviar mensagem"}
           >
             {isSending ? "Cancelar" : "Enviar"}

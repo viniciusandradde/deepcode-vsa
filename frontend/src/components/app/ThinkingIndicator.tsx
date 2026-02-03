@@ -227,7 +227,7 @@ export function ThinkingIndicator({
       {/* Tool indicator */}
       {currentTool && (
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+          <span className="inline-block w-3 h-3 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
           <span>
             Chamando: <span className="font-mono text-slate-700">{currentTool}</span>
           </span>

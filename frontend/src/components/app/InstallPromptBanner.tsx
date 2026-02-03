@@ -30,7 +30,7 @@ export function InstallPromptBanner() {
         </div>
         <button
           onClick={handleInstall}
-          className="bg-white text-slate-900 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors border-2 border-white/60"
+          className="bg-vsa-orange text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-vsa-orange-600 shadow-vsa-orange transition-colors border-2 border-vsa-orange-600/30"
         >
           Instalar
         </button>

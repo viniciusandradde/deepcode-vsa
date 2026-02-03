@@ -140,7 +140,7 @@ export default function PlanningPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg text-slate-900 shadow-sm">
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg text-slate-900 shadow-sm">
             {error}
           </div>
         )}
@@ -222,7 +222,7 @@ export default function PlanningPage() {
         {/* Create Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white border-2 border-slate-200 rounded-xl p-6 w-full max-w-md shadow-sm">
+            <div className="bg-white border-2 border-slate-300 rounded-xl p-6 w-full max-w-md shadow-sm">
               <h2 className="text-xl font-semibold text-slate-900 mb-4">Novo Projeto</h2>
               
               <div className="space-y-4">

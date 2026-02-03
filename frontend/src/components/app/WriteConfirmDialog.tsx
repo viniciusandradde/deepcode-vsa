@@ -78,11 +78,11 @@ function JsonPreview({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
 
   return (
-    <div className="rounded-lg bg-slate-50 border-2 border-slate-200 p-3 max-h-48 overflow-y-auto shadow-sm">
+    <div className="rounded-lg bg-slate-50 border-2 border-slate-300 p-3 max-h-48 overflow-y-auto shadow-sm">
       <table className="w-full text-xs font-mono">
         <tbody>
           {entries.map(([key, value]) => (
-            <tr key={key} className="border-b-2 border-slate-200 last:border-0">
+            <tr key={key} className="border-b-2 border-slate-300 last:border-0">
               <td className="py-1.5 pr-3 text-slate-600 align-top whitespace-nowrap">
                 {key}:
               </td>
@@ -192,7 +192,7 @@ export function WriteConfirmDialog({
         </div>
 
         {/* Dry-run toggle */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border-2 border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border-2 border-slate-300 shadow-sm">
           <div>
             <p className="text-sm text-slate-700">Modo Simulação (Dry-Run)</p>
             <p className="text-xs text-slate-500">
@@ -210,7 +210,7 @@ export function WriteConfirmDialog({
 
         {/* Warning for real execution */}
         {!dryRun && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border-2 border-amber-200 text-slate-900 shadow-sm">
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border-2 border-amber-300 text-slate-900 shadow-sm">
             <span className="text-lg">⚠️</span>
             <div className="text-xs">
               <p className="font-medium">Atenção: Execução Real</p>

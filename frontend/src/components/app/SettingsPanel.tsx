@@ -39,7 +39,7 @@ export function SettingsPanel() {
                     onClick={() => setIsOpen(!isOpen)}
                     variant="outline"
                     size="sm"
-                    className="border-slate-300 text-slate-700 hover:border-vsa-orange/60 hover:text-slate-900"
+                    className="border-slate-400 text-slate-700 hover:border-vsa-orange/60 hover:text-slate-900"
                 >
                     {isOpen ? "Ocultar" : "Mostrar"} Configurações
                 </Button>
@@ -147,7 +147,7 @@ export function SettingsPanel() {
                             )}
                         </div>
 
-                        <div className="border-t-2 border-slate-200 pt-4 space-y-4">
+                        <div className="border-t-2 border-slate-300 pt-4 space-y-4">
                             {/* Model Selection Dropdown */}
                             <div className="space-y-2">
                                 <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
@@ -156,7 +156,7 @@ export function SettingsPanel() {
                                 <select
                                     value={selectedModelId}
                                     onChange={(e) => setSelectedModelId(e.target.value)}
-                                    className="w-full rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
+                                    className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
                                 >
                                     {models.map((model) => (
                                         <option key={model.id} value={model.id}>

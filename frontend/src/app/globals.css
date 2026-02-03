@@ -66,3 +66,18 @@ body .text-slate-900 {
   user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* Fundo VSA – padrão geométrico (fundo.png) na área principal do chat */
+.vsa-main-background {
+  background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.75) 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0.6) 100%
+    ),
+    url("/images/fundo.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}

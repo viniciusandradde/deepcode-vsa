@@ -89,7 +89,7 @@ function StepItem({ step, index }: { step: PlanStep; index: number }) {
 
   return (
     <div
-      className={`rounded-lg border-2 border-slate-200 ${config.bgColor} transition-all duration-200 shadow-sm`}
+      className={`rounded-lg border-2 border-slate-300 ${config.bgColor} transition-all duration-200 shadow-sm`}
     >
       <div className="flex items-start gap-3 p-3">
         {/* Step number and status */}
@@ -199,10 +199,10 @@ export function StructuredResponse({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border-2 border-slate-200 bg-white p-4 shadow-sm">
+    <div className="space-y-4 rounded-xl border-2 border-slate-300 bg-white p-4 shadow-sm">
       {/* Classification Header */}
       {classification && (
-        <div className="border-b-2 border-slate-200 pb-3">
+        <div className="border-b-2 border-slate-300 pb-3">
           <ITILBadge
             type={classification.type}
             gutScore={classification.gutScore}
@@ -261,7 +261,7 @@ export function StructuredResponse({
 
       {/* Sources */}
       {sources && sources.length > 0 && (
-        <div className="border-t-2 border-slate-200 pt-3">
+        <div className="border-t-2 border-slate-300 pt-3">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-slate-500">Fontes:</span>
             {sources.map((source, index) => {

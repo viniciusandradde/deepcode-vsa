@@ -85,10 +85,10 @@ export function SuggestionChips({ onSelect, disabled }: SuggestionChipsProps) {
           disabled={disabled}
           className={clsx(
             "group flex flex-col items-start gap-1 rounded-xl p-4 text-left transition-all shadow-sm",
-            "border-2 border-slate-200 bg-white hover:border-vsa-orange/60 hover:bg-slate-50",
+            "border-2 border-slate-300 bg-white hover:border-vsa-orange hover:bg-vsa-orange/5 hover:shadow-vsa-orange",
             "disabled:cursor-not-allowed disabled:opacity-50",
             suggestion.variant === "warning"
-              ? "border-amber-400/40 hover:border-amber-500/60"
+              ? "border-amber-400/40 hover:border-amber-500/60 hover:bg-amber-50/50"
               : ""
           )}
         >
@@ -100,7 +100,9 @@ export function SuggestionChips({ onSelect, disabled }: SuggestionChipsProps) {
                 : "text-slate-900"
             )}
           >
-            {suggestion.icon}
+            <span className="text-vsa-orange group-hover:text-vsa-orange-600 transition-colors">
+              {suggestion.icon}
+            </span>
             <span className="font-medium text-slate-900">{suggestion.label}</span>
           </div>
           <span className="text-xs text-slate-500 group-hover:text-slate-600">
