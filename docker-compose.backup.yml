@@ -1,0 +1,115 @@
+# Docker Compose para rodar o BACKUP do DeepCode VSA sem conflito com o projeto original.
+# Uso: docker compose -f docker-compose.backup.yml up -d
+# Acesso: Frontend http://localhost:3001 | Backend http://localhost:8001 | PostgreSQL porta 5434
+
+version: '3.8'
+
+services:
+  # PostgreSQL com extensão pgvector (backup)
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: deepcode_vsa_backup_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ai_agent_db}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_HOST_PORT:-5434}:5432"
+    volumes:
+      - postgres_data_backup:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d/sql
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ai_agent_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai_agent_network_backup
+    restart: unless-stopped
+
+  # Backend API (FastAPI) - backup
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: deepcode_vsa_backup_backend
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ai_agent_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      # APIs
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      COHERE_API_KEY: ${COHERE_API_KEY:-}
+      # Checkpointing
+      USE_POSTGRES_CHECKPOINT: ${USE_POSTGRES_CHECKPOINT:-true}
+      # LangSmith
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-true}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-ai-agent-template}
+      # GLPI Integration (Phase 1)
+      GLPI_BASE_URL: ${GLPI_BASE_URL:-}
+      GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:-}
+      GLPI_USERNAME: ${GLPI_USERNAME:-}
+      GLPI_PASSWORD: ${GLPI_PASSWORD:-}
+      # Zabbix Integration (Phase 1)
+      ZABBIX_BASE_URL: ${ZABBIX_BASE_URL:-}
+      ZABBIX_API_TOKEN: ${ZABBIX_API_TOKEN:-}
+      # Linear Integration (Phase 1)
+      LINEAR_API_KEY: ${LINEAR_API_KEY:-}
+    ports:
+      - "${BACKEND_HOST_PORT:-8001}:8000"
+    volumes:
+      - .:/app
+      - backend_cache_backup:/root/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ai_agent_network_backup
+    restart: unless-stopped
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (Next.js) - backup
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: deepcode_vsa_backup_frontend
+    environment:
+      - API_BASE_URL=http://backend:8000
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-http://localhost:8001}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-${NEXT_PUBLIC_API_BASE:-http://localhost:8001}}
+      - NODE_ENV=development
+      - CI=true
+      - NEXT_TELEMETRY_DISABLED=1
+    ports:
+      - "${FRONTEND_HOST_PORT:-3001}:3000"
+    volumes:
+      - ./frontend:/app
+      - ./models.yaml:/app/models.yaml:ro
+      - ./models.yaml:/models.yaml:ro
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - ai_agent_network_backup
+    restart: unless-stopped
+    command: sh -c "rm -rf .next && pnpm run dev"
+
+volumes:
+  postgres_data_backup:
+    driver: local
+  backend_cache_backup:
+    driver: local
+
+networks:
+  ai_agent_network_backup:
+    driver: bridge

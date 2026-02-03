@@ -236,11 +236,35 @@ docker compose restart backend
 docker compose down
 ```
 
+### Rodar o backup sem conflito com o projeto original
+
+Quando o projeto original já está rodando no mesmo host (containers/volumes/portas em uso), use o compose de backup para subir esta cópia em portas e recursos separados:
+
+```bash
+# Subir o backup (portas 5434, 8001, 3001)
+docker compose -f docker-compose.backup.yml up -d
+
+# Opcional: usar arquivo de env com portas customizadas
+cp .env.backup.example .env.backup
+docker compose -f docker-compose.backup.yml --env-file .env.backup up -d
+
+# Ver logs
+docker compose -f docker-compose.backup.yml logs -f
+
+# Parar
+docker compose -f docker-compose.backup.yml down
+```
+
+**Acesso:** Frontend [http://localhost:3001](http://localhost:3001) | Backend [http://localhost:8001](http://localhost:8001) | PostgreSQL porta **5434**.
+
 ### Banco de Dados
 
 ```bash
-# Conectar ao PostgreSQL
+# Conectar ao PostgreSQL (projeto original)
 docker exec -it ai_agent_postgres psql -U postgres -d deepcode_vsa
+
+# Conectar ao PostgreSQL (backup: use porta 5434 se exposta)
+docker exec -it deepcode_vsa_backup_postgres psql -U postgres -d ai_agent_db
 
 # Verificar checkpoints
 SELECT COUNT(*) FROM checkpoints;
