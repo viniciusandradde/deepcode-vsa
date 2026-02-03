@@ -55,12 +55,9 @@ export function MessageInput({
   }
 
   return (
-    <footer className="border-t border-white/10 px-10 py-5">
+    <footer className="border-t-2 border-slate-200 bg-white px-10 py-5 shadow-sm">
       <form onSubmit={handleSubmit} className="flex w-full items-start gap-4">
         <div className="flex-1">
-          <label htmlFor="message-input" className="mb-2 block text-[11px] uppercase tracking-[0.35em] text-slate-400">
-            Entrada de Comando
-          </label>
           <div className="flex items-start gap-2">
             <textarea
               id="message-input"
@@ -68,7 +65,7 @@ export function MessageInput({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder={isLoading ? "Carregando..." : "Digite sua mensagem ou use o microfone..."}
-              className="h-[90px] w-full resize-none rounded-xl border border-white/10 bg-[#0b1526]/90 px-4 py-3 text-sm text-white shadow-[0_0_25px_rgba(62,130,246,0.35)] focus:border-vsa-blue focus:outline-none focus:ring-2 focus:ring-vsa-blue/50"
+              className="h-[90px] w-full resize-none rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none focus:ring-2 focus:ring-vsa-orange/40"
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -126,21 +123,18 @@ export function MessageInput({
               onCancel();
               textareaRef.current?.focus();
             } : undefined}
-            className={clsx(
-              "h-[80px] rounded-lg border px-6 text-sm uppercase tracking-[0.35em] transition focus:outline-none focus:ring-2",
-              isSending
-                ? "border-red-500/40 bg-red-500/20 text-red-400 hover:border-red-500 hover:bg-red-500/30 focus:ring-red-500/50"
-                : "border-vsa-orange/40 bg-vsa-orange/20 text-vsa-orange-light hover:border-vsa-orange hover:bg-vsa-orange/30 focus:ring-vsa-orange/50"
-            )}
+              className={clsx(
+                "h-[80px] rounded-lg border-2 px-6 text-sm transition shadow-sm focus:outline-none focus:ring-2",
+                isSending
+                  ? "border-red-500/40 bg-red-100 text-slate-900 hover:border-red-500 hover:bg-red-200 focus:ring-red-500/50"
+                  : "border-vsa-orange/40 bg-vsa-orange/15 text-slate-900 hover:border-vsa-orange hover:bg-vsa-orange/25 focus:ring-vsa-orange/50"
+              )}
             aria-label={isSending ? "Cancelar envio" : "Enviar mensagem"}
           >
             {isSending ? "Cancelar" : "Enviar"}
           </Button>
         </div>
       </form>
-      <div className="mt-3 text-[11px] uppercase tracking-[0.3em] text-slate-500">
-        Sessão atual: <span className="text-slate-300">{currentSessionId || "—"}</span>
-      </div>
     </footer>
   );
 }

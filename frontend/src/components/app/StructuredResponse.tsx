@@ -51,36 +51,36 @@ const stepStatusConfig: Record<
 > = {
   pending: {
     icon: "○",
-    color: "text-slate-400",
-    bgColor: "bg-slate-700/50",
+    color: "text-slate-900",
+    bgColor: "bg-slate-100",
   },
   running: {
     icon: "◐",
-    color: "text-blue-400",
-    bgColor: "bg-blue-900/30",
+    color: "text-slate-900",
+    bgColor: "bg-blue-50",
   },
   done: {
     icon: "●",
-    color: "text-green-400",
-    bgColor: "bg-green-900/30",
+    color: "text-slate-900",
+    bgColor: "bg-green-50",
   },
   error: {
     icon: "✕",
-    color: "text-red-400",
-    bgColor: "bg-red-900/30",
+    color: "text-slate-900",
+    bgColor: "bg-red-50",
   },
   skipped: {
     icon: "—",
-    color: "text-slate-500",
-    bgColor: "bg-slate-800/50",
+    color: "text-slate-900",
+    bgColor: "bg-slate-100",
   },
 };
 
 const sourceConfig: Record<string, { icon: string; color: string }> = {
-  glpi: { icon: "🎫", color: "text-purple-400" },
-  zabbix: { icon: "📊", color: "text-orange-400" },
-  linear: { icon: "📋", color: "text-blue-400" },
-  rag: { icon: "📚", color: "text-green-400" },
+  glpi: { icon: "🎫", color: "text-slate-900" },
+  zabbix: { icon: "📊", color: "text-slate-900" },
+  linear: { icon: "📋", color: "text-slate-900" },
+  rag: { icon: "📚", color: "text-slate-900" },
 };
 
 function StepItem({ step, index }: { step: PlanStep; index: number }) {
@@ -89,7 +89,7 @@ function StepItem({ step, index }: { step: PlanStep; index: number }) {
 
   return (
     <div
-      className={`rounded-lg border border-white/10 ${config.bgColor} transition-all duration-200`}
+      className={`rounded-lg border-2 border-slate-200 ${config.bgColor} transition-all duration-200 shadow-sm`}
     >
       <div className="flex items-start gap-3 p-3">
         {/* Step number and status */}
@@ -105,9 +105,9 @@ function StepItem({ step, index }: { step: PlanStep; index: number }) {
         {/* Step content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-200">{step.description}</span>
+            <span className="text-sm text-slate-700">{step.description}</span>
             {step.tool && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-700 text-slate-400 font-mono">
+              <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-mono">
                 {step.tool}
               </span>
             )}
@@ -117,13 +117,13 @@ function StepItem({ step, index }: { step: PlanStep; index: number }) {
           {isExpanded && (
             <div className="mt-2">
               {step.status === "running" && (
-                <div className="flex items-center gap-2 text-xs text-blue-400">
-                  <span className="inline-block w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center gap-2 text-xs text-slate-900">
+                  <span className="inline-block w-3 h-3 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
                   Executando...
                 </div>
               )}
               {step.status === "error" && step.error && (
-                <div className="text-xs text-red-400 bg-red-900/20 rounded p-2 mt-1">
+                <div className="text-xs text-slate-900 bg-red-50 rounded p-2 mt-1">
                   {step.error}
                 </div>
               )}
@@ -132,7 +132,7 @@ function StepItem({ step, index }: { step: PlanStep; index: number }) {
 
           {/* Result preview for completed steps */}
           {step.status === "done" && step.result && (
-            <div className="mt-1 text-xs text-slate-400 truncate">
+            <div className="mt-1 text-xs text-slate-500 truncate">
               {step.result}
             </div>
           )}
@@ -152,20 +152,20 @@ function ProgressBar({ steps }: { steps: PlanStep[] }) {
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
-        <span className="text-slate-400">
+        <span className="text-slate-600">
           {done}/{total} etapas
           {running > 0 && (
-            <span className="text-blue-400 ml-2">({running} em execução)</span>
+            <span className="text-slate-900 ml-2">({running} em execução)</span>
           )}
           {errors > 0 && (
-            <span className="text-red-400 ml-2">({errors} com erro)</span>
+            <span className="text-slate-900 ml-2">({errors} com erro)</span>
           )}
         </span>
-        <span className="text-slate-400">{percent}%</span>
+        <span className="text-slate-600">{percent}%</span>
       </div>
-      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-vsa-blue to-vsa-orange transition-all duration-300"
+          className="h-full bg-vsa-orange transition-all duration-300"
           style={{ width: `${percent}%` }}
         />
       </div>
@@ -199,10 +199,10 @@ export function StructuredResponse({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-white/10 bg-slate-900/50 p-4">
+    <div className="space-y-4 rounded-xl border-2 border-slate-200 bg-white p-4 shadow-sm">
       {/* Classification Header */}
       {classification && (
-        <div className="border-b border-white/10 pb-3">
+        <div className="border-b-2 border-slate-200 pb-3">
           <ITILBadge
             type={classification.type}
             gutScore={classification.gutScore}
@@ -235,7 +235,7 @@ export function StructuredResponse({
           <h4 className="text-xs uppercase tracking-wider text-slate-500">
             Resumo
           </h4>
-          <p className="text-sm text-slate-300 leading-relaxed">{summary}</p>
+          <p className="text-sm text-slate-700 leading-relaxed">{summary}</p>
         </div>
       )}
 
@@ -249,9 +249,9 @@ export function StructuredResponse({
             {recommendations.map((rec, index) => (
               <li
                 key={index}
-                className="flex items-start gap-2 text-sm text-slate-300"
+                className="flex items-start gap-2 text-sm text-slate-700"
               >
-                <span className="text-vsa-orange mt-0.5">→</span>
+                <span className="text-slate-900 mt-0.5">→</span>
                 {rec}
               </li>
             ))}
@@ -261,7 +261,7 @@ export function StructuredResponse({
 
       {/* Sources */}
       {sources && sources.length > 0 && (
-        <div className="border-t border-white/10 pt-3">
+        <div className="border-t-2 border-slate-200 pt-3">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-slate-500">Fontes:</span>
             {sources.map((source, index) => {
@@ -272,7 +272,7 @@ export function StructuredResponse({
               return (
                 <span
                   key={index}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-slate-800 ${config.color}`}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-slate-100 ${config.color}`}
                 >
                   {config.icon} {source.label}
                   {source.id && (

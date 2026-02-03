@@ -1,17 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Source_Sans_3, Poppins, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const sourceSans = Source_Sans_3({ subsets: ["latin"], variable: "--font-sans" });
+const poppins = Poppins({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-display" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "DeepCode VSA",
+  title: "VSA Nexus AI",
   description: "Agente Inteligente para Gestão de TI",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "DeepCode VSA",
+    title: "VSA Nexus AI",
   },
   icons: {
     icon: "/images/vsa-logo.png",
@@ -24,7 +26,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#FF6B35",
+  themeColor: "#F7941D",
 };
 
 export default function RootLayout({
@@ -34,11 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.variable} suppressHydrationWarning>
+      <body className={`${sourceSans.variable} ${poppins.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
         {children}
       </body>
     </html>
   );
 }
-
-

@@ -26,18 +26,18 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
   return (
     <div
       className={clsx(
-        "absolute right-2 top-2 flex gap-1 rounded-md bg-[#0b1526]/95 p-1 shadow-lg transition-opacity",
+        "absolute right-2 top-2 flex gap-1 rounded-md border-2 border-slate-200 bg-white/95 p-1 shadow-md transition-opacity",
         isHovered ? "opacity-100" : "opacity-0",
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <button
-        onClick={onEdit}
-        className="rounded p-1.5 text-slate-400 transition-colors hover:bg-vsa-blue/20 hover:text-vsa-blue-light focus:outline-none focus:ring-2 focus:ring-vsa-blue/50"
-        aria-label="Editar mensagem"
-        title="Editar mensagem (E)"
-      >
+        <button
+          onClick={onEdit}
+          className="rounded p-1.5 text-slate-500 transition-colors hover:bg-vsa-orange/10 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-vsa-orange/40"
+          aria-label="Editar mensagem"
+          title="Editar mensagem (E)"
+        >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-4 w-4"
@@ -56,7 +56,7 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
       {onResend && (
         <button
           onClick={onResend}
-          className="rounded p-1.5 text-slate-400 transition-colors hover:bg-emerald-500/20 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+          className="rounded p-1.5 text-slate-500 transition-colors hover:bg-emerald-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
           aria-label="Reenviar mensagem"
           title="Reenviar mensagem"
         >
@@ -76,12 +76,12 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
           </svg>
         </button>
       )}
-      <button
-        onClick={handleCopy}
-        className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-500/20 hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400/50"
-        aria-label="Copiar mensagem"
-        title="Copiar mensagem"
-      >
+        <button
+          onClick={handleCopy}
+          className="rounded p-1.5 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          aria-label="Copiar mensagem"
+          title="Copiar mensagem"
+        >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-4 w-4"
@@ -100,4 +100,3 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
     </div>
   );
 }
-

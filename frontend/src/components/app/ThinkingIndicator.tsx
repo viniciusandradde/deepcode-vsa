@@ -28,37 +28,37 @@ const phaseConfig: Record<ThinkingPhase, PhaseConfig> = {
   connecting: {
     label: "Conectando",
     icon: "○",
-    color: "text-slate-400",
+    color: "text-slate-900",
   },
   classifying: {
     label: "Classificando (ITIL)",
     icon: "◐",
-    color: "text-purple-400",
+    color: "text-slate-900",
   },
   planning: {
     label: "Planejando ações",
     icon: "◐",
-    color: "text-blue-400",
+    color: "text-slate-900",
   },
   executing: {
     label: "Executando",
     icon: "◐",
-    color: "text-orange-400",
+    color: "text-slate-900",
   },
   analyzing: {
     label: "Analisando resultados",
     icon: "◐",
-    color: "text-yellow-400",
+    color: "text-slate-900",
   },
   integrating: {
     label: "Integrando resposta",
     icon: "◐",
-    color: "text-green-400",
+    color: "text-slate-900",
   },
   responding: {
     label: "Gerando resposta",
     icon: "●",
-    color: "text-vsa-blue-light",
+    color: "text-slate-900",
   },
 };
 
@@ -136,19 +136,19 @@ export function ThinkingIndicator({
       <div className="flex items-center gap-2 text-sm">
         <div className="flex gap-1">
           <div
-            className="h-2 w-2 rounded-full bg-vsa-blue-light animate-pulse"
+            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
             style={{ animationDelay: "0ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-blue-light animate-pulse"
+            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
             style={{ animationDelay: "150ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-blue-light animate-pulse"
+            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
             style={{ animationDelay: "300ms" }}
           />
         </div>
-        <span className="text-slate-300 animate-pulse">
+        <span className="text-slate-600 animate-pulse">
           Pensando{dots}
         </span>
       </div>
@@ -217,7 +217,7 @@ export function ThinkingIndicator({
                 "h-1 flex-1 rounded-full transition-all duration-300",
                 isCompleted && "bg-vsa-orange",
                 isCurrent && "bg-vsa-orange/50 animate-pulse",
-                !isCompleted && !isCurrent && "bg-slate-700"
+                !isCompleted && !isCurrent && "bg-slate-200"
               )}
             />
           );
@@ -226,20 +226,20 @@ export function ThinkingIndicator({
 
       {/* Tool indicator */}
       {currentTool && (
-        <div className="flex items-center gap-2 text-xs text-slate-400">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
           <span className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
           <span>
-            Chamando: <span className="font-mono text-slate-300">{currentTool}</span>
+            Chamando: <span className="font-mono text-slate-700">{currentTool}</span>
           </span>
         </div>
       )}
 
       {/* Phase labels */}
       <div className="flex justify-between text-[9px] uppercase tracking-wider text-slate-500">
-        <span className={currentPhaseIndex >= 0 ? "text-slate-400" : ""}>Classificar</span>
-        <span className={currentPhaseIndex >= 2 ? "text-slate-400" : ""}>Planejar</span>
-        <span className={currentPhaseIndex >= 3 ? "text-slate-400" : ""}>Executar</span>
-        <span className={currentPhaseIndex >= 5 ? "text-slate-400" : ""}>Integrar</span>
+        <span className={currentPhaseIndex >= 0 ? "text-slate-600" : ""}>Classificar</span>
+        <span className={currentPhaseIndex >= 2 ? "text-slate-600" : ""}>Planejar</span>
+        <span className={currentPhaseIndex >= 3 ? "text-slate-600" : ""}>Executar</span>
+        <span className={currentPhaseIndex >= 5 ? "text-slate-600" : ""}>Integrar</span>
       </div>
     </div>
   );

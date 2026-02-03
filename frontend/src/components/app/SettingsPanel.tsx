@@ -39,7 +39,7 @@ export function SettingsPanel() {
                     onClick={() => setIsOpen(!isOpen)}
                     variant="outline"
                     size="sm"
-                    className="border-vsa-blue/40 text-vsa-blue-light hover:bg-vsa-blue/10"
+                    className="border-slate-300 text-slate-700 hover:border-vsa-orange/60 hover:text-slate-900"
                 >
                     {isOpen ? "Ocultar" : "Mostrar"} Configurações
                 </Button>
@@ -47,7 +47,7 @@ export function SettingsPanel() {
                     <Button
                         variant="outline"
                         size="sm"
-                        className="w-full border-vsa-orange/40 text-vsa-orange hover:bg-vsa-orange/10"
+                        className="w-full border-vsa-orange/50 text-slate-900 hover:bg-vsa-orange/10"
                     >
                         Planejamento de Projetos
                     </Button>
@@ -55,9 +55,9 @@ export function SettingsPanel() {
             </div>
 
             {isOpen && (
-                <Card className="mb-4 border-white/10 bg-white/5">
+                <Card className="mb-4">
                     <CardHeader>
-                        <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-slate-200">
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-slate-700">
                             Configurações
                         </h3>
                     </CardHeader>
@@ -66,8 +66,8 @@ export function SettingsPanel() {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h4 className="font-semibold text-sm text-slate-200">Modo VSA (Gestão de TI)</h4>
-                                    <p className="text-xs text-slate-400">
+                                    <h4 className="font-semibold text-sm text-slate-700">Modo VSA (Gestão de TI)</h4>
+                                    <p className="text-xs text-slate-500">
                                         Ativa integrações GLPI, Zabbix e Linear
                                     </p>
                                 </div>
@@ -83,10 +83,10 @@ export function SettingsPanel() {
 
                             {/* Integration toggles - only shown when VSA mode is enabled */}
                             {enableVSA && (
-                                <div className="border-l-2 border-blue-500 pl-4 space-y-3 ml-2">
+                                <div className="border-l-2 border-vsa-orange/50 pl-4 space-y-3 ml-2">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-300">🎫 GLPI</span>
+                                            <span className="text-sm text-slate-700">🎫 GLPI</span>
                                             <p className="text-xs text-slate-500">Tickets e chamados</p>
                                         </div>
                                         <Switch
@@ -101,7 +101,7 @@ export function SettingsPanel() {
 
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-300">📊 Zabbix</span>
+                                            <span className="text-sm text-slate-700">📊 Zabbix</span>
                                             <p className="text-xs text-slate-500">Alertas e monitoramento</p>
                                         </div>
                                         <Switch
@@ -116,7 +116,7 @@ export function SettingsPanel() {
 
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-300">📋 Linear</span>
+                                            <span className="text-sm text-slate-700">📋 Linear</span>
                                             <p className="text-xs text-slate-500">Issues e projetos</p>
                                         </div>
                                         <Switch
@@ -131,7 +131,7 @@ export function SettingsPanel() {
 
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-300">📁 Planejamento</span>
+                                            <span className="text-sm text-slate-700">📁 Planejamento</span>
                                             <p className="text-xs text-slate-500">Projetos, documentos e análise no chat</p>
                                         </div>
                                         <Switch
@@ -147,16 +147,16 @@ export function SettingsPanel() {
                             )}
                         </div>
 
-                        <div className="border-t border-white/10 pt-4 space-y-4">
+                        <div className="border-t-2 border-slate-200 pt-4 space-y-4">
                             {/* Model Selection Dropdown */}
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-400">
+                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
                                     Modelo de IA
                                 </label>
                                 <select
                                     value={selectedModelId}
                                     onChange={(e) => setSelectedModelId(e.target.value)}
-                                    className="w-full rounded-lg border border-white/10 bg-[#0b1526] px-3 py-2 text-sm text-white focus:border-vsa-blue focus:outline-none"
+                                    className="w-full rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
                                 >
                                     {models.map((model) => (
                                         <option key={model.id} value={model.id}>
@@ -170,7 +170,7 @@ export function SettingsPanel() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-400">
+                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
                                     Busca Web (Tavily)
                                 </label>
                                 <Switch
@@ -184,7 +184,7 @@ export function SettingsPanel() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-400">
+                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
                                     Streaming de Respostas
                                 </label>
                                 <Switch
@@ -197,11 +197,11 @@ export function SettingsPanel() {
                                 />
                             </div>
 
-                            <div className="pt-2 text-xs text-slate-400">
+                            <div className="pt-2 text-xs text-slate-500">
                                 <p>Modelo: {selectedModelId}</p>
                                 <p>Busca Web: {useTavily ? "Ativa" : "Inativa"}</p>
                                 {enableVSA && (
-                                    <p className="text-blue-400">
+                                    <p className="text-slate-900">
                                         VSA: {[
                                             enableGLPI && "GLPI",
                                             enableZabbix && "Zabbix",

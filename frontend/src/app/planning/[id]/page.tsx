@@ -194,7 +194,7 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#0f1f35] to-[#0a1628] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-vsa-orange"></div>
       </div>
     );
@@ -204,7 +204,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#0f1f35] to-[#0a1628] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 mb-4">{error || "Projeto não encontrado"}</p>
+          <p className="text-slate-900 mb-4">{error || "Projeto não encontrado"}</p>
           <Link href="/planning">
             <Button>Voltar</Button>
           </Link>
@@ -214,20 +214,20 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#0f1f35] to-[#0a1628] text-white">
+    <div className="min-h-screen bg-[#F5F6F8] text-slate-900">
       {/* Header */}
-      <div className="border-b border-slate-700 bg-slate-900/50 px-6 py-4">
+      <div className="border-b-2 border-slate-200 bg-white px-6 py-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <Link href="/planning" className="text-slate-400 hover:text-white">
+              <Link href="/planning" className="text-slate-500 hover:text-slate-900">
                 ← Projetos
               </Link>
-              <span className="text-slate-600">/</span>
+              <span className="text-slate-400">/</span>
               <h1 className="text-xl font-semibold">{project.title}</h1>
             </div>
             {project.description && (
-              <p className="text-sm text-slate-400 mt-1">{project.description}</p>
+              <p className="text-sm text-slate-600 mt-1">{project.description}</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -236,13 +236,13 @@ export default function ProjectDetailPage() {
                 href={project.linear_project_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-400 hover:text-blue-300"
+                className="text-sm text-slate-900 hover:text-slate-900"
               >
                 Ver no Linear ↗
               </a>
             )}
             <Link href="/">
-              <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">
+              <Button variant="outline" size="sm" className="border-slate-300 text-slate-700">
                 Chat VSA
               </Button>
             </Link>
@@ -254,11 +254,11 @@ export default function ProjectDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Documents */}
           <div className="lg:col-span-1">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
+                <CardTitle className="text-slate-900 flex items-center justify-between">
                   <span>Documentos</span>
-                  <span className="text-sm font-normal text-slate-400">
+                  <span className="text-sm font-normal text-slate-500">
                     {project.documents.length} arquivo(s)
                   </span>
                 </CardTitle>
@@ -266,7 +266,7 @@ export default function ProjectDetailPage() {
               <CardContent>
                 {/* Upload Area */}
                 <div
-                  className="border-2 border-dashed border-slate-600 rounded-lg p-4 text-center mb-4 hover:border-vsa-orange/50 transition-colors cursor-pointer"
+                  className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center mb-4 hover:border-vsa-orange/50 transition-colors cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -290,9 +290,9 @@ export default function ProjectDetailPage() {
                     onChange={(e) => handleFileUpload(e.target.files)}
                   />
                   {uploading ? (
-                    <span className="text-slate-400">Enviando...</span>
+                    <span className="text-slate-500">Enviando...</span>
                   ) : (
-                    <span className="text-slate-400">
+                    <span className="text-slate-500">
                       Arraste arquivos ou clique para upload<br />
                       <span className="text-xs">(PDF, MD, TXT)</span>
                     </span>
@@ -304,17 +304,17 @@ export default function ProjectDetailPage() {
                   {project.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg"
+                      className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border-2 border-slate-200 shadow-sm"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white truncate">{doc.file_name}</p>
+                        <p className="text-sm text-slate-900 truncate">{doc.file_name}</p>
                         <p className="text-xs text-slate-500">
                           {doc.file_type?.toUpperCase()} • {formatFileSize(doc.file_size || 0)}
                         </p>
                       </div>
                       <button
                         onClick={() => handleDeleteDocument(doc.id)}
-                        className="text-red-400 hover:text-red-300 p-1"
+                        className="text-slate-900 hover:text-slate-900 p-1"
                       >
                         ×
                       </button>
@@ -327,16 +327,16 @@ export default function ProjectDetailPage() {
 
           {/* Center: Analysis */}
           <div className="lg:col-span-2">
-            <Card className="bg-slate-800/50 border-slate-700 mb-6">
+            <Card className="mb-6">
               <CardHeader>
-                <CardTitle className="text-white">Análise de Documentos</CardTitle>
+                <CardTitle className="text-slate-900">Análise de Documentos</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4 mb-4">
                   <select
                     value={focusArea}
                     onChange={(e) => setFocusArea(e.target.value)}
-                    className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white"
+                    className="px-3 py-2 bg-white border-2 border-slate-300 rounded-lg text-slate-900 shadow-sm"
                   >
                     <option value="Geral">Análise Geral</option>
                     <option value="Riscos">Foco em Riscos</option>
@@ -348,29 +348,29 @@ export default function ProjectDetailPage() {
                   <Button
                     onClick={handleAnalyze}
                     disabled={analyzing || project.documents.length === 0}
-                    className="bg-vsa-orange/80 hover:bg-vsa-orange"
+                    className="bg-vsa-orange hover:bg-vsa-orange-dark"
                   >
                     {analyzing ? "Analisando..." : "Analisar com IA"}
                   </Button>
                 </div>
 
                 {project.documents.length === 0 && (
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-slate-600 text-sm">
                     Faça upload de documentos para habilitar a análise.
                   </p>
                 )}
 
                 {analysis && (
                   <div className="space-y-4">
-                    <div className="p-4 bg-slate-900/50 rounded-lg">
-                      <h3 className="text-sm font-semibold text-vsa-orange mb-2">Resumo Executivo</h3>
-                      <p className="text-sm text-slate-300">{analysis.executive_summary}</p>
+                    <div className="p-4 bg-slate-50 border-2 border-slate-200 rounded-lg shadow-sm">
+                      <h3 className="text-sm font-semibold text-slate-900 mb-2">Resumo Executivo</h3>
+                      <p className="text-sm text-slate-700">{analysis.executive_summary}</p>
                     </div>
 
                     {analysis.critical_points.length > 0 && (
-                      <div className="p-4 bg-slate-900/50 rounded-lg">
-                        <h3 className="text-sm font-semibold text-yellow-400 mb-2">Pontos Críticos</h3>
-                        <ul className="text-sm text-slate-300 list-disc list-inside space-y-1">
+                      <div className="p-4 bg-slate-50 border-2 border-slate-200 rounded-lg shadow-sm">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-2">Pontos Críticos</h3>
+                        <ul className="text-sm text-slate-900 list-disc list-inside space-y-1">
                           {analysis.critical_points.map((p, i) => (
                             <li key={i}>{p}</li>
                           ))}
@@ -379,9 +379,9 @@ export default function ProjectDetailPage() {
                     )}
 
                     {analysis.risks.length > 0 && (
-                      <div className="p-4 bg-red-900/20 border border-red-800/50 rounded-lg">
-                        <h3 className="text-sm font-semibold text-red-400 mb-2">Riscos Identificados</h3>
-                        <ul className="text-sm text-slate-300 list-disc list-inside space-y-1">
+                      <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg shadow-sm">
+                        <h3 className="text-sm font-semibold text-slate-900 mb-2">Riscos Identificados</h3>
+                        <ul className="text-sm text-slate-900 list-disc list-inside space-y-1">
                           {analysis.risks.map((r, i) => (
                             <li key={i}>{r}</li>
                           ))}
@@ -411,15 +411,15 @@ export default function ProjectDetailPage() {
             </Card>
 
             {/* Tabs: Stages & Budget */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardHeader>
-                <div className="flex gap-4 border-b border-slate-700 pb-2">
+                <div className="flex gap-4 border-b-2 border-slate-200 pb-2">
                   <button
                     onClick={() => setActiveTab("stages")}
                     className={`pb-2 text-sm font-medium transition-colors ${
                       activeTab === "stages"
-                        ? "text-vsa-orange border-b-2 border-vsa-orange"
-                        : "text-slate-400 hover:text-white"
+                        ? "text-slate-900 border-b-2 border-vsa-orange"
+                        : "text-slate-500 hover:text-slate-900"
                     }`}
                   >
                     Etapas ({project.stages.length})
@@ -428,8 +428,8 @@ export default function ProjectDetailPage() {
                     onClick={() => setActiveTab("budget")}
                     className={`pb-2 text-sm font-medium transition-colors ${
                       activeTab === "budget"
-                        ? "text-vsa-orange border-b-2 border-vsa-orange"
-                        : "text-slate-400 hover:text-white"
+                        ? "text-slate-900 border-b-2 border-vsa-orange"
+                        : "text-slate-500 hover:text-slate-900"
                     }`}
                   >
                     Orçamento ({formatCurrency(project.total_budget_estimated)})
@@ -440,28 +440,28 @@ export default function ProjectDetailPage() {
                 {activeTab === "stages" && (
                   <div className="space-y-2">
                     {project.stages.length === 0 ? (
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-slate-600 text-sm">
                         Nenhuma etapa definida. Analise os documentos para sugestões.
                       </p>
                     ) : (
                       project.stages.map((stage) => (
                         <div
                           key={stage.id}
-                          className="p-3 bg-slate-900/50 rounded-lg flex items-center gap-3"
+                          className="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg flex items-center gap-3 shadow-sm"
                         >
                           <span className="text-xs text-slate-500 w-6">{stage.order_index + 1}</span>
                           <div className="flex-1">
-                            <p className="text-sm text-white">{stage.title}</p>
+                            <p className="text-sm text-slate-900">{stage.title}</p>
                             {stage.description && (
-                              <p className="text-xs text-slate-400">{stage.description}</p>
+                              <p className="text-xs text-slate-600">{stage.description}</p>
                             )}
                           </div>
                           <span className={`text-xs px-2 py-1 rounded ${
                             stage.status === "completed"
-                              ? "bg-emerald-500/20 text-emerald-300"
+                              ? "bg-emerald-100 text-slate-900"
                               : stage.status === "in_progress"
-                              ? "bg-blue-500/20 text-blue-300"
-                              : "bg-slate-600/50 text-slate-400"
+                              ? "bg-blue-100 text-slate-900"
+                              : "bg-slate-100 text-slate-900"
                           }`}>
                             {stage.status === "completed"
                               ? "Concluído"
@@ -481,7 +481,7 @@ export default function ProjectDetailPage() {
                 {activeTab === "budget" && (
                   <div className="space-y-2">
                     {project.budget_items.length === 0 ? (
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-slate-600 text-sm">
                         Nenhum item de orçamento. Analise os documentos para sugestões.
                       </p>
                     ) : (
@@ -489,22 +489,22 @@ export default function ProjectDetailPage() {
                         {project.budget_items.map((item) => (
                           <div
                             key={item.id}
-                            className="p-3 bg-slate-900/50 rounded-lg flex items-center gap-3"
+                            className="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg flex items-center gap-3 shadow-sm"
                           >
                             <span className="text-xs text-slate-500 uppercase w-20">
                               {item.category}
                             </span>
                             <div className="flex-1">
-                              <p className="text-sm text-white">{item.description}</p>
+                              <p className="text-sm text-slate-900">{item.description}</p>
                             </div>
-                            <span className="text-sm text-emerald-400">
+                            <span className="text-sm text-slate-900">
                               {formatCurrency(item.estimated_cost)}
                             </span>
                           </div>
                         ))}
-                        <div className="pt-2 border-t border-slate-700 flex justify-between text-sm">
-                          <span className="text-slate-400">Total Estimado:</span>
-                          <span className="text-emerald-400 font-semibold">
+                        <div className="pt-2 border-t-2 border-slate-200 flex justify-between text-sm">
+                          <span className="text-slate-600">Total Estimado:</span>
+                          <span className="text-slate-900 font-semibold">
                             {formatCurrency(project.total_budget_estimated)}
                           </span>
                         </div>

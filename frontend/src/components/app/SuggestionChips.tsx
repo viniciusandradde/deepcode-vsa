@@ -84,26 +84,26 @@ export function SuggestionChips({ onSelect, disabled }: SuggestionChipsProps) {
           onClick={() => onSelect(suggestion.command)}
           disabled={disabled}
           className={clsx(
-            "group flex flex-col items-start gap-1 rounded-xl p-4 text-left transition-all",
-            "border bg-white/5 hover:bg-white/10",
+            "group flex flex-col items-start gap-1 rounded-xl p-4 text-left transition-all shadow-sm",
+            "border-2 border-slate-200 bg-white hover:border-vsa-orange/60 hover:bg-slate-50",
             "disabled:cursor-not-allowed disabled:opacity-50",
             suggestion.variant === "warning"
-              ? "border-amber-500/30 hover:border-amber-500/50"
-              : "border-white/10 hover:border-white/20"
+              ? "border-amber-400/40 hover:border-amber-500/60"
+              : ""
           )}
         >
           <div
             className={clsx(
               "flex items-center gap-2",
               suggestion.variant === "warning"
-                ? "text-amber-400"
-                : "text-cyan-400"
+                ? "text-slate-900"
+                : "text-slate-900"
             )}
           >
             {suggestion.icon}
-            <span className="font-medium text-white">{suggestion.label}</span>
+            <span className="font-medium text-slate-900">{suggestion.label}</span>
           </div>
-          <span className="text-xs text-slate-400 group-hover:text-slate-300">
+          <span className="text-xs text-slate-500 group-hover:text-slate-600">
             {suggestion.description}
           </span>
         </button>

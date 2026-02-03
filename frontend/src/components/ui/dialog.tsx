@@ -24,16 +24,15 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
         aria-hidden="true"
       />
       <div
-        className="relative z-50 w-full max-w-md rounded-xl border border-white/10 bg-[#0b1526] p-6 shadow-2xl"
+        className="relative z-50 w-full max-w-md rounded-xl border-2 border-slate-200 bg-white p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide text-slate-100">
+        <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide text-slate-900">
           {title}
         </h2>
-        <div className="mb-6 text-sm text-slate-300">{children}</div>
+        <div className="mb-6 text-sm text-slate-700">{children}</div>
         {footer && <div className="flex justify-end gap-3">{footer}</div>}
       </div>
     </div>
   );
 }
-

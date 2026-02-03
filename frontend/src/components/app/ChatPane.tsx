@@ -119,13 +119,13 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
   }, [currentSessionId]);
 
   return (
-    <div className="flex h-screen flex-1 flex-col bg-gradient-to-br from-[#0d1426] via-[#0d1b2a] to-[#09111e]">
-      <header className="flex h-20 items-center justify-between border-b border-vsa-blue/20 px-10 text-slate-100 bg-gradient-to-r from-vsa-blue-dark/10 via-transparent to-vsa-orange-dark/10">
+    <div className="flex h-screen flex-1 flex-col bg-[#F5F6F8]">
+      <header className="flex h-20 items-center justify-between border-b-2 border-slate-200 px-10 text-slate-900 bg-white shadow-sm">
         <div className="flex items-center gap-4">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="p-2 rounded-lg border border-vsa-blue/40 bg-vsa-blue/10 text-vsa-blue-light hover:border-vsa-blue hover:bg-vsa-blue/20 transition-colors"
+              className="p-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 shadow-sm hover:border-vsa-orange/60 hover:text-slate-900 transition-colors"
               aria-label={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
               title={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
             >
@@ -146,48 +146,39 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
             </button>
           )}
           <Logo size="md" showText={true} />
-          <div className="h-12 w-px bg-vsa-orange/30" />
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.4em] text-vsa-blue-light/70">Painel de Controle</div>
-            <div className="text-2xl font-bold uppercase text-white" style={{ fontFamily: "var(--font-sans)" }}>
-              Sessão {currentSessionId ? currentSessionId.slice(0, 12) : "—"}
-            </div>
-          </div>
+          <div className="h-12 w-px bg-vsa-orange/40" />
         </div>
         <div className="flex items-center gap-4 text-[11px] uppercase tracking-wide">
-          {enableVSA && (
-            <span className="rounded-md border border-green-500/40 px-3 py-1 text-green-400 bg-green-500/10 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+          {enableVSA ? (
+            <span className="rounded-md border-2 border-slate-300 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse" />
               VSA Ativo
-              {enableGLPI && <span className="text-purple-400">GLPI</span>}
-              {enableZabbix && <span className="text-orange-400">Zabbix</span>}
-              {enableLinear && <span className="text-blue-400">Linear</span>}
-              {enablePlanning && <span className="text-orange-400">Planejamento</span>}
+              {enableGLPI && <span className="text-slate-900">GLPI</span>}
+              {enableZabbix && <span className="text-slate-900">Zabbix</span>}
+              {enableLinear && <span className="text-slate-900">Linear</span>}
+              {enablePlanning && <span className="text-slate-900">Planejamento</span>}
+            </span>
+          ) : (
+            <span className="rounded-md border-2 border-slate-300 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-slate-400" />
+              VSA Inativo
             </span>
           )}
-          <span className="rounded-md border border-vsa-blue/40 px-3 py-1 text-vsa-blue-light bg-vsa-blue/5">
-            Modelo: <span className="font-semibold text-white">{selectedModelId || "—"}</span>
-          </span>
-          <span className="rounded-md border border-vsa-orange/40 px-3 py-1 text-vsa-orange-light bg-vsa-orange/5">
-            Busca Web: <span className={useTavily ? "text-vsa-orange-light" : "text-slate-400"}>{useTavily ? "Ativa" : "Inativa"}</span>
-          </span>
         </div>
       </header>
 
       <main ref={mainRef} className="relative flex flex-1 flex-col gap-5 overflow-y-auto px-10 py-8">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(5,173,202,0.12),transparent_60%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(32,51,109,0.18),transparent_55%)]" />
         <div className="relative flex-1 space-y-4">
           {isLoading ? (
-            <Card className="border border-white/10 bg-white/5 text-center text-slate-400">
+            <Card className="border-2 border-slate-200 bg-white text-center text-slate-600">
               <CardHeader>Carregando sessões</CardHeader>
               <CardContent>Aguarde enquanto conectamos ao servidor.</CardContent>
             </Card>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-8 py-8">
               <div className="text-center">
-                <h2 className="text-2xl font-semibold text-white">Como posso ajudar?</h2>
-                <p className="mt-2 text-slate-400">Escolha uma opção ou digite sua pergunta</p>
+                <h2 className="text-2xl font-semibold text-slate-900">Como posso ajudar?</h2>
+                <p className="mt-2 text-slate-600">Escolha uma opção ou digite sua pergunta</p>
               </div>
               <SuggestionChips
                 onSelect={(cmd) => handleMessageSubmit(cmd, true)}

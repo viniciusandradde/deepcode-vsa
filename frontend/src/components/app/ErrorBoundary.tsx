@@ -35,12 +35,12 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <Card className="m-4 border-red-500/50 bg-red-500/10">
+        <Card className="m-4 border-2 border-red-200 bg-red-50 shadow-sm">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-red-200">Algo deu errado</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Algo deu errado</h2>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-red-100">
+            <p className="text-sm text-slate-900">
               {this.state.error?.message || "Ocorreu um erro inesperado"}
             </p>
             <Button
@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.reload();
               }}
               variant="outline"
-              className="border-red-300/40 text-red-100 hover:bg-red-500/20"
+              className="border-red-200 text-slate-900 hover:bg-red-100"
             >
               Recarregar Página
             </Button>

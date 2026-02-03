@@ -32,7 +32,7 @@ export function DeleteConfirmDialog({
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="border-slate-400/40 text-slate-300 hover:border-slate-300"
+            className="border-slate-300 text-slate-700 hover:border-slate-400"
           >
             Cancelar
           </Button>
@@ -40,7 +40,7 @@ export function DeleteConfirmDialog({
             variant="primary"
             size="sm"
             onClick={handleConfirm}
-            className="bg-red-600/80 text-white hover:bg-red-600"
+            className="bg-red-200 text-slate-900 hover:bg-red-300"
           >
             Deletar
           </Button>
@@ -49,16 +49,15 @@ export function DeleteConfirmDialog({
     >
       <p className="mb-2">
         Tem certeza que deseja deletar a conversa{" "}
-        <span className="font-semibold text-vsa-orange-light">
+        <span className="font-semibold text-slate-900">
           {sessionTitle || "esta sessão"}
         </span>
         ?
       </p>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-slate-500">
         Esta ação não pode ser desfeita. Todas as mensagens desta conversa serão
         permanentemente removidas.
       </p>
     </Dialog>
   );
 }
-

@@ -99,10 +99,10 @@ export default function PlanningPage() {
   };
 
   const statusColors: Record<string, string> = {
-    draft: "bg-gray-500/20 text-gray-300",
-    active: "bg-emerald-500/20 text-emerald-300",
-    completed: "bg-blue-500/20 text-blue-300",
-    archived: "bg-slate-500/20 text-slate-400",
+    draft: "bg-gray-100 text-slate-900",
+    active: "bg-emerald-100 text-slate-900",
+    completed: "bg-blue-100 text-slate-900",
+    archived: "bg-slate-100 text-slate-900",
   };
 
   const statusLabels: Record<string, string> = {
@@ -113,25 +113,25 @@ export default function PlanningPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#0f1f35] to-[#0a1628] text-white p-8">
+    <div className="min-h-screen bg-[#F5F6F8] text-slate-900 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Planejamento de Projetos</h1>
-            <p className="text-slate-400 mt-1">
+            <h1 className="text-3xl font-bold text-slate-900">Planejamento de Projetos</h1>
+            <p className="text-slate-600 mt-1">
               Gerencie projetos com análise de documentos estilo NotebookLM
             </p>
           </div>
           <div className="flex gap-3">
             <Link href="/">
-              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700">
+              <Button variant="outline" className="border-slate-300 text-slate-700 hover:border-vsa-orange/60 hover:text-slate-900">
                 ← Voltar ao Chat
               </Button>
             </Link>
             <Button 
               onClick={() => setShowCreateModal(true)}
-              className="bg-vsa-orange/80 hover:bg-vsa-orange text-white"
+              className="bg-vsa-orange hover:bg-vsa-orange-dark text-slate-900"
             >
               + Novo Projeto
             </Button>
@@ -140,7 +140,7 @@ export default function PlanningPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/40 rounded-lg text-red-200">
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg text-slate-900 shadow-sm">
             {error}
           </div>
         )}
@@ -154,12 +154,12 @@ export default function PlanningPage() {
 
         {/* Projects Grid */}
         {!loading && projects.length === 0 && (
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-slate-400 mb-4">Nenhum projeto encontrado</p>
+              <p className="text-slate-600 mb-4">Nenhum projeto encontrado</p>
               <Button 
                 onClick={() => setShowCreateModal(true)}
-                className="bg-vsa-orange/80 hover:bg-vsa-orange"
+                className="bg-vsa-orange hover:bg-vsa-orange-dark"
               >
                 Criar primeiro projeto
               </Button>
@@ -172,12 +172,12 @@ export default function PlanningPage() {
             {projects.map((project) => (
               <Card 
                 key={project.id}
-                className="bg-slate-800/50 border-slate-700 hover:border-vsa-orange/50 transition-colors"
+                className="hover:border-vsa-orange/50 transition-colors"
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <Link href={`/planning/${project.id}`} className="flex-1">
-                      <CardTitle className="text-lg text-white hover:text-vsa-orange transition-colors">
+                      <CardTitle className="text-lg text-slate-900 hover:text-slate-900 transition-colors">
                         {project.title}
                       </CardTitle>
                     </Link>
@@ -187,7 +187,7 @@ export default function PlanningPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-slate-400 mb-4 line-clamp-2">
+                  <p className="text-sm text-slate-600 mb-4 line-clamp-2">
                     {project.description || "Sem descrição"}
                   </p>
                   <div className="flex items-center justify-between text-xs text-slate-500">
@@ -200,14 +200,14 @@ export default function PlanningPage() {
                           href={project.linear_project_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300"
+                          className="text-slate-900 hover:text-slate-900"
                         >
                           Linear ↗
                         </a>
                       )}
                       <button
                         onClick={() => handleDeleteProject(project.id)}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-slate-900 hover:text-slate-900"
                       >
                         Excluir
                       </button>
@@ -221,29 +221,29 @@ export default function PlanningPage() {
 
         {/* Create Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 w-full max-w-md">
-              <h2 className="text-xl font-semibold text-white mb-4">Novo Projeto</h2>
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white border-2 border-slate-200 rounded-xl p-6 w-full max-w-md shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900 mb-4">Novo Projeto</h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-slate-300 mb-1">Título *</label>
+                  <label className="block text-sm text-slate-600 mb-1">Título *</label>
                   <input
                     type="text"
                     value={newProjectTitle}
                     onChange={(e) => setNewProjectTitle(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-vsa-orange focus:outline-none"
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-lg text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
                     placeholder="Nome do projeto"
                     autoFocus
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm text-slate-300 mb-1">Descrição</label>
+                  <label className="block text-sm text-slate-600 mb-1">Descrição</label>
                   <textarea
                     value={newProjectDescription}
                     onChange={(e) => setNewProjectDescription(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-vsa-orange focus:outline-none resize-none"
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-lg text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none resize-none"
                     rows={3}
                     placeholder="Descrição breve do projeto"
                   />
@@ -254,14 +254,14 @@ export default function PlanningPage() {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowCreateModal(false)}
-                  className="border-slate-600 text-slate-300"
+                  className="border-slate-300 text-slate-700"
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleCreateProject}
                   disabled={!newProjectTitle.trim() || creating}
-                  className="bg-vsa-orange/80 hover:bg-vsa-orange"
+                  className="bg-vsa-orange hover:bg-vsa-orange-dark"
                 >
                   {creating ? "Criando..." : "Criar Projeto"}
                 </Button>

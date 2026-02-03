@@ -22,15 +22,15 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
   }, [duration, onClose]);
 
   const typeStyles = {
-    success: "bg-emerald-500/20 border-emerald-400/40 text-emerald-200",
-    error: "bg-red-500/20 border-red-400/40 text-red-200",
-    info: "bg-cyan-500/20 border-cyan-400/40 text-cyan-200",
+    success: "bg-emerald-50 border-emerald-200 text-slate-900",
+    error: "bg-red-50 border-red-200 text-slate-900",
+    info: "bg-slate-50 border-slate-200 text-slate-900",
   };
 
   return (
     <div
       className={clsx(
-        "fixed bottom-4 right-4 z-50 rounded-lg border px-4 py-3 shadow-lg transition-all",
+        "fixed bottom-4 right-4 z-50 rounded-lg border-2 px-4 py-3 shadow-lg transition-all",
         typeStyles[type],
       )}
     >
@@ -76,4 +76,3 @@ export function ToastManager({ toasts, onRemove }: ToastManagerProps) {
     </>
   );
 }
-

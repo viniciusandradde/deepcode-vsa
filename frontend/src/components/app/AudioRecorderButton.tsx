@@ -58,7 +58,7 @@ export function AudioRecorderButton({
       <button
         disabled
         className={clsx(
-          "flex h-12 w-12 items-center justify-center rounded-lg border border-slate-500/40 bg-slate-500/10 text-slate-500 cursor-not-allowed",
+          "flex h-12 w-12 items-center justify-center rounded-lg border-2 border-slate-300 bg-slate-100 text-slate-500 cursor-not-allowed",
           className
         )}
         title="Reconhecimento de voz não suportado"
@@ -87,10 +87,10 @@ export function AudioRecorderButton({
       type="button"
       onClick={handleToggle}
       className={clsx(
-        "relative flex h-12 w-12 items-center justify-center rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0b1526]",
+        "relative flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white",
         isRecording
-          ? "border-vsa-orange/60 bg-vsa-orange/20 text-vsa-orange-light shadow-lg shadow-vsa-orange/30 focus:ring-vsa-orange animate-pulse"
-          : "border-vsa-blue/40 bg-vsa-blue/10 text-vsa-blue-light hover:border-vsa-blue hover:bg-vsa-blue/20 focus:ring-vsa-blue",
+          ? "border-vsa-orange/60 bg-vsa-orange/15 text-slate-900 shadow-sm shadow-vsa-orange/20 focus:ring-vsa-orange animate-pulse"
+          : "border-slate-300 bg-white text-slate-600 hover:border-vsa-orange/60 hover:text-slate-900 focus:ring-vsa-orange/40",
         className
       )}
       aria-label={isRecording ? "Parar gravação" : "Iniciar gravação"}
@@ -129,4 +129,3 @@ export function AudioRecorderButton({
     </button>
   );
 }
-

@@ -24,10 +24,10 @@ export interface ActionPlanProps {
 }
 
 const statusConfig = {
-    pending: { icon: "⏳", color: "text-gray-400", bgColor: "bg-gray-800" },
-    in_progress: { icon: "🔄", color: "text-blue-400", bgColor: "bg-blue-900/30" },
-    completed: { icon: "✅", color: "text-green-400", bgColor: "bg-green-900/30" },
-    failed: { icon: "❌", color: "text-red-400", bgColor: "bg-red-900/30" },
+    pending: { icon: "⏳", color: "text-slate-900", bgColor: "bg-slate-100" },
+    in_progress: { icon: "🔄", color: "text-slate-900", bgColor: "bg-blue-50" },
+    completed: { icon: "✅", color: "text-slate-900", bgColor: "bg-green-50" },
+    failed: { icon: "❌", color: "text-slate-900", bgColor: "bg-red-50" },
 };
 
 export function ActionPlan({
@@ -42,8 +42,8 @@ export function ActionPlan({
 
     if (compact) {
         return (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-900/30 border border-blue-700/50">
-                <span className="text-blue-400 text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-50 border-2 border-blue-200 shadow-sm">
+                <span className="text-slate-900 text-xs font-semibold">
                     🎯 Plano de Ação ({steps.length} etapas)
                 </span>
             </div>
@@ -51,17 +51,17 @@ export function ActionPlan({
     }
 
     return (
-        <div className="my-3 p-4 rounded-lg bg-gray-800/80 border border-gray-700 shadow-lg">
+        <div className="my-3 p-4 rounded-lg bg-white border-2 border-slate-200 shadow-sm">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-slate-200">
                 <span className="text-xl">🎯</span>
                 <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-white">Plano de Ação</h3>
+                    <h3 className="text-sm font-semibold text-slate-800">Plano de Ação</h3>
                     {methodology && (
-                        <p className="text-xs text-gray-400">Metodologia: {methodology}</p>
+                        <p className="text-xs text-slate-500">Metodologia: {methodology}</p>
                     )}
                 </div>
-                <span className="text-xs text-gray-400 bg-gray-900 px-2 py-1 rounded">
+                <span className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
                     {steps.length} etapas
                 </span>
             </div>
@@ -75,11 +75,11 @@ export function ActionPlan({
                     return (
                         <div
                             key={index}
-                            className={`flex gap-3 p-3 rounded-md transition-colors ${config.bgColor} border border-gray-700/50`}
+                            className={`flex gap-3 p-3 rounded-md transition-colors ${config.bgColor} border-2 border-slate-200 shadow-sm`}
                         >
                             {/* Step Number + Status Icon */}
                             <div className="flex-shrink-0 flex flex-col items-center gap-1">
-                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-gray-300">
+                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-white border-2 border-slate-200 text-xs font-bold text-slate-600">
                                     {step.step}
                                 </div>
                                 <span className="text-sm">{config.icon}</span>
@@ -90,7 +90,7 @@ export function ActionPlan({
                                 <h4 className={`text-sm font-semibold ${config.color}`}>
                                     {step.title}
                                 </h4>
-                                <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+                                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                                     {step.description}
                                 </p>
                             </div>
@@ -101,15 +101,15 @@ export function ActionPlan({
 
             {/* Confirmation Buttons (Task 2.8 - Future) */}
             {requiresConfirmation && (onConfirm || onCancel) && (
-                <div className="mt-4 pt-3 border-t border-gray-700 flex items-center justify-between">
-                    <p className="text-xs text-gray-400">
+                <div className="mt-4 pt-3 border-t-2 border-slate-200 flex items-center justify-between">
+                    <p className="text-xs text-slate-600">
                         ⚠️ Confirmação necessária para executar este plano
                     </p>
                     <div className="flex gap-2">
                         {onCancel && (
                             <button
                                 onClick={onCancel}
-                                className="px-3 py-1.5 text-xs rounded-md bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                                className="px-3 py-1.5 text-xs rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -117,7 +117,7 @@ export function ActionPlan({
                         {onConfirm && (
                             <button
                                 onClick={onConfirm}
-                                className="px-3 py-1.5 text-xs rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+                                className="px-3 py-1.5 text-xs rounded-md bg-vsa-orange/20 hover:bg-vsa-orange/30 text-slate-900 font-semibold transition-colors border-2 border-vsa-orange/30"
                             >
                                 ✓ Confirmar Execução
                             </button>

@@ -12,11 +12,11 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const base = "inline-flex items-center justify-center rounded-md font-semibold uppercase tracking-[0.25em] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0b1526]";
+  const base = "inline-flex items-center justify-center rounded-md font-medium shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white";
   const variants = {
-    primary: "bg-vsa-orange text-white hover:bg-vsa-orange-dark focus:ring-vsa-orange-light shadow-lg shadow-vsa-orange/20",
-    ghost: "bg-transparent text-slate-100 hover:bg-white/10 focus:ring-vsa-blue",
-    outline: "border border-vsa-blue/40 text-vsa-blue-light hover:border-vsa-blue hover:bg-vsa-blue/10 focus:ring-vsa-blue-light",
+    primary: "border-2 border-transparent bg-vsa-orange text-slate-900 hover:bg-vsa-orange-dark focus:ring-vsa-orange-light",
+    ghost: "border-2 border-transparent bg-transparent text-slate-900 hover:bg-slate-100 focus:ring-vsa-orange/50",
+    outline: "border-2 border-slate-300 text-slate-900 hover:border-vsa-orange/60 hover:text-slate-900 focus:ring-vsa-orange/40",
   } as const;
   const sizes = {
     sm: "h-8 px-3 text-xs",

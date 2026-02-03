@@ -31,17 +31,17 @@ const targetConfig: Record<
   glpi: {
     icon: "🎫",
     label: "GLPI",
-    color: "text-purple-400 border-purple-500/40 bg-purple-500/10",
+    color: "text-slate-900 border-purple-300 bg-purple-50",
   },
   zabbix: {
     icon: "📊",
     label: "Zabbix",
-    color: "text-orange-400 border-orange-500/40 bg-orange-500/10",
+    color: "text-slate-900 border-orange-300 bg-orange-50",
   },
   linear: {
     icon: "📋",
     label: "Linear",
-    color: "text-blue-400 border-blue-500/40 bg-blue-500/10",
+    color: "text-slate-900 border-blue-300 bg-blue-50",
   },
 };
 
@@ -52,17 +52,17 @@ const operationTypeConfig: Record<
   create: {
     label: "Criar",
     icon: "+",
-    color: "text-green-400",
+    color: "text-slate-900",
   },
   update: {
     label: "Atualizar",
     icon: "↻",
-    color: "text-yellow-400",
+    color: "text-slate-900",
   },
   execute: {
     label: "Executar",
     icon: "▶",
-    color: "text-blue-400",
+    color: "text-slate-900",
   },
 };
 
@@ -78,17 +78,17 @@ function JsonPreview({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data);
 
   return (
-    <div className="rounded-lg bg-slate-900/80 border border-white/10 p-3 max-h-48 overflow-y-auto">
+    <div className="rounded-lg bg-slate-50 border-2 border-slate-200 p-3 max-h-48 overflow-y-auto shadow-sm">
       <table className="w-full text-xs font-mono">
         <tbody>
           {entries.map(([key, value]) => (
-            <tr key={key} className="border-b border-white/5 last:border-0">
-              <td className="py-1.5 pr-3 text-slate-400 align-top whitespace-nowrap">
+            <tr key={key} className="border-b-2 border-slate-200 last:border-0">
+              <td className="py-1.5 pr-3 text-slate-600 align-top whitespace-nowrap">
                 {key}:
               </td>
-              <td className="py-1.5 text-slate-200 break-all">
+              <td className="py-1.5 text-slate-800 break-all">
                 {typeof value === "object" && value !== null ? (
-                  <pre className="whitespace-pre-wrap text-[10px] bg-slate-800/50 rounded p-1.5 mt-1">
+                  <pre className="whitespace-pre-wrap text-[10px] bg-slate-100 rounded p-1.5 mt-1">
                     {JSON.stringify(value, null, 2)}
                   </pre>
                 ) : (
@@ -133,7 +133,7 @@ export function WriteConfirmDialog({
             size="sm"
             onClick={onClose}
             disabled={isLoading}
-            className="border-slate-400/40 text-slate-300 hover:border-slate-300"
+            className="border-slate-300 text-slate-700 hover:border-slate-400"
           >
             Cancelar
           </Button>
@@ -144,8 +144,8 @@ export function WriteConfirmDialog({
             disabled={isLoading}
             className={
               dryRun
-                ? "bg-blue-600/80 text-white hover:bg-blue-600"
-                : "bg-vsa-orange/80 text-white hover:bg-vsa-orange"
+                ? "bg-blue-100 text-slate-900 hover:bg-blue-200"
+                : "bg-vsa-orange/20 text-slate-900 hover:bg-vsa-orange/30"
             }
           >
             {isLoading ? (
@@ -166,7 +166,7 @@ export function WriteConfirmDialog({
         {/* Operation header */}
         <div className="flex items-center gap-3">
           <span
-            className={`px-3 py-1.5 rounded-lg border text-sm font-medium ${target.color}`}
+            className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium ${target.color}`}
           >
             {target.icon} {target.label}
           </span>
@@ -177,9 +177,9 @@ export function WriteConfirmDialog({
 
         {/* Action description */}
         <div className="space-y-1">
-          <p className="text-sm text-slate-200 font-medium">{operation.action}</p>
+          <p className="text-sm text-slate-800 font-medium">{operation.action}</p>
           {operation.description && (
-            <p className="text-xs text-slate-400">{operation.description}</p>
+            <p className="text-xs text-slate-500">{operation.description}</p>
           )}
         </div>
 
@@ -192,10 +192,10 @@ export function WriteConfirmDialog({
         </div>
 
         {/* Dry-run toggle */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-white/10">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border-2 border-slate-200 shadow-sm">
           <div>
-            <p className="text-sm text-slate-200">Modo Simulação (Dry-Run)</p>
-            <p className="text-xs text-slate-400">
+            <p className="text-sm text-slate-700">Modo Simulação (Dry-Run)</p>
+            <p className="text-xs text-slate-500">
               {dryRun
                 ? "Apenas validar, sem executar de fato"
                 : "Executar operação real no sistema"}
@@ -210,11 +210,11 @@ export function WriteConfirmDialog({
 
         {/* Warning for real execution */}
         {!dryRun && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-900/20 border border-amber-500/30 text-amber-300">
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border-2 border-amber-200 text-slate-900 shadow-sm">
             <span className="text-lg">⚠️</span>
             <div className="text-xs">
               <p className="font-medium">Atenção: Execução Real</p>
-              <p className="text-amber-300/80 mt-0.5">
+              <p className="text-slate-900 mt-0.5">
                 Esta operação será executada no {target.label} e não poderá ser
                 desfeita automaticamente.
               </p>

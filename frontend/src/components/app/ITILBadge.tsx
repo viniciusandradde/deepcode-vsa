@@ -26,37 +26,37 @@ const typeConfig: Record<
     { color: string; icon: string; label: string }
 > = {
     incidente: {
-        color: "bg-red-500 hover:bg-red-600",
+        color: "bg-red-100 hover:bg-red-200",
         icon: "🔥",
         label: "INCIDENTE",
     },
     problema: {
-        color: "bg-orange-500 hover:bg-orange-600",
+        color: "bg-orange-100 hover:bg-orange-200",
         icon: "🔍",
         label: "PROBLEMA",
     },
     mudanca: {
-        color: "bg-blue-500 hover:bg-blue-600",
+        color: "bg-blue-100 hover:bg-blue-200",
         icon: "🔄",
         label: "MUDANÇA",
     },
     requisicao: {
-        color: "bg-green-500 hover:bg-green-600",
+        color: "bg-green-100 hover:bg-green-200",
         icon: "📋",
         label: "REQUISIÇÃO",
     },
     conversa: {
-        color: "bg-gray-500 hover:bg-gray-600",
+        color: "bg-gray-100 hover:bg-gray-200",
         icon: "💬",
         label: "CONVERSA",
     },
 };
 
 const priorityConfig: Record<Priority, { color: string; label: string }> = {
-    critico: { color: "bg-red-600", label: "CRÍTICO" },
-    alto: { color: "bg-orange-600", label: "ALTO" },
-    medio: { color: "bg-yellow-600", label: "MÉDIO" },
-    baixo: { color: "bg-gray-600", label: "BAIXO" },
+    critico: { color: "bg-red-200", label: "CRÍTICO" },
+    alto: { color: "bg-orange-200", label: "ALTO" },
+    medio: { color: "bg-yellow-200", label: "MÉDIO" },
+    baixo: { color: "bg-gray-200", label: "BAIXO" },
 };
 
 /**
@@ -73,10 +73,10 @@ function getPriorityFromGUT(gutScore: number): Priority {
  * Get GUT score color based on value
  */
 function getGUTColor(gutScore: number): string {
-    if (gutScore >= 100) return "bg-red-700";
-    if (gutScore >= 64) return "bg-orange-700";
-    if (gutScore >= 27) return "bg-yellow-700";
-    return "bg-gray-700";
+    if (gutScore >= 100) return "bg-red-200";
+    if (gutScore >= 64) return "bg-orange-200";
+    if (gutScore >= 27) return "bg-yellow-200";
+    return "bg-gray-200";
 }
 
 export function ITILBadge({
@@ -93,13 +93,13 @@ export function ITILBadge({
         return (
             <div className="inline-flex items-center gap-1">
                 <span
-                    className={`px-2 py-0.5 rounded text-white text-xs font-semibold ${config.color} transition-colors`}
+                    className={`px-2 py-0.5 rounded text-slate-900 text-xs font-semibold ${config.color} transition-colors`}
                 >
                     {config.icon} {config.label}
                 </span>
                 {gutScore && (
                     <span
-                        className={`px-1.5 py-0.5 rounded text-white text-xs font-mono ${getGUTColor(gutScore)}`}
+                        className={`px-1.5 py-0.5 rounded text-slate-900 text-xs font-mono ${getGUTColor(gutScore)}`}
                     >
                         {gutScore}
                     </span>
@@ -109,17 +109,17 @@ export function ITILBadge({
     }
 
     return (
-        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-800/50 border border-gray-700">
+        <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-slate-50 border-2 border-slate-200 shadow-sm">
             {/* ITIL Type Badge */}
             <span
-                className={`px-3 py-1 rounded-md text-white text-xs font-semibold ${config.color} transition-colors shadow-sm`}
+                className={`px-3 py-1 rounded-md text-slate-900 text-xs font-semibold ${config.color} transition-colors shadow-sm`}
             >
                 {config.icon} {config.label}
             </span>
 
             {/* Category Badge */}
             {category && (
-                <span className="px-2 py-1 rounded-md bg-gray-600 text-gray-200 text-xs">
+                <span className="px-2 py-1 rounded-md bg-slate-200 text-slate-700 text-xs">
                     📁 {category}
                 </span>
             )}
@@ -127,7 +127,7 @@ export function ITILBadge({
             {/* GUT Score Badge */}
             {gutScore !== undefined && (
                 <span
-                    className={`px-2 py-1 rounded-md text-white text-xs font-mono ${getGUTColor(gutScore)}`}
+                    className={`px-2 py-1 rounded-md text-slate-900 text-xs font-mono ${getGUTColor(gutScore)}`}
                     title={`GUT Score: Gravidade × Urgência × Tendência = ${gutScore}`}
                 >
                     📊 GUT: {gutScore}
@@ -137,7 +137,7 @@ export function ITILBadge({
             {/* Priority Badge */}
             {effectivePriority && (
                 <span
-                    className={`px-2 py-1 rounded-md text-white text-xs ${priorityConfig[effectivePriority].color}`}
+                    className={`px-2 py-1 rounded-md text-slate-900 text-xs ${priorityConfig[effectivePriority].color}`}
                 >
                     ⚡ {priorityConfig[effectivePriority].label}
                 </span>
