@@ -264,17 +264,17 @@ def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
     """
     from datetime import datetime
     from zoneinfo import ZoneInfo
-
+    
     # Date only (no time) so prefix is stable for prompt caching across requests in the same day
     data_atual = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y")
     suffix = f"\n\nData: {data_atual} (São Paulo)"
-
+    
     if enable_vsa:
         prompt = VSA_CORE_PROMPT
         if include_examples:
             prompt = prompt + VSA_EXAMPLES_PROMPT
         return prompt + suffix
-    return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
+        return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
 
 @router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -336,7 +336,7 @@ async def chat(request: ChatRequest):
 
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
-
+        
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
             agent = UnifiedAgent(
@@ -480,7 +480,7 @@ async def stream_chat(request: ChatRequest):
 
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
-
+        
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
             agent = UnifiedAgent(
@@ -529,7 +529,7 @@ async def stream_chat(request: ChatRequest):
                 logger.info("[STREAM] Sent start event, waiting for LLM...")
 
                 from langchain_core.messages import AIMessage, AIMessageChunk
-
+                
                 # Use stream_mode="messages" to get deltas (tokens) for a smoother experience
                 async for chunk, metadata in agent.astream(
                     {"messages": [HumanMessage(content=request.message)]},
@@ -542,17 +542,17 @@ async def stream_chat(request: ChatRequest):
                         if not hasattr(chunk, 'tool_calls') or not chunk.tool_calls:
                             content_str = _content_to_str(chunk.content)
                             if content_str:
-                                data = {
-                                    "type": "content",
+                            data = {
+                                "type": "content",
                                     "content": content_str,
-                                    "thread_id": thread_id,
-                                    "model": request.model
-                                }
-                                yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
-
+                                "thread_id": thread_id,
+                                "model": request.model
+                            }
+                            yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                                
                 logger.info("[STREAM] Sending done event")
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
-
+                
             except asyncio.CancelledError:
                 # Client disconnected or request cancelled - do not log as error
                 logger.debug("Stream cancelled (client disconnected)")
