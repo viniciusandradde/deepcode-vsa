@@ -49,7 +49,7 @@ export function SettingsPanel() {
                         size="sm"
                         className="w-full border-vsa-orange/50 text-slate-900 hover:bg-vsa-orange/10"
                     >
-                        Planejamento de Projetos
+                        Projetos
                     </Button>
                 </Link>
             </div>

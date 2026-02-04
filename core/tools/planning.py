@@ -25,11 +25,11 @@ def planning_list_projects(
     limit: int = 10,
 ) -> str:
     """Lista projetos de planejamento.
-    
+
     Args:
         status: Filtrar por status (draft, active, completed, archived)
         limit: Número máximo de projetos (padrão 10)
-    
+
     Returns:
         Lista de projetos em formato JSON
     """
@@ -47,7 +47,7 @@ def planning_list_projects(
                         ORDER BY created_at DESC
                         LIMIT %s
                         """,
-                        (status, limit)
+                        (status, limit),
                     )
                 else:
                     cur.execute(
@@ -59,26 +59,30 @@ def planning_list_projects(
                         ORDER BY created_at DESC
                         LIMIT %s
                         """,
-                        (limit,)
+                        (limit,),
                     )
                 rows = cur.fetchall()
-                
+
                 if not rows:
                     return json.dumps({"projects": [], "message": "Nenhum projeto encontrado"})
-                
+
                 projects = []
                 for row in rows:
-                    projects.append({
-                        "id": str(row["id"]),
-                        "title": row["title"],
-                        "status": row["status"],
-                        "docs_count": row["docs_count"],
-                        "stages_count": row["stages_count"],
-                        "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    })
-                
+                    projects.append(
+                        {
+                            "id": str(row["id"]),
+                            "title": row["title"],
+                            "status": row["status"],
+                            "docs_count": row["docs_count"],
+                            "stages_count": row["stages_count"],
+                            "created_at": row["created_at"].isoformat()
+                            if row["created_at"]
+                            else None,
+                        }
+                    )
+
                 return json.dumps({"projects": projects}, ensure_ascii=False)
-                
+
     except Exception as e:
         logger.error(f"Error listing projects: {e}", exc_info=True)
         return json.dumps({"error": f"Erro ao listar projetos: {e}"})
@@ -87,10 +91,10 @@ def planning_list_projects(
 @tool
 def planning_get_project(project_id: str) -> str:
     """Obtém detalhes de um projeto de planejamento específico.
-    
+
     Args:
         project_id: ID do projeto (UUID)
-    
+
     Returns:
         Detalhes do projeto em formato JSON incluindo etapas, documentos e orçamento
     """
@@ -103,22 +107,22 @@ def planning_get_project(project_id: str) -> str:
                     SELECT id, title, description, status, linear_project_id, linear_project_url
                     FROM planning_projects WHERE id = %s
                     """,
-                    (project_id,)
+                    (project_id,),
                 )
                 project = cur.fetchone()
                 if not project:
                     return json.dumps({"error": "Projeto não encontrado"})
-                
+
                 # Get stages
                 cur.execute(
                     """
                     SELECT title, description, order_index, status, estimated_days
                     FROM planning_stages WHERE project_id = %s ORDER BY order_index
                     """,
-                    (project_id,)
+                    (project_id,),
                 )
                 stages = [dict(row) for row in cur.fetchall()]
-                
+
                 # Get budget summary
                 cur.execute(
                     """
@@ -126,10 +130,10 @@ def planning_get_project(project_id: str) -> str:
                     FROM planning_budget_items WHERE project_id = %s
                     GROUP BY category
                     """,
-                    (project_id,)
+                    (project_id,),
                 )
                 budget = {row["category"]: float(row["total"]) for row in cur.fetchall()}
-                
+
                 result = {
                     "id": str(project["id"]),
                     "title": project["title"],
@@ -141,9 +145,9 @@ def planning_get_project(project_id: str) -> str:
                     "budget_by_category": budget,
                     "total_budget": sum(budget.values()),
                 }
-                
+
                 return json.dumps(result, ensure_ascii=False, default=str)
-                
+
     except Exception as e:
         logger.error(f"Error getting project: {e}", exc_info=True)
         return json.dumps({"error": f"Erro ao obter projeto: {e}"})
@@ -156,27 +160,30 @@ def planning_create_project(
     dry_run: bool = True,
 ) -> str:
     """Cria um novo projeto de planejamento.
-    
+
     Args:
         title: Título do projeto
         description: Descrição do projeto (opcional)
         dry_run: Se True, apenas mostra preview sem criar (padrão True)
-    
+
     Returns:
         Resultado da criação ou preview
     """
     try:
         if dry_run:
-            return json.dumps({
-                "dry_run": True,
-                "preview": {
-                    "title": title,
-                    "description": description,
-                    "status": "draft",
+            return json.dumps(
+                {
+                    "dry_run": True,
+                    "preview": {
+                        "title": title,
+                        "description": description,
+                        "status": "draft",
+                    },
+                    "message": "Preview do projeto. Confirme com dry_run=False para criar.",
                 },
-                "message": "Preview do projeto. Confirme com dry_run=False para criar."
-            }, ensure_ascii=False)
-        
+                ensure_ascii=False,
+            )
+
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -185,22 +192,25 @@ def planning_create_project(
                     VALUES (%s, %s)
                     RETURNING id, title, status, created_at
                     """,
-                    (title, description)
+                    (title, description),
                 )
                 row = cur.fetchone()
                 conn.commit()
-                
-                return json.dumps({
-                    "success": True,
-                    "project": {
-                        "id": str(row["id"]),
-                        "title": row["title"],
-                        "status": row["status"],
+
+                return json.dumps(
+                    {
+                        "success": True,
+                        "project": {
+                            "id": str(row["id"]),
+                            "title": row["title"],
+                            "status": row["status"],
+                        },
+                        "message": f"Projeto '{title}' criado com sucesso!",
+                        "url": f"/planning/{row['id']}",
                     },
-                    "message": f"Projeto '{title}' criado com sucesso!",
-                    "url": f"/planning/{row['id']}",
-                }, ensure_ascii=False)
-                
+                    ensure_ascii=False,
+                )
+
     except Exception as e:
         logger.error(f"Error creating project: {e}", exc_info=True)
         return json.dumps({"error": f"Erro ao criar projeto: {e}"})
@@ -212,49 +222,50 @@ def planning_analyze_project(
     focus_area: str = "Geral",
 ) -> str:
     """Analisa documentos de um projeto e gera insights usando IA.
-    
+
     Args:
         project_id: ID do projeto (UUID)
         focus_area: Área de foco (Geral, Riscos, Cronograma, Custos, Requisitos, Arquitetura)
-    
+
     Returns:
         Resultado da análise com resumo executivo, riscos, sugestões
     """
     try:
         import asyncio
         from core.agents.planning import analyze_project_documents as analyze_docs
-        
+
         # Get documents context
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT get_planning_documents_context(%s)",
-                    (project_id,)
-                )
+                cur.execute("SELECT get_planning_documents_context(%s)", (project_id,))
                 result = cur.fetchone()
                 documents_context = result["get_planning_documents_context"] if result else ""
-        
+
         if not documents_context or not documents_context.strip():
-            return json.dumps({
-                "error": "Nenhum documento encontrado no projeto. Faça upload de documentos primeiro."
-            }, ensure_ascii=False)
-        
+            return json.dumps(
+                {
+                    "error": "Nenhum documento encontrado no projeto. Faça upload de documentos primeiro."
+                },
+                ensure_ascii=False,
+            )
+
         # Run async analysis
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # Create a new task for nested async
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(
-                    asyncio.run,
-                    analyze_docs(documents_context, focus_area)
-                )
+                future = executor.submit(asyncio.run, analyze_docs(documents_context, focus_area))
                 analysis = future.result()
         else:
             analysis = asyncio.run(analyze_docs(documents_context, focus_area))
-        
+
         return json.dumps(analysis, ensure_ascii=False, default=str)
-        
+
     except Exception as e:
         logger.error(f"Error analyzing project: {e}", exc_info=True)
         return json.dumps({"error": f"Erro na análise: {e}"})
@@ -267,12 +278,12 @@ def planning_sync_to_linear(
     dry_run: bool = True,
 ) -> str:
     """Sincroniza projeto com Linear.app, criando projeto e milestones.
-    
+
     Args:
         project_id: ID do projeto de planejamento (UUID)
         team_id: ID do time no Linear
         dry_run: Se True, apenas mostra preview sem criar (padrão True)
-    
+
     Returns:
         Resultado da sincronização ou preview
     """
@@ -280,36 +291,36 @@ def planning_sync_to_linear(
         import asyncio
         from core.integrations.linear_client import LinearClient
         from core.config import get_settings
-        
+
         settings = get_settings()
         if not settings.linear.enabled or not settings.linear.api_key:
-            return json.dumps({
-                "error": "Linear não está configurado. Configure LINEAR_API_KEY."
-            })
-        
+            return json.dumps({"error": "Linear não está configurado. Configure LINEAR_API_KEY."})
+
         # Get project with stages
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT id, title, description, linear_project_id FROM planning_projects WHERE id = %s",
-                    (project_id,)
+                    (project_id,),
                 )
                 project = cur.fetchone()
                 if not project:
                     return json.dumps({"error": "Projeto não encontrado"})
-                
+
                 if project["linear_project_id"]:
-                    return json.dumps({
-                        "error": "Projeto já está sincronizado com Linear",
-                        "linear_project_id": project["linear_project_id"],
-                    })
-                
+                    return json.dumps(
+                        {
+                            "error": "Projeto já está sincronizado com Linear",
+                            "linear_project_id": project["linear_project_id"],
+                        }
+                    )
+
                 cur.execute(
                     "SELECT title, description, estimated_days, end_date FROM planning_stages WHERE project_id = %s ORDER BY order_index",
-                    (project_id,)
+                    (project_id,),
                 )
                 stages = list(cur.fetchall())
-        
+
         # Build plan
         plan = {
             "project": {
@@ -327,14 +338,18 @@ def planning_sync_to_linear(
             ],
             "tasks": [],
         }
-        
+
         if dry_run:
-            return json.dumps({
-                "dry_run": True,
-                "preview": plan,
-                "message": f"Preview: Criar projeto '{project['title']}' no Linear com {len(stages)} milestones. Confirme com dry_run=False.",
-            }, ensure_ascii=False, default=str)
-        
+            return json.dumps(
+                {
+                    "dry_run": True,
+                    "preview": plan,
+                    "message": f"Preview: Criar projeto '{project['title']}' no Linear com {len(stages)} milestones. Confirme com dry_run=False.",
+                },
+                ensure_ascii=False,
+                default=str,
+            )
+
         # Sync to Linear
         async def do_sync():
             client = LinearClient(settings.linear.api_key)
@@ -347,32 +362,35 @@ def planning_sync_to_linear(
                 return result
             finally:
                 await client.close()
-        
+
         result = asyncio.run(do_sync())
-        
+
         if not result.success:
             return json.dumps({"error": f"Erro no Linear: {result.error}"})
-        
+
         # Update project with Linear ID
         linear_project_id = result.output.get("project_id")
         linear_project_url = result.output.get("project_url")
-        
+
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "UPDATE planning_projects SET linear_project_id = %s, linear_project_url = %s WHERE id = %s",
-                    (linear_project_id, linear_project_url, project_id)
+                    (linear_project_id, linear_project_url, project_id),
                 )
                 conn.commit()
-        
-        return json.dumps({
-            "success": True,
-            "project_id": linear_project_id,
-            "project_url": linear_project_url,
-            "milestones_created": result.output.get("milestones_created", 0),
-            "message": "Projeto sincronizado com Linear com sucesso!",
-        }, ensure_ascii=False)
-        
+
+        return json.dumps(
+            {
+                "success": True,
+                "project_id": linear_project_id,
+                "project_url": linear_project_url,
+                "milestones_created": result.output.get("milestones_created", 0),
+                "message": "Projeto sincronizado com Linear com sucesso!",
+            },
+            ensure_ascii=False,
+        )
+
     except Exception as e:
         logger.error(f"Error syncing to Linear: {e}", exc_info=True)
         return json.dumps({"error": f"Erro ao sincronizar: {e}"})

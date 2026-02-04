@@ -175,7 +175,8 @@ CREATE OR REPLACE FUNCTION public.kb_hybrid_search(
             COALESCE(v.chunk_ix, t.chunk_ix) AS chunk_ix,
             COALESCE(v.content, t.content) AS content,
             COALESCE(v.meta, t.meta) AS meta,
-            COALESCE(1.0 / (60 + v.vec_rank), 0) + COALESCE(1.0 / (60 + t.text_rank), 0) AS rrf_score
+            COALESCE(1.0::double precision / (60 + v.vec_rank), 0.0::double precision)
+            + COALESCE(1.0::double precision / (60 + t.text_rank), 0.0::double precision) AS rrf_score
         FROM vector_results v
             FULL OUTER JOIN text_results t ON v.doc_path = t.doc_path
             AND v.chunk_ix = t.chunk_ix

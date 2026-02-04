@@ -29,6 +29,7 @@ from api.models.planning import (
 from core.database import get_conn
 from core.rag.loaders import get_file_type, load_document_from_bytes
 from core.rag.planning_ingestion import ingest_project_document_task
+from core.rag.embeddings import EmbeddingFactory
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ router = APIRouter()
 # Helper Functions
 # =============================================================================
 
+
 def _get_conn_with_dict_row():
     """Get connection with dict row factory."""
     conn = get_conn()
@@ -46,9 +48,21 @@ def _get_conn_with_dict_row():
     return conn
 
 
+def _resolve_embedding_model(model_id: Optional[str]) -> str:
+    resolved = (model_id or "openai").strip().lower()
+    available = {m["id"] for m in EmbeddingFactory.list_models()}
+    if resolved not in available:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Embedding model inválido ou indisponível: {resolved}",
+        )
+    return resolved
+
+
 # =============================================================================
 # Projects CRUD
 # =============================================================================
+
 
 @router.get("/projects", response_model=ProjectListResponse)
 async def list_projects(
@@ -63,34 +77,35 @@ async def list_projects(
             with conn.cursor() as cur:
                 where_parts = []
                 params = []
-                
+
                 if status:
                     where_parts.append("status = %s")
                     params.append(status)
                 if empresa:
                     where_parts.append("lower(empresa) = lower(%s)")
                     params.append(empresa)
-                
+
                 where_clause = " AND ".join(where_parts) if where_parts else "1=1"
-                
+
                 # Count total
                 cur.execute(f"SELECT COUNT(*) FROM planning_projects WHERE {where_clause}", params)
                 total = cur.fetchone()["count"]
-                
+
                 # Fetch projects
                 cur.execute(
                     f"""
                     SELECT id, title, description, status, empresa, client_id,
+                           COALESCE(embedding_model, 'openai') AS embedding_model,
                            linear_project_id, linear_project_url, created_at, updated_at
                     FROM planning_projects
                     WHERE {where_clause}
                     ORDER BY created_at DESC
                     LIMIT %s OFFSET %s
                     """,
-                    params + [limit, offset]
+                    params + [limit, offset],
                 )
                 rows = cur.fetchall()
-                
+
                 projects = [ProjectResponse(**row) for row in rows]
                 return ProjectListResponse(projects=projects, total=total)
     except Exception as e:
@@ -104,14 +119,22 @@ async def create_project(request: ProjectCreate):
     try:
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
+                embedding_model = _resolve_embedding_model(request.embedding_model)
                 cur.execute(
                     """
-                    INSERT INTO planning_projects (title, description, empresa, client_id)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO planning_projects (title, description, empresa, client_id, embedding_model)
+                    VALUES (%s, %s, %s, %s, %s)
                     RETURNING id, title, description, status, empresa, client_id,
+                              COALESCE(embedding_model, 'openai') AS embedding_model,
                               linear_project_id, linear_project_url, created_at, updated_at
                     """,
-                    (request.title, request.description, request.empresa, request.client_id)
+                    (
+                        request.title,
+                        request.description,
+                        request.empresa,
+                        request.client_id,
+                        embedding_model,
+                    ),
                 )
                 row = cur.fetchone()
                 conn.commit()
@@ -131,16 +154,17 @@ async def get_project(project_id: UUID):
                 cur.execute(
                     """
                     SELECT id, title, description, status, empresa, client_id,
+                           COALESCE(embedding_model, 'openai') AS embedding_model,
                            linear_project_id, linear_project_url, created_at, updated_at
                     FROM planning_projects
                     WHERE id = %s
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 project = cur.fetchone()
                 if not project:
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 # Get stages
                 cur.execute(
                     """
@@ -151,10 +175,10 @@ async def get_project(project_id: UUID):
                     WHERE project_id = %s
                     ORDER BY order_index
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 stages = [StageResponse(**row) for row in cur.fetchall()]
-                
+
                 # Get documents
                 cur.execute(
                     """
@@ -164,10 +188,10 @@ async def get_project(project_id: UUID):
                     WHERE project_id = %s
                     ORDER BY uploaded_at DESC
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 documents = [DocumentResponse(**row) for row in cur.fetchall()]
-                
+
                 # Get budget items
                 cur.execute(
                     """
@@ -177,14 +201,14 @@ async def get_project(project_id: UUID):
                     WHERE project_id = %s
                     ORDER BY category, created_at
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 budget_items = [BudgetItemResponse(**row) for row in cur.fetchall()]
-                
+
                 # Calculate totals
                 total_estimated = sum(b.estimated_cost for b in budget_items)
                 total_actual = sum(b.actual_cost for b in budget_items)
-                
+
                 return ProjectDetailResponse(
                     **project,
                     stages=stages,
@@ -208,7 +232,7 @@ async def update_project(project_id: UUID, request: ProjectUpdate):
             with conn.cursor() as cur:
                 updates = []
                 params = []
-                
+
                 if request.title is not None:
                     updates.append("title = %s")
                     params.append(request.title)
@@ -218,21 +242,25 @@ async def update_project(project_id: UUID, request: ProjectUpdate):
                 if request.status is not None:
                     updates.append("status = %s")
                     params.append(request.status)
-                
+                if request.embedding_model is not None:
+                    updates.append("embedding_model = %s")
+                    params.append(_resolve_embedding_model(request.embedding_model))
+
                 if not updates:
                     raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
-                
+
                 params.append(str(project_id))
-                
+
                 cur.execute(
                     f"""
                     UPDATE planning_projects
                     SET {", ".join(updates)}
                     WHERE id = %s
                     RETURNING id, title, description, status, empresa, client_id,
+                              COALESCE(embedding_model, 'openai') AS embedding_model,
                               linear_project_id, linear_project_url, created_at, updated_at
                     """,
-                    params
+                    params,
                 )
                 row = cur.fetchone()
                 if not row:
@@ -253,8 +281,7 @@ async def delete_project(project_id: UUID):
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM planning_projects WHERE id = %s RETURNING id",
-                    (str(project_id),)
+                    "DELETE FROM planning_projects WHERE id = %s RETURNING id", (str(project_id),)
                 )
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
@@ -271,6 +298,7 @@ async def delete_project(project_id: UUID):
 # Documents
 # =============================================================================
 
+
 @router.get("/projects/{project_id}/documents", response_model=DocumentListResponse)
 async def list_documents(project_id: UUID):
     """List documents for a project."""
@@ -285,7 +313,7 @@ async def list_documents(project_id: UUID):
                     WHERE project_id = %s
                     ORDER BY uploaded_at DESC
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 rows = cur.fetchall()
                 documents = [DocumentResponse(**row) for row in rows]
@@ -307,30 +335,26 @@ async def upload_document(
         file_type = get_file_type(file.filename or "")
         if not file_type:
             raise HTTPException(
-                status_code=400,
-                detail="Tipo de arquivo não suportado. Use: .pdf, .md, .txt"
+                status_code=400, detail="Tipo de arquivo não suportado. Use: .pdf, .md, .txt"
             )
-        
+
         # Read and extract content
         content_bytes = await file.read()
         file_size = len(content_bytes)
-        
+
         try:
             extracted_text = load_document_from_bytes(content_bytes, file.filename or "doc")
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Erro ao extrair texto: {e}")
-        
+
         # Save to database
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 # Check if project exists
-                cur.execute(
-                    "SELECT id FROM planning_projects WHERE id = %s",
-                    (str(project_id),)
-                )
+                cur.execute("SELECT id FROM planning_projects WHERE id = %s", (str(project_id),))
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 cur.execute(
                     """
                     INSERT INTO planning_documents (project_id, file_name, file_type, content, file_size)
@@ -338,7 +362,7 @@ async def upload_document(
                     RETURNING id, project_id, file_name, file_type, file_size,
                               LEFT(content, 500) as content_preview, uploaded_at
                     """,
-                    (str(project_id), file.filename, file_type, extracted_text, file_size)
+                    (str(project_id), file.filename, file_type, extracted_text, file_size),
                 )
                 row = cur.fetchone()
                 conn.commit()
@@ -369,7 +393,7 @@ async def delete_document(project_id: UUID, document_id: UUID):
             with conn.cursor() as cur:
                 cur.execute(
                     "DELETE FROM planning_documents WHERE id = %s AND project_id = %s RETURNING id",
-                    (str(document_id), str(project_id))
+                    (str(document_id), str(project_id)),
                 )
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Documento não encontrado")
@@ -386,6 +410,7 @@ async def delete_document(project_id: UUID, document_id: UUID):
 # Stages
 # =============================================================================
 
+
 @router.post("/projects/{project_id}/stages", response_model=StageResponse)
 async def create_stage(project_id: UUID, request: StageCreate):
     """Create a stage in a project."""
@@ -393,13 +418,10 @@ async def create_stage(project_id: UUID, request: StageCreate):
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 # Check if project exists
-                cur.execute(
-                    "SELECT id FROM planning_projects WHERE id = %s",
-                    (str(project_id),)
-                )
+                cur.execute("SELECT id FROM planning_projects WHERE id = %s", (str(project_id),))
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 cur.execute(
                     """
                     INSERT INTO planning_stages 
@@ -410,10 +432,14 @@ async def create_stage(project_id: UUID, request: StageCreate):
                               created_at, updated_at
                     """,
                     (
-                        str(project_id), request.title, request.description,
-                        request.order_index, request.estimated_days,
-                        request.start_date, request.end_date
-                    )
+                        str(project_id),
+                        request.title,
+                        request.description,
+                        request.order_index,
+                        request.estimated_days,
+                        request.start_date,
+                        request.end_date,
+                    ),
                 )
                 row = cur.fetchone()
                 conn.commit()
@@ -433,7 +459,7 @@ async def update_stage(project_id: UUID, stage_id: UUID, request: StageUpdate):
             with conn.cursor() as cur:
                 updates = []
                 params = []
-                
+
                 if request.title is not None:
                     updates.append("title = %s")
                     params.append(request.title)
@@ -455,12 +481,12 @@ async def update_stage(project_id: UUID, stage_id: UUID, request: StageUpdate):
                 if request.end_date is not None:
                     updates.append("end_date = %s")
                     params.append(request.end_date)
-                
+
                 if not updates:
                     raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
-                
+
                 params.extend([str(stage_id), str(project_id)])
-                
+
                 cur.execute(
                     f"""
                     UPDATE planning_stages
@@ -470,7 +496,7 @@ async def update_stage(project_id: UUID, stage_id: UUID, request: StageUpdate):
                               estimated_days, start_date, end_date, linear_milestone_id,
                               created_at, updated_at
                     """,
-                    params
+                    params,
                 )
                 row = cur.fetchone()
                 if not row:
@@ -492,7 +518,7 @@ async def delete_stage(project_id: UUID, stage_id: UUID):
             with conn.cursor() as cur:
                 cur.execute(
                     "DELETE FROM planning_stages WHERE id = %s AND project_id = %s RETURNING id",
-                    (str(stage_id), str(project_id))
+                    (str(stage_id), str(project_id)),
                 )
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Etapa não encontrada")
@@ -509,6 +535,7 @@ async def delete_stage(project_id: UUID, stage_id: UUID):
 # Budget Items
 # =============================================================================
 
+
 @router.post("/projects/{project_id}/budget", response_model=BudgetItemResponse)
 async def create_budget_item(project_id: UUID, request: BudgetItemCreate):
     """Create a budget item for a project."""
@@ -516,13 +543,10 @@ async def create_budget_item(project_id: UUID, request: BudgetItemCreate):
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 # Check if project exists
-                cur.execute(
-                    "SELECT id FROM planning_projects WHERE id = %s",
-                    (str(project_id),)
-                )
+                cur.execute("SELECT id FROM planning_projects WHERE id = %s", (str(project_id),))
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 cur.execute(
                     """
                     INSERT INTO planning_budget_items 
@@ -534,9 +558,12 @@ async def create_budget_item(project_id: UUID, request: BudgetItemCreate):
                     (
                         str(project_id),
                         str(request.stage_id) if request.stage_id else None,
-                        request.category, request.description,
-                        request.estimated_cost, request.actual_cost, request.currency
-                    )
+                        request.category,
+                        request.description,
+                        request.estimated_cost,
+                        request.actual_cost,
+                        request.currency,
+                    ),
                 )
                 row = cur.fetchone()
                 conn.commit()
@@ -556,7 +583,7 @@ async def update_budget_item(project_id: UUID, item_id: UUID, request: BudgetIte
             with conn.cursor() as cur:
                 updates = []
                 params = []
-                
+
                 if request.category is not None:
                     updates.append("category = %s")
                     params.append(request.category)
@@ -572,12 +599,12 @@ async def update_budget_item(project_id: UUID, item_id: UUID, request: BudgetIte
                 if request.stage_id is not None:
                     updates.append("stage_id = %s")
                     params.append(str(request.stage_id))
-                
+
                 if not updates:
                     raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
-                
+
                 params.extend([str(item_id), str(project_id)])
-                
+
                 cur.execute(
                     f"""
                     UPDATE planning_budget_items
@@ -586,7 +613,7 @@ async def update_budget_item(project_id: UUID, item_id: UUID, request: BudgetIte
                     RETURNING id, project_id, stage_id, category, description,
                               estimated_cost, actual_cost, currency, created_at, updated_at
                     """,
-                    params
+                    params,
                 )
                 row = cur.fetchone()
                 if not row:
@@ -608,7 +635,7 @@ async def delete_budget_item(project_id: UUID, item_id: UUID):
             with conn.cursor() as cur:
                 cur.execute(
                     "DELETE FROM planning_budget_items WHERE id = %s AND project_id = %s RETURNING id",
-                    (str(item_id), str(project_id))
+                    (str(item_id), str(project_id)),
                 )
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Item de orçamento não encontrado")
@@ -625,10 +652,11 @@ async def delete_budget_item(project_id: UUID, item_id: UUID):
 # Analysis (NotebookLM-like)
 # =============================================================================
 
+
 @router.post("/projects/{project_id}/analyze", response_model=AnalyzeDocsResponse)
 async def analyze_project_documents(project_id: UUID, request: AnalyzeDocsRequest):
     """Analyze all project documents using Gemini (NotebookLM-like functionality).
-    
+
     This endpoint reads all documents from the project and uses a large context
     LLM (Gemini) to analyze them and generate planning insights including:
     - Executive summary
@@ -643,21 +671,17 @@ async def analyze_project_documents(project_id: UUID, request: AnalyzeDocsReques
             with conn.cursor() as cur:
                 # Check if project exists
                 cur.execute(
-                    "SELECT id, title FROM planning_projects WHERE id = %s",
-                    (str(project_id),)
+                    "SELECT id, title FROM planning_projects WHERE id = %s", (str(project_id),)
                 )
                 project = cur.fetchone()
                 if not project:
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 # Get all document content
-                cur.execute(
-                    "SELECT get_planning_documents_context(%s)",
-                    (str(project_id),)
-                )
+                cur.execute("SELECT get_planning_documents_context(%s)", (str(project_id),))
                 result = cur.fetchone()
                 documents_context = result["get_planning_documents_context"] if result else ""
-        
+
         if not documents_context or not documents_context.strip():
             return AnalyzeDocsResponse(
                 executive_summary="Nenhum documento encontrado no projeto.",
@@ -667,25 +691,21 @@ async def analyze_project_documents(project_id: UUID, request: AnalyzeDocsReques
                 risks=["Projeto sem documentação"],
                 recommendations=["Adicione especificações, requisitos ou outros documentos"],
             )
-        
+
         # Analyze with planning agent
         from core.agents.planning import analyze_project_documents as analyze_docs
-        
+
         analysis = await analyze_docs(
             documents_context=documents_context,
             focus_area=request.focus_area,
         )
-        
+
         # Convert to response model
         from api.models.planning import SuggestedBudgetItem, SuggestedStage
-        
-        suggested_stages = [
-            SuggestedStage(**s) for s in analysis.get("suggested_stages", [])
-        ]
-        suggested_budget = [
-            SuggestedBudgetItem(**b) for b in analysis.get("suggested_budget", [])
-        ]
-        
+
+        suggested_stages = [SuggestedStage(**s) for s in analysis.get("suggested_stages", [])]
+        suggested_budget = [SuggestedBudgetItem(**b) for b in analysis.get("suggested_budget", [])]
+
         return AnalyzeDocsResponse(
             executive_summary=analysis.get("executive_summary", ""),
             critical_points=analysis.get("critical_points", []),
@@ -696,7 +716,7 @@ async def analyze_project_documents(project_id: UUID, request: AnalyzeDocsReques
             tokens_used=analysis.get("tokens_used"),
             model_used=analysis.get("model_used"),
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -712,23 +732,20 @@ async def apply_analysis_suggestions(
     body: AnalyzeDocsResponse = Body(...),
 ):
     """Apply suggestions from analysis to the project.
-    
+
     Creates stages and budget items based on analysis results.
     """
     try:
         created_stages = []
         created_budget = []
-        
+
         with _get_conn_with_dict_row() as conn:
             with conn.cursor() as cur:
                 # Check if project exists
-                cur.execute(
-                    "SELECT id FROM planning_projects WHERE id = %s",
-                    (str(project_id),)
-                )
+                cur.execute("SELECT id FROM planning_projects WHERE id = %s", (str(project_id),))
                 if not cur.fetchone():
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 # Create stages
                 if stages and body.suggested_stages:
                     for i, stage in enumerate(body.suggested_stages):
@@ -740,13 +757,16 @@ async def apply_analysis_suggestions(
                             RETURNING id, title
                             """,
                             (
-                                str(project_id), stage.title, stage.description,
-                                i, stage.estimated_days if stage.estimated_days is not None else 0,
-                            )
+                                str(project_id),
+                                stage.title,
+                                stage.description,
+                                i,
+                                stage.estimated_days if stage.estimated_days is not None else 0,
+                            ),
                         )
                         row = cur.fetchone()
                         created_stages.append(row)
-                
+
                 # Create budget items
                 if budget and body.suggested_budget:
                     for item in body.suggested_budget:
@@ -758,15 +778,17 @@ async def apply_analysis_suggestions(
                             RETURNING id, category, estimated_cost
                             """,
                             (
-                                str(project_id), item.category, item.description,
+                                str(project_id),
+                                item.category,
+                                item.description,
                                 item.estimated_cost,
-                            )
+                            ),
                         )
                         row = cur.fetchone()
                         created_budget.append(row)
-                
+
                 conn.commit()
-        
+
         return {
             "message": "Sugestões aplicadas com sucesso",
             "stages_created": len(created_stages),
@@ -774,7 +796,7 @@ async def apply_analysis_suggestions(
             "stages": created_stages,
             "budget_items": created_budget,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -786,10 +808,11 @@ async def apply_analysis_suggestions(
 # Linear Sync
 # =============================================================================
 
+
 @router.post("/projects/{project_id}/sync-linear", response_model=SyncLinearResponse)
 async def sync_project_to_linear(project_id: UUID, request: SyncLinearRequest):
     """Sync project to Linear.app - creates project with milestones.
-    
+
     Uses the existing linear_client.create_project_with_plan() functionality.
     """
     try:
@@ -801,19 +824,19 @@ async def sync_project_to_linear(project_id: UUID, request: SyncLinearRequest):
                     SELECT id, title, description, linear_project_id
                     FROM planning_projects WHERE id = %s
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 project = cur.fetchone()
                 if not project:
                     raise HTTPException(status_code=404, detail="Projeto não encontrado")
-                
+
                 if project["linear_project_id"]:
                     return SyncLinearResponse(
                         success=False,
                         project_id=project["linear_project_id"],
                         message="Projeto já está sincronizado com Linear",
                     )
-                
+
                 # Get stages
                 cur.execute(
                     """
@@ -822,10 +845,10 @@ async def sync_project_to_linear(project_id: UUID, request: SyncLinearRequest):
                     WHERE project_id = %s
                     ORDER BY order_index
                     """,
-                    (str(project_id),)
+                    (str(project_id),),
                 )
                 stages = cur.fetchall()
-        
+
         # Build plan for Linear
         plan = {
             "project": {
@@ -843,34 +866,33 @@ async def sync_project_to_linear(project_id: UUID, request: SyncLinearRequest):
             ],
             "tasks": [],  # Can be extended to create issues
         }
-        
+
         # Call Linear client
         from core.integrations.linear_client import LinearClient
         from core.config import get_settings
-        
+
         settings = get_settings()
         if not settings.linear.enabled or not settings.linear.api_key:
             raise HTTPException(
-                status_code=400,
-                detail="Linear não está configurado. Configure LINEAR_API_KEY."
+                status_code=400, detail="Linear não está configurado. Configure LINEAR_API_KEY."
             )
-        
+
         client = LinearClient(settings.linear.api_key)
-        
+
         try:
             result = await client.create_project_with_plan(
                 team_id=request.team_id,
                 plan=plan,
                 dry_run=False,
             )
-            
+
             if not result.success:
                 raise HTTPException(status_code=500, detail=f"Erro no Linear: {result.error}")
-            
+
             # Update project with Linear IDs
             linear_project_id = result.output.get("project_id")
             linear_project_url = result.output.get("project_url")
-            
+
             with _get_conn_with_dict_row() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
@@ -879,10 +901,10 @@ async def sync_project_to_linear(project_id: UUID, request: SyncLinearRequest):
                         SET linear_project_id = %s, linear_project_url = %s
                         WHERE id = %s
                         """,
-                        (linear_project_id, linear_project_url, str(project_id))
+                        (linear_project_id, linear_project_url, str(project_id)),
                     )
                     conn.commit()
-            
+
             return SyncLinearResponse(
                 success=True,
                 project_id=linear_project_id,
@@ -891,10 +913,10 @@ async def sync_project_to_linear(project_id: UUID, request: SyncLinearRequest):
                 issues_created=len(result.output.get("issues_created", [])),
                 message="Projeto sincronizado com Linear com sucesso",
             )
-            
+
         finally:
             await client.close()
-            
+
     except HTTPException:
         raise
     except Exception as e:

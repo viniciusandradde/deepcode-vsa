@@ -11,7 +11,7 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
 from core.database import get_conn
-from core.rag.ingestion import _get_embedding_client
+from core.rag.embeddings import EmbeddingFactory
 
 
 def vec_to_literal(v: List[float]) -> str:
@@ -78,35 +78,41 @@ def query_candidates(
                 )
             else:
                 raise ValueError(f"Unknown search_type: {search_type}")
-            
+
             for row in cur.fetchall() or []:
-                results.append({
-                    "doc_path": row[0],
-                    "chunk_ix": row[1],
-                    "content": row[2],
-                    "score": float(row[3]) if row[3] is not None else None,
-                    "meta": row[4] or {},
-                })
+                results.append(
+                    {
+                        "doc_path": row[0],
+                        "chunk_ix": row[1],
+                        "content": row[2],
+                        "score": float(row[3]) if row[3] is not None else None,
+                        "meta": row[4] or {},
+                    }
+                )
             return results
 
 
-def apply_rerank(query: str, items: List[Dict[str, Any]], reranker: str, k: int) -> List[Dict[str, Any]]:
+def apply_rerank(
+    query: str, items: List[Dict[str, Any]], reranker: str, k: int
+) -> List[Dict[str, Any]]:
     """Apply reranking to search results."""
     if reranker == "none" or not items:
         return items[:k]
-    
+
     if reranker == "cohere":
         try:
             from langchain_cohere import CohereRerank
         except Exception as e:
-            raise RuntimeError("Reranker 'cohere' requested but langchain-cohere package not available") from e
-        
+            raise RuntimeError(
+                "Reranker 'cohere' requested but langchain-cohere package not available"
+            ) from e
+
         if not os.getenv("COHERE_API_KEY"):
             raise RuntimeError("Reranker 'cohere' requested but COHERE_API_KEY not defined")
-        
+
         reranker_model = CohereRerank(model="rerank-english-v3.0")
         docs = [it["content"] for it in items]
-        
+
         # Try multiple APIs for version compatibility
         results = None
         if hasattr(reranker_model, "rank"):
@@ -118,9 +124,10 @@ def apply_rerank(query: str, items: List[Dict[str, Any]], reranker: str, k: int)
                 results = reranker_model.invoke({"query": query, "documents": docs})
             except Exception:
                 results = None
-        
+
         # Reconstruct order from reranked results
         if isinstance(results, list) and results:
+
             def _get_content_and_score(obj):
                 c = getattr(obj, "document", None)
                 if c is not None:
@@ -134,9 +141,10 @@ def apply_rerank(query: str, items: List[Dict[str, Any]], reranker: str, k: int)
                 if score is None and isinstance(obj, dict):
                     score = obj.get("relevance_score")
                 return (str(txt or ""), float(score or 0.0))
-            
+
             res_pairs = [_get_content_and_score(r) for r in results]
             from collections import defaultdict, deque
+
             idx_map = defaultdict(deque)
             for i, d in enumerate(docs):
                 idx_map[d].append(i)
@@ -147,17 +155,31 @@ def apply_rerank(query: str, items: List[Dict[str, Any]], reranker: str, k: int)
                     ordered.append(items[i])
             if ordered:
                 return ordered[:k]
-        
+
         # Fallback: return original top-k
         return items[:k]
-    
+
     # Future rerankers can be added here
     return items[:k]
 
 
+def _get_project_embedding_model(project_id: str) -> str:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT embedding_model FROM planning_projects WHERE id = %s",
+                (project_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise RuntimeError("Projeto não encontrado para busca RAG")
+            model = row[0] if isinstance(row, tuple) else row.get("embedding_model")
+            return (model or "openai").strip().lower()
+
+
 def hyde(query: str) -> str:
     """Generate a hypothetical relevant document (HyDE) to expand the query.
-    
+
     KISS: uses ChatOpenAI with light model; controls low temperature.
     """
     llm = ChatOpenAI(model=(os.getenv("HYDE_LLM_MODEL") or "gpt-4o-mini"), temperature=0.3)
@@ -196,7 +218,11 @@ def kb_search_client(
     # Embedding only when necessary (usa OPENAI_API_KEY, não OpenRouter)
     query_emb: Optional[List[float]] = None
     if search_type != "text":
-        emb = _get_embedding_client()
+        if project_id:
+            model_id = _get_project_embedding_model(project_id)
+            emb = EmbeddingFactory.get_model(model_id)
+        else:
+            emb = EmbeddingFactory.get_model("openai")
         q_for_embed = hyde(query) if use_hyde else query
         query_emb = emb.embed_query(q_for_embed)
 
@@ -212,8 +238,7 @@ def kb_search_client(
         match_threshold,
         project_id=project_id,
     )
-    
+
     # Optional reranking
     final = apply_rerank(query, candidates, reranker, k)
     return final
-

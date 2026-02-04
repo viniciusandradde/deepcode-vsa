@@ -6,7 +6,8 @@ from uuid import UUID
 
 from core.database import get_conn
 from core.rag.loaders import load_document_from_bytes, split_text
-from core.rag.ingestion import embed_texts, vec_to_literal
+from core.rag.ingestion import vec_to_literal
+from core.rag.embeddings import EmbeddingFactory
 
 logger = logging.getLogger(__name__)
 
@@ -35,23 +36,27 @@ async def ingest_project_document_task(
             return
 
         chunk_texts = [c["content"] for c in chunks]
-        vectors = embed_texts(chunk_texts)
+        embedding_model = _get_project_embedding_model(project_id)
+        embedder = EmbeddingFactory.get_model(embedding_model)
+        vectors = embedder.embed_documents(chunk_texts)
 
         # 3. Persistência isolada
         doc_path_prefix = f"planning/{project_id}/{filename}"
         rows = []
         for i, (c, vec) in enumerate(zip(chunks, vectors)):
-            rows.append({
-                "doc_path": doc_path_prefix,
-                "chunk_ix": i,
-                "content": c["content"],
-                "embedding": vec,
-                "meta": {
-                    "source": "planning",
-                    "doc_id": str(document_id),
-                    "file": filename,
-                },
-            })
+            rows.append(
+                {
+                    "doc_path": doc_path_prefix,
+                    "chunk_ix": i,
+                    "content": c["content"],
+                    "embedding": vec,
+                    "meta": {
+                        "source": "planning",
+                        "doc_id": str(document_id),
+                        "file": filename,
+                    },
+                }
+            )
 
         _upsert_planning_chunks(rows, project_id)
         logger.info("Sucesso: %s chunks indexados para %s", len(rows), filename)
@@ -65,6 +70,19 @@ async def ingest_project_document_task(
         )
 
 
+def _get_project_embedding_model(project_id: UUID) -> str:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT embedding_model FROM planning_projects WHERE id = %s", (str(project_id),)
+            )
+            row = cur.fetchone()
+            if not row:
+                raise RuntimeError("Projeto não encontrado para ingestão RAG")
+            model = row[0] if isinstance(row, tuple) else row.get("embedding_model")
+            return (model or "openai").strip().lower()
+
+
 def _upsert_planning_chunks(rows: list, project_id: UUID) -> None:
     """Insere ou atualiza chunks em kb_chunks com project_id."""
     if not rows:
@@ -76,7 +94,7 @@ def _upsert_planning_chunks(rows: list, project_id: UUID) -> None:
                     """
                     INSERT INTO kb_chunks
                     (doc_path, chunk_ix, content, embedding, meta, project_id)
-                    VALUES (%s, %s, %s, %s::vector(1536), %s::jsonb, %s::uuid)
+                    VALUES (%s, %s, %s, %s::vector, %s::jsonb, %s::uuid)
                     ON CONFLICT (doc_path, chunk_ix)
                     DO UPDATE SET
                         content = excluded.content,

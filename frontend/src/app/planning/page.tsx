@@ -11,9 +11,16 @@ interface Project {
   title: string;
   description: string | null;
   status: string;
+  embedding_model: string;
   created_at: string;
   updated_at: string;
   linear_project_url: string | null;
+}
+
+interface RagModel {
+  id: string;
+  name: string;
+  dims: number;
 }
 
 interface ProjectListResponse {
@@ -28,6 +35,8 @@ export default function PlanningPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [newProjectDescription, setNewProjectDescription] = useState("");
+  const [ragModels, setRagModels] = useState<RagModel[]>([]);
+  const [embeddingModel, setEmbeddingModel] = useState("openai");
   const [creating, setCreating] = useState(false);
 
   const fetchProjects = useCallback(async () => {
@@ -57,6 +66,30 @@ export default function PlanningPage() {
     fetchProjects();
   }, [fetchProjects]);
 
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const res = await fetch(`/api/v1/config/rag-models`);
+        if (!res.ok) throw new Error("Erro ao carregar modelos RAG");
+        const data: RagModel[] = await res.json();
+        if (data && data.length > 0) {
+          setRagModels(data);
+          setEmbeddingModel(data[0].id);
+          return;
+        }
+      } catch (e) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[Planning] RAG models error:", e);
+        }
+      }
+      setRagModels([
+        { id: "openai", name: "OpenAI Cloud (Rápido)", dims: 1536 },
+      ]);
+      setEmbeddingModel("openai");
+    };
+    fetchModels();
+  }, []);
+
   const handleCreateProject = async () => {
     if (!newProjectTitle.trim()) return;
     
@@ -68,6 +101,7 @@ export default function PlanningPage() {
         body: JSON.stringify({
           title: newProjectTitle,
           description: newProjectDescription,
+          embedding_model: embeddingModel,
         }),
       });
       
@@ -118,9 +152,9 @@ export default function PlanningPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Planejamento de Projetos</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Projetos</h1>
             <p className="text-slate-600 mt-1">
-              Gerencie projetos com análise de documentos estilo NotebookLM
+              Gerencie projetos com análise de documentos
             </p>
           </div>
           <div className="flex gap-3">
@@ -247,6 +281,21 @@ export default function PlanningPage() {
                     rows={3}
                     placeholder="Descrição breve do projeto"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-600 mb-1">Modelo de Embeddings</label>
+                  <select
+                    value={embeddingModel}
+                    onChange={(e) => setEmbeddingModel(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-lg text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
+                  >
+                    {ragModels.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name} ({model.dims})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               

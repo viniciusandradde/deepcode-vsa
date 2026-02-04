@@ -43,6 +43,7 @@ router = APIRouter()
 def _get_tool_capable_default() -> str:
     """Default para chamadas com ferramentas: TOOL_CAPABLE_MODEL ou config smart_model."""
     from core.config import get_settings
+
     return os.getenv("TOOL_CAPABLE_MODEL") or get_settings().llm.smart_model
 
 
@@ -50,6 +51,8 @@ def _resolve_model_for_request(request: ChatRequest, has_tools: bool) -> str:
     """Modelo da requisição: respeita request.model; senão DEFAULT_MODEL_NAME ou default do tier."""
     default = os.getenv("DEFAULT_MODEL_NAME") or _get_tool_capable_default()
     chosen = request.model or default
+    if not chosen:
+        chosen = "deepseek/deepseek-chat"
     if has_tools:
         logger.info(
             "[CHAT] Ferramentas ativas: modelo=%s (solicitado=%s, default tools=%s)",
@@ -63,6 +66,7 @@ def _resolve_model_for_request(request: ChatRequest, has_tools: bool) -> str:
 def _resolve_fast_model() -> str:
     """Modelo barato para router/classifier (tiered): FAST_MODEL ou config fast_model."""
     from core.config import get_settings
+
     return os.getenv("FAST_MODEL") or get_settings().llm.fast_model
 
 
@@ -72,37 +76,35 @@ def _resolve_fast_model() -> str:
 INTENT_PATTERNS = {
     # GLPI específico: "chamados novos sem atribuição" (deve vir antes do genérico)
     "glpi_new_unassigned": re.compile(
-        r"^(chamados?|tickets?)\s+(novos?|abertos?)\s+sem\s+(atribui|tecnico)",
-        re.I
+        r"^(chamados?|tickets?)\s+(novos?|abertos?)\s+sem\s+(atribui|tecnico)", re.I
     ),
     # GLPI específico: "chamados pendentes antigos" / "pendentes > 7 dias"
     "glpi_pending_old": re.compile(
-        r"^(chamados?|tickets?)\s+pendentes?\s+(antigos?|velhos?|parados?|mais\s+de|\>\s*\d)",
-        re.I
+        r"^(chamados?|tickets?)\s+pendentes?\s+(antigos?|velhos?|parados?|mais\s+de|\>\s*\d)", re.I
     ),
     # GLPI genérico: "tickets", "chamados", "listar tickets", "glpi", "glpi tickets"
     "glpi_tickets": re.compile(
         r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(os\s+)?(ultimos?\s+)?(\d+\s+)?"
         r"(tickets?|chamados?|glpi)(\s+(do\s+)?glpi|\s+abertos?|\s+novos?|\s+recentes?)?\.?$",
-        re.I
+        re.I,
     ),
     # Zabbix: "alertas", "alertas zabbix", "zabbix alertas", "problemas zabbix"
     "zabbix_alerts": re.compile(
         r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(os\s+)?(ultimos?\s+)?(\d+\s+)?"
         r"(alertas?|problemas?|zabbix|alarmes?)(\s+(do\s+)?zabbix|\s+ativos?|\s+criticos?)?\.?$",
-        re.I
+        re.I,
     ),
     # Dashboard: "dashboard", "visão geral", "status geral", "resumo"
     "dashboard": re.compile(
         r"^(mostrar?|ver|exibir)?\s*(o\s+)?"
         r"(dashboard|status\s*geral|visao\s*geral|resumo(\s+geral)?|painel)\.?$",
-        re.I
+        re.I,
     ),
     # Linear: "issues", "issues linear", "tarefas", "backlog"
     "linear_issues": re.compile(
         r"^(listar?|mostrar?|ver|exibir|buscar?)?\s*(as\s+)?(ultimas?\s+)?(\d+\s+)?"
         r"(issues?|tarefas?|linear|backlog)(\s+(do\s+)?linear)?\.?$",
-        re.I
+        re.I,
     ),
 }
 
@@ -120,7 +122,7 @@ def _resolve_intent(message: str) -> str | None:
 
 async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
     """Gera relatório via código (sem LLM) baseado no intent detectado.
-    
+
     Returns:
         (markdown_report, success)
     """
@@ -141,14 +143,18 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
 
         if intent == "glpi_new_unassigned":
             from core.tools.glpi import get_client
+
             client = get_client()
             result = await client.get_tickets_new_unassigned(min_age_hours=24, limit=20)
             if result.success:
-                return format_new_unassigned_report(result.output, glpi_base_url=glpi_base_url), True
+                return format_new_unassigned_report(
+                    result.output, glpi_base_url=glpi_base_url
+                ), True
             return f"**Erro GLPI:** {result.error}", False
 
         elif intent == "glpi_pending_old":
             from core.tools.glpi import get_client
+
             client = get_client()
             result = await client.get_tickets_pending_old(min_age_days=7, limit=20)
             if result.success:
@@ -157,6 +163,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
 
         elif intent == "glpi_tickets":
             from core.tools.glpi import get_client
+
             client = get_client()
             result = await client.get_tickets(limit=15)
             if result.success:
@@ -165,6 +172,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
 
         elif intent == "zabbix_alerts":
             from core.tools.zabbix import get_client
+
             client = get_client()
             result = await client.get_problems(limit=15, severity=3)
             if result.success:
@@ -174,6 +182,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
 
         elif intent == "linear_issues":
             from core.tools.linear import get_client
+
             client = get_client()
             result = await client.get_issues(limit=15)
             if result.success:
@@ -186,6 +195,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
 
             try:
                 from core.tools.glpi import get_client as get_glpi_client
+
                 client = get_glpi_client()
                 result = await client.get_tickets(limit=10)
                 if result.success:
@@ -197,10 +207,15 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
 
             try:
                 from core.tools.zabbix import get_client as get_zabbix_client
+
                 client = get_zabbix_client()
                 result = await client.get_problems(limit=10, severity=3)
                 if result.success:
-                    zabbix_data = {"problems": result.output, "count": len(result.output), "min_severity": 3}
+                    zabbix_data = {
+                        "problems": result.output,
+                        "count": len(result.output),
+                        "min_severity": 3,
+                    }
                 else:
                     zabbix_data = {"error": result.error}
             except Exception as e:
@@ -214,10 +229,24 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             ), True
 
         return None, False
-        
+
     except Exception as e:
         logger.exception("Report generation failed for intent %s: %s", intent, e)
         return f"**Erro ao gerar relatório:** {e}", False
+
+
+def _fetch_project_context(query: str, project_id: str) -> str | None:
+    try:
+        return search_project_knowledge.invoke(
+            {
+                "query": query,
+                "project_id": project_id,
+            }
+        )
+    except Exception as e:
+        logger.warning("Project RAG fetch failed: %s", e)
+        return None
+
 
 # Phase 2: ITIL System Prompt for VSA Mode (compressed: core + examples on demand)
 VSA_CORE_PROMPT = """Você é o **DeepCode VSA** (Virtual Support Agent), especialista em Gestão de TI (ITIL, GUT).
@@ -265,17 +294,18 @@ def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
     """
     from datetime import datetime
     from zoneinfo import ZoneInfo
-    
+
     # Date only (no time) so prefix is stable for prompt caching across requests in the same day
     data_atual = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y")
     suffix = f"\n\nData: {data_atual} (São Paulo)"
-    
+
     if enable_vsa:
         prompt = VSA_CORE_PROMPT
         if include_examples:
             prompt = prompt + VSA_EXAMPLES_PROMPT
         return prompt + suffix
         return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
+
 
 @router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
@@ -294,7 +324,7 @@ async def chat(request: ChatRequest):
                 return ChatResponse(
                     response=report_md,
                     thread_id=thread_id,
-                    model="rule-based"  # Indicates no LLM was used
+                    model="rule-based",  # Indicates no LLM was used
                 )
             # If report generation failed, fall through to LLM
             logger.warning("⚠️ Report generation failed, falling back to LLM")
@@ -307,29 +337,31 @@ async def chat(request: ChatRequest):
         tools = []
         if request.use_tavily:
             tools.append(tavily_search)
-        
+
         # GLPI tools (Task 1.2)
         if request.enable_glpi:
             tools.extend([glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket])
             logger.info("✅ GLPI tools enabled")
-        
+
         # Zabbix tools (Task 1.3)
         if request.enable_zabbix:
             tools.extend([zabbix_get_alerts, zabbix_get_host])
             logger.info("✅ Zabbix tools enabled")
-        
+
         # Linear tools
         if request.enable_linear:
-            tools.extend([
-                linear_get_issues,
-                linear_get_issue,
-                linear_create_issue,
-                linear_get_teams,
-                linear_create_project,
-                linear_create_full_project,
-            ])
+            tools.extend(
+                [
+                    linear_get_issues,
+                    linear_get_issue,
+                    linear_create_issue,
+                    linear_get_teams,
+                    linear_create_project,
+                    linear_create_full_project,
+                ]
+            )
             logger.info("✅ Linear tools enabled")
-        
+
         # Planning tools
         if request.enable_planning:
             tools.extend(PLANNING_TOOLS)
@@ -343,12 +375,15 @@ async def chat(request: ChatRequest):
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
 
-        system_prompt = get_system_prompt(request.enable_vsa)
+        system_prompt = get_system_prompt(request.enable_vsa) or ""
         if request.project_id:
             system_prompt += (
                 f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
                 "Use a ferramenta 'search_project_knowledge' para dúvidas sobre este projeto."
             )
+            project_context = _fetch_project_context(request.message, request.project_id)
+            if project_context:
+                system_prompt += f"\n\nCONTEXTO RECUPERADO DO PROJETO:\n{project_context}"
 
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
@@ -377,21 +412,16 @@ async def chat(request: ChatRequest):
                 "thread_id": thread_id,
             }
         }
-        
+
         result = await agent.ainvoke(
-            {"messages": [HumanMessage(content=request.message)]},
-            config=config
+            {"messages": [HumanMessage(content=request.message)]}, config=config
         )
-        
+
         # Extract response
         messages = result.get("messages", [])
         response_text = messages[-1].content if messages else "No response generated"
-        
-        return ChatResponse(
-            response=response_text,
-            thread_id=thread_id,
-            model=request.model
-        )
+
+        return ChatResponse(response=response_text, thread_id=thread_id, model=request.model)
     except Exception as e:
         logger.error(f"Chat error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
@@ -410,26 +440,26 @@ async def stream_chat(request: ChatRequest):
     intent = _resolve_intent(request.message)
     if intent:
         logger.info("📊 [RULE-ROUTER/STREAM] Intent detectado: %s (bypass LLM)", intent)
-        
+
         async def generate_report_stream():
             """Stream do relatório gerado por código (simula streaming)."""
             try:
                 # Enviar evento start
                 yield f"data: {json.dumps({'type': 'start', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
-                
+
                 report_md, success = await _generate_report_by_intent(intent)
-                
+
                 if success and report_md:
                     # Envia conteúdo em chunks para simular streaming
                     # Divide em partes menores para UX melhor
                     chunk_size = 200
                     for i in range(0, len(report_md), chunk_size):
-                        chunk = report_md[i:i + chunk_size]
+                        chunk = report_md[i : i + chunk_size]
                         data = {
                             "type": "content",
                             "content": chunk,
                             "thread_id": thread_id,
-                            "model": "rule-based"
+                            "model": "rule-based",
                         }
                         yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
                 else:
@@ -438,20 +468,20 @@ async def stream_chat(request: ChatRequest):
                         "type": "content",
                         "content": report_md or "Erro ao gerar relatório",
                         "thread_id": thread_id,
-                        "model": "rule-based"
+                        "model": "rule-based",
                     }
                     yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
-                
+
                 # Evento done
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
-                
+
             except asyncio.CancelledError:
                 logger.debug("Report stream cancelled (client disconnected)")
                 raise
             except Exception as e:
                 logger.exception("Report stream error: %s", e)
                 yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
-        
+
         return StreamingResponse(generate_report_stream(), media_type="text/event-stream")
 
     # === LLM PATH: Use agent for complex/unknown intents ===
@@ -463,29 +493,31 @@ async def stream_chat(request: ChatRequest):
         tools = []
         if request.use_tavily:
             tools.append(tavily_search)
-        
+
         # GLPI tools (Task 1.2)
         if request.enable_glpi:
             tools.extend([glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket])
             logger.info("✅ GLPI tools enabled (stream)")
-        
+
         # Zabbix tools (Task 1.3)
         if request.enable_zabbix:
             tools.extend([zabbix_get_alerts, zabbix_get_host])
             logger.info("✅ Zabbix tools enabled (stream)")
-        
+
         # Linear tools
         if request.enable_linear:
-            tools.extend([
-                linear_get_issues,
-                linear_get_issue,
-                linear_create_issue,
-                linear_get_teams,
-                linear_create_project,
-                linear_create_full_project,
-            ])
+            tools.extend(
+                [
+                    linear_get_issues,
+                    linear_get_issue,
+                    linear_create_issue,
+                    linear_get_teams,
+                    linear_create_project,
+                    linear_create_full_project,
+                ]
+            )
             logger.info("✅ Linear tools enabled (stream)")
-        
+
         # Planning tools
         if request.enable_planning:
             tools.extend(PLANNING_TOOLS)
@@ -499,12 +531,15 @@ async def stream_chat(request: ChatRequest):
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
 
-        system_prompt = get_system_prompt(request.enable_vsa)
+        system_prompt = get_system_prompt(request.enable_vsa) or ""
         if request.project_id:
             system_prompt += (
                 f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
                 "Use a ferramenta 'search_project_knowledge' para dúvidas sobre este projeto."
             )
+            project_context = _fetch_project_context(request.message, request.project_id)
+            if project_context:
+                system_prompt += f"\n\nCONTEXTO RECUPERADO DO PROJETO:\n{project_context}"
 
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
@@ -554,30 +589,30 @@ async def stream_chat(request: ChatRequest):
                 logger.info("[STREAM] Sent start event, waiting for LLM...")
 
                 from langchain_core.messages import AIMessage, AIMessageChunk
-                
+
                 # Use stream_mode="messages" to get deltas (tokens) for a smoother experience
                 async for chunk, metadata in agent.astream(
                     {"messages": [HumanMessage(content=request.message)]},
                     config=config,
-                    stream_mode="messages"
+                    stream_mode="messages",
                 ):
                     # In 'messages' mode, chunk is typically a message delta (AIMessageChunk)
                     if isinstance(chunk, (AIMessage, AIMessageChunk)) and chunk.content:
                         # Only stream AI content, skipping tool calls and metadata
-                        if not hasattr(chunk, 'tool_calls') or not chunk.tool_calls:
+                        if not hasattr(chunk, "tool_calls") or not chunk.tool_calls:
                             content_str = _content_to_str(chunk.content)
                             if content_str:
                                 data = {
                                     "type": "content",
                                     "content": content_str,
                                     "thread_id": thread_id,
-                                    "model": request.model
+                                    "model": request.model,
                                 }
                                 yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
-                                
+
                 logger.info("[STREAM] Sending done event")
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
-                
+
             except asyncio.CancelledError:
                 # Client disconnected or request cancelled - do not log as error
                 logger.debug("Stream cancelled (client disconnected)")
@@ -586,15 +621,15 @@ async def stream_chat(request: ChatRequest):
                 logger.error(f"Stream error: {str(e)}", exc_info=True)
                 # Try to extract a clean string from the exception
                 error_msg = str(e)
-                if hasattr(e, 'body') and isinstance(e.body, dict):
-                    error_msg = e.body.get('message', error_msg)
+                if hasattr(e, "body") and isinstance(e.body, dict):
+                    error_msg = e.body.get("message", error_msg)
                 elif "API key USD spend limit exceeded" in error_msg:
                     error_msg = "Limite de gastos da chave API do OpenRouter excedido. Verifique suas configurações de 'Spending Limit' no OpenRouter."
-                
+
                 yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
-        
+
     except Exception as e:
         logger.error(f"Stream setup error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Stream error: {str(e)}")

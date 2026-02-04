@@ -41,6 +41,7 @@ interface Project {
   title: string;
   description: string | null;
   status: string;
+  embedding_model: string;
   linear_project_id: string | null;
   linear_project_url: string | null;
   stages: Stage[];
@@ -50,15 +51,10 @@ interface Project {
   total_budget_actual: number;
 }
 
-interface AnalysisResult {
-  executive_summary: string;
-  critical_points: string[];
-  suggested_stages: { title: string; description?: string; estimated_days?: number }[];
-  suggested_budget: { category: string; description: string; estimated_cost: number }[];
-  risks: string[];
-  recommendations: string[];
-  tokens_used?: number;
-  model_used?: string;
+interface RagModel {
+  id: string;
+  name: string;
+  dims: number;
 }
 
 export default function ProjectDetailPage() {
@@ -69,11 +65,14 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [focusArea, setFocusArea] = useState("Geral");
-  const [activeTab, setActiveTab] = useState<"docs" | "stages" | "budget">("docs");
+  const [ragModels, setRagModels] = useState<RagModel[]>([]);
+  const [embeddingModel, setEmbeddingModel] = useState("openai");
+  const [savingEmbedding, setSavingEmbedding] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uniqueRagModels = Array.from(
+    new Map(ragModels.map((model) => [model.id, model])).values()
+  );
 
   const fetchProject = useCallback(async () => {
     try {
@@ -82,6 +81,7 @@ export default function ProjectDetailPage() {
       if (!res.ok) throw new Error("Erro ao carregar projeto");
       const data: Project = await res.json();
       setProject(data);
+      setEmbeddingModel(data.embedding_model || "openai");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro desconhecido");
     } finally {
@@ -92,6 +92,38 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     fetchProject();
   }, [fetchProject]);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const res = await fetch(`/api/v1/config/rag-models`);
+        if (!res.ok) throw new Error("Erro ao carregar modelos RAG");
+        const data: RagModel[] = await res.json();
+        if (data && data.length > 0) {
+          setRagModels(data);
+          return;
+        }
+      } catch (e) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[Planning] RAG models error:", e);
+        }
+      }
+      setRagModels([
+        { id: "openai", name: "OpenAI Cloud (Rápido)", dims: 1536 },
+      ]);
+    };
+    fetchModels();
+  }, []);
+
+  useEffect(() => {
+    if (!project) return;
+    if (ragModels.some((m) => m.id === project.embedding_model)) return;
+    if (!project.embedding_model) return;
+    setRagModels((prev) => [
+      ...prev,
+      { id: project.embedding_model, name: `${project.embedding_model} (Indisponível)`, dims: 0 },
+    ]);
+  }, [project, ragModels]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -134,56 +166,28 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleAnalyze = async () => {
-    setAnalyzing(true);
-    setAnalysis(null);
-    
+  const handleSaveEmbeddingModel = async () => {
+    if (!project) return;
+    if (embeddingModel === project.embedding_model) return;
     try {
-      const res = await fetch(`/api/v1/planning/projects/${projectId}/analyze`, {
-        method: "POST",
+      setSavingEmbedding(true);
+      const res = await fetch(`/api/v1/planning/projects/${projectId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ focus_area: focusArea }),
+        body: JSON.stringify({ embedding_model: embeddingModel }),
       });
-      
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || "Erro na análise");
+        throw new Error(err.detail || "Erro ao atualizar modelo");
       }
-      
-      const data: AnalysisResult = await res.json();
-      setAnalysis(data);
+      const updated: Project = await res.json();
+      setProject(updated);
+      setEmbeddingModel(updated.embedding_model || embeddingModel);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro na análise");
+      alert(e instanceof Error ? e.message : "Erro ao atualizar modelo");
     } finally {
-      setAnalyzing(false);
+      setSavingEmbedding(false);
     }
-  };
-
-  const handleApplySuggestions = async () => {
-    if (!analysis) return;
-    if (!confirm("Aplicar etapas e orçamento sugeridos ao projeto?")) return;
-    
-    try {
-      const res = await fetch(`/api/v1/planning/projects/${projectId}/apply-suggestions?stages=true&budget=true`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(analysis),
-      });
-      
-      if (!res.ok) throw new Error("Erro ao aplicar sugestões");
-      
-      fetchProject();
-      alert("Sugestões aplicadas com sucesso!");
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao aplicar");
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -231,6 +235,28 @@ export default function ProjectDetailPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <select
+                value={embeddingModel}
+                onChange={(e) => setEmbeddingModel(e.target.value)}
+                className="px-2 py-1 bg-white border-2 border-slate-300 rounded-md text-xs text-slate-900"
+              >
+                {uniqueRagModels.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name} ({model.dims})
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveEmbeddingModel}
+                disabled={savingEmbedding || embeddingModel === project.embedding_model}
+                className="border-slate-300 text-slate-700"
+              >
+                {savingEmbedding ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
             {project.linear_project_url && (
               <a
                 href={project.linear_project_url}
@@ -321,197 +347,6 @@ export default function ProjectDetailPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Center: Analysis */}
-          <div className="lg:col-span-2">
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-slate-900">Análise de Documentos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 mb-4">
-                  <select
-                    value={focusArea}
-                    onChange={(e) => setFocusArea(e.target.value)}
-                    className="px-3 py-2 bg-white border-2 border-slate-400 rounded-lg text-slate-900 shadow-sm"
-                  >
-                    <option value="Geral">Análise Geral</option>
-                    <option value="Riscos">Foco em Riscos</option>
-                    <option value="Cronograma">Foco em Cronograma</option>
-                    <option value="Custos">Foco em Custos</option>
-                    <option value="Requisitos">Foco em Requisitos</option>
-                    <option value="Arquitetura">Foco em Arquitetura</option>
-                  </select>
-                  <Button
-                    onClick={handleAnalyze}
-                    disabled={analyzing || project.documents.length === 0}
-                    className="bg-vsa-orange hover:bg-vsa-orange-dark"
-                  >
-                    {analyzing ? "Analisando..." : "Analisar com IA"}
-                  </Button>
-                </div>
-
-                {project.documents.length === 0 && (
-                  <p className="text-slate-600 text-sm">
-                    Faça upload de documentos para habilitar a análise.
-                  </p>
-                )}
-
-                {analysis && (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-slate-50 border-2 border-slate-400 rounded-lg shadow-sm">
-                      <h3 className="text-sm font-semibold text-slate-900 mb-2">Resumo Executivo</h3>
-                      <p className="text-sm text-slate-700">{analysis.executive_summary}</p>
-                    </div>
-
-                    {analysis.critical_points.length > 0 && (
-                      <div className="p-4 bg-slate-50 border-2 border-slate-400 rounded-lg shadow-sm">
-                        <h3 className="text-sm font-semibold text-slate-900 mb-2">Pontos Críticos</h3>
-                        <ul className="text-sm text-slate-900 list-disc list-inside space-y-1">
-                          {analysis.critical_points.map((p, i) => (
-                            <li key={i}>{p}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {analysis.risks.length > 0 && (
-                      <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg shadow-sm">
-                        <h3 className="text-sm font-semibold text-slate-900 mb-2">Riscos Identificados</h3>
-                        <ul className="text-sm text-slate-900 list-disc list-inside space-y-1">
-                          {analysis.risks.map((r, i) => (
-                            <li key={i}>{r}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {(analysis.suggested_stages.length > 0 || analysis.suggested_budget.length > 0) && (
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={handleApplySuggestions}
-                          className="bg-emerald-600/80 hover:bg-emerald-600"
-                        >
-                          Aplicar Sugestões ao Projeto
-                        </Button>
-                      </div>
-                    )}
-
-                    {analysis.model_used && (
-                      <p className="text-xs text-slate-500 text-right">
-                        Modelo: {analysis.model_used} • ~{analysis.tokens_used} tokens
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Tabs: Stages & Budget */}
-            <Card>
-              <CardHeader>
-                <div className="flex gap-4 border-b-2 border-slate-400 pb-2">
-                  <button
-                    onClick={() => setActiveTab("stages")}
-                    className={`pb-2 text-sm font-medium transition-colors ${
-                      activeTab === "stages"
-                        ? "text-slate-900 border-b-2 border-vsa-orange"
-                        : "text-slate-500 hover:text-slate-900"
-                    }`}
-                  >
-                    Etapas ({project.stages.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("budget")}
-                    className={`pb-2 text-sm font-medium transition-colors ${
-                      activeTab === "budget"
-                        ? "text-slate-900 border-b-2 border-vsa-orange"
-                        : "text-slate-500 hover:text-slate-900"
-                    }`}
-                  >
-                    Orçamento ({formatCurrency(project.total_budget_estimated)})
-                  </button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {activeTab === "stages" && (
-                  <div className="space-y-2">
-                    {project.stages.length === 0 ? (
-                      <p className="text-slate-600 text-sm">
-                        Nenhuma etapa definida. Analise os documentos para sugestões.
-                      </p>
-                    ) : (
-                      project.stages.map((stage) => (
-                        <div
-                          key={stage.id}
-                          className="p-3 bg-slate-50 border-2 border-slate-400 rounded-lg flex items-center gap-3 shadow-sm"
-                        >
-                          <span className="text-xs text-slate-500 w-6">{stage.order_index + 1}</span>
-                          <div className="flex-1">
-                            <p className="text-sm text-slate-900">{stage.title}</p>
-                            {stage.description && (
-                              <p className="text-xs text-slate-600">{stage.description}</p>
-                            )}
-                          </div>
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            stage.status === "completed"
-                              ? "bg-emerald-100 text-slate-900"
-                              : stage.status === "in_progress"
-                              ? "bg-blue-100 text-slate-900"
-                              : "bg-slate-100 text-slate-900"
-                          }`}>
-                            {stage.status === "completed"
-                              ? "Concluído"
-                              : stage.status === "in_progress"
-                              ? "Em andamento"
-                              : "Pendente"}
-                          </span>
-                          {stage.estimated_days && (
-                            <span className="text-xs text-slate-500">{stage.estimated_days}d</span>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "budget" && (
-                  <div className="space-y-2">
-                    {project.budget_items.length === 0 ? (
-                      <p className="text-slate-600 text-sm">
-                        Nenhum item de orçamento. Analise os documentos para sugestões.
-                      </p>
-                    ) : (
-                      <>
-                        {project.budget_items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="p-3 bg-slate-50 border-2 border-slate-400 rounded-lg flex items-center gap-3 shadow-sm"
-                          >
-                            <span className="text-xs text-slate-500 uppercase w-20">
-                              {item.category}
-                            </span>
-                            <div className="flex-1">
-                              <p className="text-sm text-slate-900">{item.description}</p>
-                            </div>
-                            <span className="text-sm text-slate-900">
-                              {formatCurrency(item.estimated_cost)}
-                            </span>
-                          </div>
-                        ))}
-                        <div className="pt-2 border-t-2 border-slate-400 flex justify-between text-sm">
-                          <span className="text-slate-600">Total Estimado:</span>
-                          <span className="text-slate-900 font-semibold">
-                            {formatCurrency(project.total_budget_estimated)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
