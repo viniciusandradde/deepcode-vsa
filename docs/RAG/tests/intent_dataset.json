@@ -1,0 +1,86 @@
+[
+  {
+    "id": "lead_criar_unique",
+    "description": "Cria um lead exclusivo para preparar os demais testes.",
+    "prompt_template": "Cadastre um lead {nome} com email {email} e empresa {empresa}.",
+    "variables": [
+      {
+        "name": "uid",
+        "type": "uuid"
+      },
+      {
+        "name": "nome",
+        "template": "Lead CLI {uid}"
+      },
+      {
+        "name": "email",
+        "template": "lead-cli-{uid}@example.com"
+      },
+      {
+        "name": "empresa",
+        "value": "CLI Demo"
+      }
+    ],
+    "expected": {
+      "intent": "lead_criar",
+      "data_keys": [
+        "lead_id",
+        "nome",
+        "email"
+      ]
+    },
+    "store": [
+      {
+        "name": "lead_id",
+        "path": "data.lead_id"
+      },
+      {
+        "name": "lead_email",
+        "path": "data.email"
+      },
+      {
+        "name": "lead_nome",
+        "path": "data.nome"
+      }
+    ]
+  },
+  {
+    "id": "nota_adicionar",
+    "description": "Adiciona uma nota ao lead recém-criado.",
+    "prompt_template": "Adicione uma nota ao lead {lead_nome}: {nota}.",
+    "variables": [
+      {
+        "name": "nota",
+        "value": "Retornar orçamento amanhã"
+      }
+    ],
+    "context_vars": [
+      {
+        "name": "lead_nome",
+        "key": "lead_nome"
+      }
+    ],
+    "expected": {
+      "intent": "nota_adicionar",
+      "data_keys": [
+        "note_id",
+        "lead_id"
+      ]
+    },
+    "default_context": {
+      "lead_nome": "Lead CLI fallback"
+    }
+  },
+  {
+    "id": "listar_status",
+    "description": "Lista os status de lead disponíveis.",
+    "prompt_template": "Quais são os status de lead válidos?",
+    "expected": {
+      "intent": "listar_status_lead",
+      "data_keys": [
+        "items",
+        "total"
+      ]
+    }
+  }
+]

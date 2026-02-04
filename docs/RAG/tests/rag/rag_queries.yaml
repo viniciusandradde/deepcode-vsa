@@ -1,0 +1,309 @@
+queries:
+  # Dataset principal de perguntas usado nas Fases 1, 2 e 3.
+  # Campo opcional "answer" pode ser usado pelo juiz LLM (Fase 2/3).
+  # Por ora, os testes também usam expected/expected_all para orientar avaliação.
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Quais as condições comerciais e a garantia do Produto A?
+    expected_all: ["30/60", "12 meses"]
+    answer: "Pagamento 30/60 e garantia de 12 meses."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Qual o SLA do Serviço B?
+    expected: "99.9%"
+    answer: "SLA de 99.9% de disponibilidade mensal."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Qual o prazo para cancelamento sem multa?
+    expected: "7 dias"
+    answer: "Cancelamento sem multa em até 7 dias úteis."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Quais itens incluídos no Produto A?
+    expected_all: ["instalação", "treinamento", "suporte"]
+    answer: "Inclui instalação, treinamento inicial e suporte básico."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: O modelo de contratação do Produto A é de qual tipo?
+    expected: "assinatura anual"
+    answer: "Contratação por assinatura anual com renovação automática."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Qual canal prioritário de suporte do Serviço B?
+    expected: "portal"
+    answer: "Canal prioritário de suporte: portal do cliente."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Qual é a janela de manutenção do Serviço B?
+    expected_all: ["sábados", "01h–05h"]
+    answer: "Janela de manutenção aos sábados das 01h às 05h."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Quais componentes formam o treinamento e suporte do Produto A?
+    expected_all: ["treinamento", "suporte básico"]
+    answer: "Treinamento e suporte básico durante a garantia."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Confirme as condições de pagamento solicitadas pela Maria
+    expected: "30/60"
+    answer: "Pagamento parcelado em 30/60 dias."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual a garantia citada pela lead Maria?
+    expected: "12 meses"
+    answer: "Garantia padrão de 12 meses."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual o SLA citado pela lead Maria?
+    expected: "99.9%"
+    answer: "SLA de 99.9% solicitado pela lead."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual o SLA solicitado no lead do João?
+    expected: "99.9%"
+    answer: "SLA de 99.9% para o Serviço B."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Que integração João precisa para escoar itens?
+    expected: "marketplace"
+    answer: "Integração com marketplace para escoar itens ociosos."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Que tipo de treinamento João solicitou?
+    expected: "treinamento"
+    answer: "Treinamento para o time (inicial e reciclagens)."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual o prazo desejado pela Maria para a primeira fase?
+    expected: "60 dias"
+    answer: "Primeira fase em até 60 dias."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual é o foco principal solicitado pela Maria?
+    expected_all: ["painel", "unificado"]
+    answer: "Painel unificado para operações e pós‑venda."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual a principal dor da Maria envolvendo integração de sistemas?
+    expected: "conciliação automatizada"
+    answer: "Conciliação automatizada entre ERP e CRM."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Quais itens a Maria pediu confirmação para aprovação financeira?
+    expected_all: ["30/60", "12 meses"]
+    answer: "Pagamento 30/60 e garantia de 12 meses."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Qual é o prazo de pagamento do Produto A?
+    expected: "45 dias"
+    answer: "Pagamento por boleto em 45 dias."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Qual o SLA do Serviço B?
+    expected: "99%"
+    answer: "SLA de 99% de disponibilidade mensal."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Qual o prazo para cancelamento sem multa?
+    expected: "14 dias"
+    answer: "Cancelamento sem multa em até 14 dias corridos."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Qual é a garantia padrão do Produto A?
+    expected: "6 meses"
+    answer: "Garantia de 6 meses."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Qual é a janela de manutenção do Serviço B?
+    expected_all: ["domingos", "02h–04h"]
+    answer: "Janela de manutenção aos domingos das 02h às 04h."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Quais itens incluídos no Produto A da Empresa Y?
+    expected_all: ["manual", "suporte por e-mail"]
+    answer: "Inclui manual digital e suporte por e-mail."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual o prazo desejado por Pedro?
+    expected: "30 dias"
+    answer: "Prazo de início em 30 dias."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Quais integrações de equipamentos Pedro precisa?
+    expected_all: ["balanças", "etiquetas"]
+    answer: "Integrações com balanças e emissão de etiquetas."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual o canal de suporte preferido por Pedro?
+    expected: "e-mail"
+    answer: "Suporte preferido por e-mail."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual o prazo desejado por Carla?
+    expected: "45 dias"
+    answer: "Prazo de implantação em 45 dias."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual a garantia mencionada pela Carla?
+    expected: "6 meses"
+    answer: "Garantia de 6 meses."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: O que Carla deseja automatizar no financeiro?
+    expected: "conciliação"
+    answer: "Automatização de conciliações financeiras."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Quais relatórios são necessários para Carla?
+    expected_all: ["relatórios mensais", "centro de custo"]
+    answer: "Relatórios mensais com cortes por centro de custo."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Quais indicadores o painel financeiro da Carla deve mostrar?
+    expected: "inadimplência"
+    answer: "Indicadores de inadimplência no painel financeiro."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual o objetivo de Pedro em relação às perdas?
+    expected: "redução de perdas"
+    answer: "Redução de perdas por vencimento."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual é o prazo desejado por Carla para implantação?
+    expected: "45 dias"
+    answer: "Implantação desejada em 45 dias."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual é o foco principal de Pedro na operação?
+    expected: "acurácia do estoque"
+    answer: "Acurácia do estoque em tempo real."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: O que Carla reporta sobre conciliações e fechamento?
+    expected_all: ["conciliações bancárias", "fechamento financeiro"]
+    answer: "Conciliações bancárias e fechamento financeiro automatizados."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Quais KPIs a Maria pretende acompanhar?
+    expected_all: ["produtividade", "SLA de atendimento"]
+    answer: "KPIs de produtividade e SLA de atendimento."
+  - group: lead
+    empresa: Empresa X
+    pergunta: O que o João deseja consolidar no painel?
+    expected_all: ["vendas", "estoque", "canais"]
+    answer: "Consolidar vendas, estoque e canais."
+  - group: lead
+    empresa: Empresa X
+    pergunta: O que o João requer para integração com o marketplace?
+    expected: "APIs documentadas"
+    answer: "APIs documentadas para integração com marketplace."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Qual o tipo de suporte citado no Produto A?
+    expected: "suporte básico"
+    answer: "Suporte básico incluso no Produto A."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Qual é a visão geral do Produto A em relação à implantação?
+    expected: "implantação rápida"
+    answer: "Implantação rápida."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: O Produto A atende que tipo de operações?
+    expected_all: ["médio porte", "estabilidade"]
+    answer: "Atende operações de médio porte com estabilidade."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: O Serviço B inclui qual tipo de atendimento?
+    expected: "manutenção preventiva"
+    answer: "Inclui manutenção preventiva."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: O Serviço B inclui qual tipo de manutenção?
+    expected: "corretiva"
+    answer: "Inclui manutenção corretiva sob demanda."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Quais são os canais adicionais do Serviço B?
+    expected: "base de conhecimento"
+    answer: "Canais adicionais incluem base de conhecimento."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: O Produto A prioriza o que em relação à implantação?
+    expected_all: ["simplicidade", "baixo custo"]
+    answer: "Prioriza simplicidade e baixo custo."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Quais requisitos não funcionais a Maria levantou?
+    expected_all: ["integração estável", "SLA de 99.9%"]
+    answer: "Integração estável e SLA de 99.9%."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Quais ações a Maria pediu nos próximos passos?
+    expected_all: ["condições de pagamento", "garantia"]
+    answer: "Incluir condições de pagamento e garantia na proposta."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Qual critério de decisão cita ROI no caso da Maria?
+    expected: "6 meses"
+    answer: "ROI esperado em até 6 meses."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual a preocupação de Carla com esforço manual?
+    expected: "fechamento"
+    answer: "Reduzir esforço no fechamento."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Que tipo de exportação de relatórios Carla deseja?
+    expected_all: ["PDF", "CSV"]
+    answer: "Exportação de relatórios em PDF e CSV."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual a infraestrutura que impacta Pedro?
+    expected: "balanças"
+    answer: "Integração com balanças."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: Quais upgrades são mencionados para o Produto A?
+    expected_all: ["suporte avançado", "add-ons"]
+    answer: "Upgrades de suporte avançado e add‑ons."
+  - group: empresa
+    empresa: Empresa X
+    pergunta: O que a contratação anual do Produto A implica?
+    expected: "renovação automática"
+    answer: "Renovação automática anual."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: O Produto A da Empresa Y inclui suporte por qual canal?
+    expected: "e-mail"
+    answer: "Suporte por e‑mail."
+  - group: empresa
+    empresa: Empresa Y
+    pergunta: Qual é a prioridade de canal do Serviço B?
+    expected: "e-mail"
+    answer: "Prioridade de canal: e‑mail."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual prazo Pedro busca para início?
+    expected: "30 dias"
+    answer: "Início em 30 dias."
+  - group: lead
+    empresa: Empresa X
+    pergunta: Que relatórios João espera no painel?
+    expected: "exportáveis"
+    answer: "Relatórios exportáveis."
+  - group: lead
+    empresa: Empresa X
+    pergunta: O que a Maria quer reduzir na operação?
+    expected: "retrabalho"
+    answer: "Reduzir retrabalho na operação."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: O que Carla busca evitar no fechamento?
+    expected: "erro"
+    answer: "Evitar erros no fechamento."
+  - group: lead
+    empresa: Empresa Y
+    pergunta: Qual preocupação de Pedro em relação a validade?
+    expected: "vencimento"
+    answer: "Evitar perdas por vencimento."

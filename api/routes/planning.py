@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, File, HTTPException, Query, UploadFile
 from psycopg.rows import dict_row
 
 from api.models.planning import (
@@ -28,6 +28,7 @@ from api.models.planning import (
 )
 from core.database import get_conn
 from core.rag.loaders import get_file_type, load_document_from_bytes
+from core.rag.planning_ingestion import ingest_project_document_task
 
 logger = logging.getLogger(__name__)
 
@@ -295,8 +296,12 @@ async def list_documents(project_id: UUID):
 
 
 @router.post("/projects/{project_id}/documents", response_model=DocumentResponse)
-async def upload_document(project_id: UUID, file: UploadFile = File(...)):
-    """Upload a document to a project."""
+async def upload_document(
+    project_id: UUID,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+):
+    """Upload a document to a project. RAG ingestion runs in background."""
     try:
         # Validate file type
         file_type = get_file_type(file.filename or "")
@@ -337,7 +342,18 @@ async def upload_document(project_id: UUID, file: UploadFile = File(...)):
                 )
                 row = cur.fetchone()
                 conn.commit()
-                return DocumentResponse(**row)
+                document_id = row["id"]
+
+        # RAG ingestion in background (chunking + embedding + kb_chunks with project_id)
+        background_tasks.add_task(
+            ingest_project_document_task,
+            project_id=project_id,
+            document_id=document_id,
+            content_bytes=content_bytes,
+            filename=file.filename or "doc",
+        )
+
+        return DocumentResponse(**row)
     except HTTPException:
         raise
     except Exception as e:

@@ -12,7 +12,8 @@ class ChatRequest(BaseModel):
     empresa: Optional[str] = None
     client_id: Optional[str] = None
     use_tavily: Optional[bool] = None
-    
+    project_id: Optional[str] = None  # DeepCode Projects: RAG scoped to this project
+
     # VSA-specific fields (Task 1.1)
     enable_vsa: bool = False
     enable_glpi: bool = False

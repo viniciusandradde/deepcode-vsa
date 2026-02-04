@@ -28,6 +28,7 @@ from core.tools.linear import (
     linear_create_full_project,
 )
 from core.tools.planning import PLANNING_TOOLS
+from core.tools.planning_rag import search_project_knowledge
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -334,16 +335,28 @@ async def chat(request: ChatRequest):
             tools.extend(PLANNING_TOOLS)
             logger.info("✅ Planning tools enabled")
 
+        # DeepCode Projects: RAG scoped to project
+        if request.project_id:
+            tools.append(search_project_knowledge)
+            logger.info("✅ Project RAG enabled (project_id=%s)", request.project_id)
+
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
-        
+
+        system_prompt = get_system_prompt(request.enable_vsa)
+        if request.project_id:
+            system_prompt += (
+                f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
+                "Use a ferramenta 'search_project_knowledge' para dúvidas sobre este projeto."
+            )
+
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
             agent = UnifiedAgent(
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
-                system_prompt=get_system_prompt(True),
+                system_prompt=system_prompt,
                 enable_itil=False,
                 enable_planning=False,
                 fast_model_name=_resolve_fast_model(),
@@ -354,10 +367,10 @@ async def chat(request: ChatRequest):
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
-                system_prompt=get_system_prompt(False),
+                system_prompt=system_prompt,
             )
             logger.info("🤖 Using SimpleAgent")
-        
+
         # Invoke agent
         config = {
             "configurable": {
@@ -478,16 +491,28 @@ async def stream_chat(request: ChatRequest):
             tools.extend(PLANNING_TOOLS)
             logger.info("✅ Planning tools enabled (stream)")
 
+        # DeepCode Projects: RAG scoped to project
+        if request.project_id:
+            tools.append(search_project_knowledge)
+            logger.info("✅ Project RAG enabled (project_id=%s) [stream]", request.project_id)
+
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
-        
+
+        system_prompt = get_system_prompt(request.enable_vsa)
+        if request.project_id:
+            system_prompt += (
+                f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
+                "Use a ferramenta 'search_project_knowledge' para dúvidas sobre este projeto."
+            )
+
         # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
         if request.enable_vsa:
             agent = UnifiedAgent(
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
-                system_prompt=get_system_prompt(True),
+                system_prompt=system_prompt,
                 enable_itil=False,
                 enable_planning=False,
                 fast_model_name=_resolve_fast_model(),
@@ -498,10 +523,10 @@ async def stream_chat(request: ChatRequest):
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
-                system_prompt=get_system_prompt(False),
+                system_prompt=system_prompt,
             )
             logger.info("🤖 Using SimpleAgent [stream]")
-        
+
         config = {
             "configurable": {
                 "thread_id": thread_id,

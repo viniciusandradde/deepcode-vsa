@@ -1,0 +1,304 @@
+row_type,chunking,total,llm_yes,question,expected,answer,judge_yes,judge_justification
+summary,semantic,61,0.8,,,,,
+detail,,,,Quais as condições comerciais e a garantia do Produto A?,Pagamento 30/60 e garantia de 12 meses.,"Assunção: Empresa X.
+
+Condições comerciais (Empresa X):
+- Pagamento: disponível parcelamento em 30/60 dias. [empresa_x/products/produto_a.md#0]
+- Modelos de contratação: assinatura anual com renovação automática. [empresa_x/products/produto_a.md#0]
+
+Garantia (Empresa X):
+- Garantia: padrão de 12 meses para defeitos de fabricação. [empresa_x/products/produto_a.md#0]
+
+Observação (variação por empresa):
+- Se for Empresa Y: Pagamento: boleto em 45 dias (não há 30/60). [empresa_y/products/produto_a.md#0]
+- Se for Empresa Y: Garantia: 6 meses para defeitos de fabricação. [empresa_y/products/produto_a.md#0]",True,"Informa pagamento 30/60 e garantia de 12 meses para o Produto A, respondendo à questão."
+detail,,,,Qual o SLA do Serviço B?,SLA de 99.9% de disponibilidade mensal.,"99.9% [kb/x/servico_b.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: 99% [empresa_y/services/servico_b.md#0]",True,"A resposta informa ""99.9%"" para o Serviço B, conforme esperado, e cita a fonte."
+detail,,,,Qual o prazo para cancelamento sem multa?,Cancelamento sem multa em até 7 dias úteis.,"7 dias úteis. [semantic/tests/rag/data/empresa_x/policies/cancelamento.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: 14 dias corridos. [semantic/tests/rag/data/empresa_y/policies/cancelamento.md#0]",True,"A resposta cita ""7 dias úteis"" para Empresa X, respondendo diretamente à questão sobre o prazo de cancelamento sem multa."
+detail,,,,Quais itens incluídos no Produto A?,"Inclui instalação, treinamento inicial e suporte básico.","Assunção: Empresa X.
+
+Itens incluídos no Produto A (Empresa X):
+- instalação no ambiente do cliente [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- treinamento inicial para a equipe [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- suporte básico durante o período de garantia [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Se for Empresa Y: manual digital; suporte por e‑mail [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"Lista ""instalação"", ""treinamento inicial"" e ""suporte básico"", respondendo à questão conforme o esperado."
+detail,,,,O modelo de contratação do Produto A é de qual tipo?,Contratação por assinatura anual com renovação automática.,"- Modelo de contratação do Produto A (padrão Empresa X): assinatura anual com renovação automática. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Assunção: Empresa X.
+- Se for Empresa Y: pagamento por boleto em 45 dias. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta afirma ""assinatura anual com renovação automática"" para o Produto A na Empresa X, respondendo à questão."
+detail,,,,Qual canal prioritário de suporte do Serviço B?,Canal prioritário de suporte: portal do cliente.,"Portal do cliente. [empresa_x/services/servico_b.md#0]
+
+Assunção: Empresa X.
+Se for Empresa Y: e-mail. [empresa_y/services/servico_b.md#0]",True,"A resposta cita ""Portal do cliente"" como canal prioritário, respondendo diretamente à questão."
+detail,,,,Qual é a janela de manutenção do Serviço B?,Janela de manutenção aos sábados das 01h às 05h.,"Janela de manutenção (Assunção: Empresa X): sábados 01h–05h. [/Users/ronnald/Documents/code/training/ai-agent-sales/tests/rag/data/empresa_x/services/servico_b.md#0]
+
+Se for Empresa Y: domingos 02h–04h. [/Users/ronnald/Documents/code/training/ai-agent-sales/tests/rag/data/empresa_y/services/servico_b.md#0]",True,"A resposta informa ""sábados 01h–05h"" para a Empresa X, que corresponde ao esperado e responde à questão."
+detail,,,,Quais componentes formam o treinamento e suporte do Produto A?,Treinamento e suporte básico durante a garantia.,"Assunção: Empresa X.
+
+Componentes que formam o treinamento e o suporte do Produto A (Empresa X):
+
+- Trilha de treinamento inicial e base de conhecimento. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Treinamento inicial para a equipe. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Instalação no ambiente do cliente (item incluído). [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Suporte básico durante o período de garantia. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Canal padrão de suporte com tempos de resposta em horário comercial. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Garantia: 12 meses para defeitos de fabricação. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Observações/Upgrades: opções de upgrade para suporte avançado e add-ons específicos. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Se for Empresa Y: Treinamento não listado; Suporte por e-mail; Garantia de 6 meses; Itens incluídos: manual digital; suporte por e-mail. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta cita ""treinamento inicial"" e ""suporte básico durante o período de garantia"", respondendo à questão e incluindo os termos esperados."
+detail,,,,Confirme as condições de pagamento solicitadas pela Maria,Pagamento parcelado em 30/60 dias.,"Condições de pagamento solicitadas pela Maria: parcelamento em 30/60. 
+Assunção: Empresa X. Se for Empresa Y: boleto em 45 dias.
+
+Fontes:
+- Parcelamento solicitado pela Maria (Empresa X) [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+- Política de Empresa Y (para referência alternativa) [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta confirma ""parcelamento em 30/60"" conforme solicitado por Maria, respondendo à questão."
+detail,,,,Qual a garantia citada pela lead Maria?,Garantia padrão de 12 meses.,"12 meses [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Assunção: Empresa X.
+Se for Empresa Y: 12 meses.",True,"A resposta cita ""12 meses"", que corresponde à garantia padrão esperada e responde à questão."
+detail,,,,Qual o SLA citado pela lead Maria?,SLA de 99.9% solicitado pela lead.,"99.9% [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: não informado no KB.",True,"A resposta menciona ""99.9%"" como SLA solicitado pela lead, respondendo à questão."
+detail,,,,Qual o SLA solicitado no lead do João?,SLA de 99.9% para o Serviço B.,99.9% [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0],False,"A resposta menciona ""99.9%"" mas não especifica que é para o Serviço B, como solicitado na questão."
+detail,,,,Que integração João precisa para escoar itens?,Integração com marketplace para escoar itens ociosos.,"Assunção: Empresa X.
+
+Integração necessária para João: Integração com marketplace regional para escoar itens ociosos. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0] [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Se for Empresa Y: Não há evidência no KB sobre a integração necessária para escoar itens.",True,"A resposta menciona ""Integração com marketplace regional para escoar itens ociosos"", respondendo diretamente à questão."
+detail,,,,Que tipo de treinamento João solicitou?,Treinamento para o time (inicial e reciclagens).,"Treinamento solicitado: treinamento do time (presencial e remoto). [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: treinamento do time (presencial e remoto).",True,"A resposta menciona ""treinamento do time"", que corresponde ao esperado, e responde à questão."
+detail,,,,Qual o prazo desejado pela Maria para a primeira fase?,Primeira fase em até 60 dias.,60 dias. Assunção: Empresa X. Se for Empresa Y: não disponível no KB. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0],True,"A resposta menciona ""60 dias"", que corresponde ao prazo desejado por Maria para a primeira fase."
+detail,,,,Qual é o foco principal solicitado pela Maria?,Painel unificado para operações e pós‑venda.,"- Foco principal solicitado pela Maria: padronizar a jornada de atendimento e consolidar informações em um painel único. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: padronizar a jornada de atendimento e consolidar informações em um painel único. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]",True,"A resposta menciona ""consolidar informações em um painel único"", alinhando-se ao foco principal esperado de um painel unificado para operações e pós-venda."
+detail,,,,Qual a principal dor da Maria envolvendo integração de sistemas?,Conciliação automatizada entre ERP e CRM.,"Integração entre sistemas é a principal dor: hoje há exportação manual de planilhas e conciliação manual de pedidos, notas e faturas. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]",True,"A resposta cita ""conciliação manual de pedidos, notas e faturas"", alinhando-se à conciliação automatizada esperada."
+detail,,,,Quais itens a Maria pediu confirmação para aprovação financeira?,Pagamento 30/60 e garantia de 12 meses.,"Itens que Maria pediu confirmação para aprovação financeira:
+- Condições de pagamento parcelado em 30/60. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+- Garantia de 12 meses. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]",True,"A resposta cita ""pagamento 30/60"" e ""garantia de 12 meses"", respondendo exatamente à questão."
+detail,,,,Qual é o prazo de pagamento do Produto A?,Pagamento por boleto em 45 dias.,"- 30/60 dias. [kb/x/produto_a.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: 45 dias. [kb/y/produto_a.md#0]",False,"A resposta não especifica 45 dias para Empresa X, apenas para Empresa Y, não respondendo claramente à questão."
+detail,,,,Qual o SLA do Serviço B?,SLA de 99% de disponibilidade mensal.,"Assunção: Empresa X.
+
+SLA Serviço B: 99.9% [empresa_x/services/servico_b.md#0].
+
+Se for Empresa Y: 99% [empresa_y/services/servico_b.md#0].",True,"A resposta cita ""SLA Serviço B: 99.9%"" e ""Se for Empresa Y: 99%"", abordando o SLA conforme a questão."
+detail,,,,Qual o prazo para cancelamento sem multa?,Cancelamento sem multa em até 14 dias corridos.,"Assunção: Empresa X.
+
+- Prazo para cancelamento sem multa (Empresa X): 7 dias úteis após assinatura. [semantic/tests/rag/data/empresa_x/policies/cancelamento.md#0]
+
+Se for Empresa Y: 14 dias corridos após assinatura. [semantic/tests/rag/data/empresa_y/policies/cancelamento.md#0]",False,"A resposta menciona 7 dias úteis (Empresa X) e 14 dias corridos (Empresa Y), mas o esperado é 14 dias corridos; não responde diretamente conforme o esperado."
+detail,,,,Qual é a garantia padrão do Produto A?,Garantia de 6 meses.,"12 meses. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: 6 meses. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",False,"A resposta indica ""12 meses"" para Empresa X, enquanto o esperado é ""6 meses"" como garantia padrão."
+detail,,,,Qual é a janela de manutenção do Serviço B?,Janela de manutenção aos domingos das 02h às 04h.,"Assunção: Empresa X.
+
+- Janela de manutenção do Serviço B (Empresa X): sábados 01h–05h. [empresa_x/services/servico_b.md#0]
+
+- Se for Empresa Y: domingos 02h–04h. [empresa_y/services/servico_b.md#0]",False,"A resposta cita duas janelas diferentes e não especifica qual se aplica, não respondendo claramente à questão."
+detail,,,,Quais itens incluídos no Produto A da Empresa Y?,Inclui manual digital e suporte por e-mail.,"Itens incluídos no Produto A (Empresa Y):
+- manual digital [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]
+- suporte por e‑mail [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"Cita ""manual digital"" e ""suporte por e‑mail"", respondendo exatamente à questão."
+detail,,,,Qual o prazo desejado por Pedro?,Prazo de início em 30 dias.,"Prazo desejado por Pedro: 30 dias. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: 30 dias.",True,"A resposta menciona ""Prazo desejado por Pedro: 30 dias"", respondendo diretamente à questão."
+detail,,,,Quais integrações de equipamentos Pedro precisa?,Integrações com balanças e emissão de etiquetas.,"- Integração com balanças para pesagem automática. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+- Emissão de etiquetas com código de barras/QR para rastreio. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+
+Observação: as informações acima se referem ao Relatório de Lead — Pedro (Empresa Y). Se o Pedro for da Empresa X, não há evidência suficiente no KB para confirmar estas integrações. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]",True,"Cita ""integração com balanças"" e ""emissão de etiquetas"", respondendo à questão conforme o esperado."
+detail,,,,Qual o canal de suporte preferido por Pedro?,Suporte preferido por e-mail.,Canal de suporte preferido por Pedro: e-mail. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0],True,"A resposta afirma ""Canal de suporte preferido por Pedro: e-mail"", respondendo diretamente à questão."
+detail,,,,Qual o prazo desejado por Carla?,Prazo de implantação em 45 dias.,Prazo desejado por Carla: 45 dias. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0],True,"A resposta menciona ""Prazo desejado por Carla: 45 dias"", respondendo diretamente à questão."
+detail,,,,Qual a garantia mencionada pela Carla?,Garantia de 6 meses.,"6 meses. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: 6 meses. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]",True,"A resposta menciona ""6 meses"", que corresponde à garantia esperada e responde à questão."
+detail,,,,O que Carla deseja automatizar no financeiro?,Automatização de conciliações financeiras.,"Carla pretende automatizar principalmente as atividades financeiras relacionadas à conciliação e aos relatórios. Evidência:
+
+- Reduzir o esforço manual em conciliações bancárias e fechamento financeiro. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Geração de relatórios mensais com cortes por centro de custo e filial. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Conciliação de boletos e cartões com regras simples. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Relatórios mensais padronizados (PDF/planilha) e painel financeiro com indicadores de atraso e inadimplência. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Requisitos funcionais: Conciliação automática com regras configuráveis; Exportação de relatórios em PDF/CSV. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Requisitos não funcionais: Facilidade de uso/onboarding rápido; Integração simples com banco/ERP atual. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: Carla (Empresa Y) também está buscando automação nesses mesmos pontos (conciliação automática, relatórios mensais padronizados e painel financeiro). [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]",True,"A resposta menciona explicitamente a ""automatização de conciliações financeiras"" e detalha atividades relacionadas, respondendo à questão."
+detail,,,,Quais relatórios são necessários para Carla?,Relatórios mensais com cortes por centro de custo.,"Contexto: Carla (Empresa Y).
+
+- Relatórios mensais padronizados (PDF/planilha) [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Painel financeiro com indicadores de atraso e inadimplência [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Modelos de relatórios mensais reutilizáveis [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]",False,"A resposta cita ""relatórios mensais"", mas não menciona cortes por centro de custo, que é parte essencial do esperado."
+detail,,,,Quais indicadores o painel financeiro da Carla deve mostrar?,Indicadores de inadimplência no painel financeiro.,"- Indicadores do painel financeiro: indicadores de atraso e inadimplência. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+- Contexto (para entender o objetivo): Carla busca maior previsibilidade de fluxo de caixa e geração de relatórios mensais com cortes por centro de custo e filial. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+- Assunção: Empresa X. Se for Empresa Y: Painel financeiro com indicadores de atraso e inadimplência. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]",True,"A resposta menciona ""indicadores de atraso e inadimplência"", atendendo ao esperado de mostrar indicadores de inadimplência no painel financeiro."
+detail,,,,Qual o objetivo de Pedro em relação às perdas?,Redução de perdas por vencimento.,"Objetivo de Pedro em relação às perdas: reduzir perdas por validade e melhorar a acurácia do estoque em tempo real. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+
+Assunção: Empresa X.
+Se for Empresa Y: reduzir perdas por validade e melhorar a acurácia do estoque em tempo real. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]",True,"A resposta menciona ""reduzir perdas por validade"", que corresponde à redução de perdas por vencimento, respondendo à questão."
+detail,,,,Qual é o prazo desejado por Carla para implantação?,Implantação desejada em 45 dias.,Prazo desejado por Carla para implantação: 45 dias. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0],True,"A resposta menciona explicitamente ""45 dias"" como prazo desejado, respondendo diretamente à questão."
+detail,,,,Qual é o foco principal de Pedro na operação?,Acurácia do estoque em tempo real.,"Assunção: Empresa X.
+
+Foco principal de Pedro na operação: reduzir perdas por validade e melhorar a acurácia do estoque em tempo real. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+
+Se for Empresa Y: Reduzir perdas por validade e melhorar a acurácia do estoque em tempo real. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]",True,"A resposta menciona ""melhorar a acurácia do estoque em tempo real"", que corresponde ao foco principal esperado."
+detail,,,,O que Carla reporta sobre conciliações e fechamento?,Conciliações bancárias e fechamento financeiro automatizados.,"Assunção: Empresa X.
+
+Resumo direto (Carla reporta, conforme KB da Empresa Y):
+- Carla relata a necessidade de reduzir o esforço manual em conciliações bancárias e fechamento financeiro, buscando maior previsibilidade de fluxo de caixa e geração de relatórios mensais com cortes por centro de custo e filial. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+Detalhes-chave:
+- Escopo inicial sugerido: conciliação de boletos e cartões com regras simples; relatórios mensais padronizados (PDF/planilha); painel financeiro com indicadores de atraso e inadimplência. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Dores/oportunidades: gestão atual em planilhas, alto risco de erro; retrabalho no fechamento prejudica geração de relatórios para diretoria. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Requisitos (funcionais): conciliação automática com regras configuráveis; exportação de relatórios em PDF/CSV. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Critérios de decisão: redução do esforço no fechamento; prazo de implantação de 45 dias; parcelamento > 30 dias; garantia de 6 meses. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+- Próximos passos: enviar proposta com escopo por fases, cronograma, condições de pagamento (parcelamento > 30 dias), garantia de 6 meses e plano de treinamento; agendar walkthrough do fluxo de conciliação e validação dos relatórios mensais. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+Nota rápida para variações (Se for Empresa Y):
+- Se for Empresa Y, Carla reporta exatamente as mesmas necessidades descritas acima: redução do esforço manual em conciliações e fechamento, automação de conciliações, e relatórios mensais padronizados. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]",True,"A resposta menciona ""redução do esforço manual em conciliações bancárias e fechamento financeiro"", ""conciliação automática"" e ""relatórios mensais"", cobrindo a automação esperada na questão."
+detail,,,,Quais KPIs a Maria pretende acompanhar?,KPIs de produtividade e SLA de atendimento.,"- KPIs de produtividade. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+- SLA de atendimento. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+- Meta: Relatórios de produtividade semanal por equipe/região/tipo de chamado. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]",True,"A resposta cita ""KPIs de produtividade"" e ""SLA de atendimento"", respondendo exatamente à questão."
+detail,,,,O que o João deseja consolidar no painel?,"Consolidar vendas, estoque e canais.","João deseja consolidar no painel: vendas, estoque e canais (incluindo marketplace). [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: Consolide vendas, estoque e canais (incluindo marketplace).",True,"A resposta menciona ""vendas, estoque e canais (incluindo marketplace)"", cobrindo todos os itens esperados pela questão."
+detail,,,,O que o João requer para integração com o marketplace?,APIs documentadas para integração com marketplace.,"Assunção: Empresa X. Se for Empresa Y: não informado no KB.
+
+O que o João requer para integração com o marketplace (conforme lead de João, Empresa X):
+
+- Integração com marketplace regional para escoar itens ociosos. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+- Painel deve consolidar vendas, estoque e canais (incluindo marketplace), com relatórios exportáveis e APIs documentadas para a equipe de dados. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+- SLA de 99.9% para o Serviço B, relacionado à solução proposta. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+- Treinamento do time (treinamento presencial e remoto) e suporte presencial em momentos críticos (fechamentos e períodos de safra), com SLAs definidos e canais de atendimento claros. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+- Próximos passos previstos: disponibilizar proposta com cronograma de implantação, plano de treinamento detalhado (treinamento inicial + reciclagens), métricas de SLA do Serviço B (99.9%) e estimativa de ganhos em ruptura e giro; agendar sessão técnica para mapear integrações com o marketplace e requisitos de dados. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+
+Observação adicional (se for Empresa Y): consultar o valor correspondente no KB. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]",True,"A resposta menciona explicitamente ""APIs documentadas para a equipe de dados"" como requisito para integração com marketplace, respondendo à questão."
+detail,,,,Qual o tipo de suporte citado no Produto A?,Suporte básico incluso no Produto A.,"Tipo de suporte citado no Produto A: canal padrão com tempos de resposta em horário comercial. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Assunção: Empresa X.
+Se for Empresa Y: por e-mail em horário comercial. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",False,"A resposta menciona ""canal padrão com tempos de resposta em horário comercial"", mas não cita explicitamente ""suporte básico incluso"", como esperado."
+detail,,,,Qual é a visão geral do Produto A em relação à implantação?,Implantação rápida.,"Assunção: Empresa X.
+
+Visão geral do Produto A em relação à implantação:
+- O Produto A foi desenvolvido para atender operações de médio porte, com foco em estabilidade, facilidade de uso e implantação rápida. Atende rotinas comerciais e operacionais, com trilha de treinamento inicial e base de conhecimento. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Se for Empresa Y: Indicado para pequenas operações, priorizando simplicidade e baixo custo de implantação. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta afirma ""implantação rápida"", atendendo diretamente ao esperado na questão."
+detail,,,,O Produto A atende que tipo de operações?,Atende operações de médio porte com estabilidade.,"Assunção: Empresa X.
+
+- O Produto A atende operações de médio porte. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Atende rotinas comerciais e operacionais. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Observação (variação por empresa):
+- Se for Empresa Y: o Produto A é indicado para pequenas operações, priorizando simplicidade e baixo custo de implantação. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta afirma que o Produto A atende operações de médio porte, respondendo à questão."
+detail,,,,O Serviço B inclui qual tipo de atendimento?,Inclui manutenção preventiva.,"Assunção: Empresa X.
+
+- O Serviço B inclui monitoramento, manutenção preventiva e atendimento N2 para incidentes e requisições dentro do escopo contratado. [empresa_x/services/servico_b.md#0]
+
+- Se for Empresa Y: atendimento básico e manutenção corretiva sob demanda. [empresa_y/services/servico_b.md#0]",True,"A resposta afirma que o Serviço B inclui ""manutenção preventiva"", respondendo à questão."
+detail,,,,O Serviço B inclui qual tipo de manutenção?,Inclui manutenção corretiva sob demanda.,"- Manutenção preventiva. [semantic/tests/rag/data/empresa_x/services/servico_b.md#0]
+
+- Assunção: Empresa X.
+
+- Se for Empresa Y: manutenção corretiva sob demanda. [semantic/tests/rag/data/empresa_y/services/servico_b.md#0]",False,"A resposta cita ""manutenção preventiva"" e só menciona ""manutenção corretiva sob demanda"" para outra empresa, não respondendo à questão sobre o Serviço B."
+detail,,,,Quais são os canais adicionais do Serviço B?,Canais adicionais incluem base de conhecimento.,"Assunção: Empresa X.
+
+- Canais adicionais do Serviço B (Empresa X): e-mail e base de conhecimento. [empresa_x/services/servico_b.md#0]
+
+- Se for Empresa Y: base de conhecimento. [empresa_y/services/servico_b.md#0]",True,"A resposta menciona ""base de conhecimento"" como canal adicional, respondendo à questão."
+detail,,,,O Produto A prioriza o que em relação à implantação?,Prioriza simplicidade e baixo custo.,"Assunção: Empresa X. O Produto A prioriza a implantação rápida. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Se for Empresa Y: prioriza simplicidade e baixo custo de implantação. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",False,"A resposta menciona ""implantação rápida"" para Empresa X, mas só cita ""simplicidade e baixo custo"" para Empresa Y, não respondendo diretamente à questão geral."
+detail,,,,Quais requisitos não funcionais a Maria levantou?,Integração estável e SLA de 99.9%.,"- Integração estável com ERP legado [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+- SLA de 99.9% no Serviço B [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Assunção: Empresa X.
+Se for Empresa Y: não há evidência no KB sobre requisitos não funcionais diferentes para Maria.",True,"Cita ""Integração estável"" e ""SLA de 99.9%"", respondendo exatamente à questão."
+detail,,,,Quais ações a Maria pediu nos próximos passos?,Incluir condições de pagamento e garantia na proposta.,"Assunção: Empresa X
+
+Ações que a Maria pediu nos próximos passos:
+- Enviar proposta com: escopo por fase, cronograma macro (incluindo Integração e homologação), condições de pagamento (30/60), garantia de 12 meses, e SLA do Serviço B (99.9%). [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+- Agendar demonstração técnica com suporte e financeiro para revisar conciliação e painel de produtividade. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Se for Empresa Y: não há evidência no KB para as ações solicitadas.",True,"A resposta menciona explicitamente ""condições de pagamento (30/60)"" e ""garantia de 12 meses"" na proposta, respondendo à questão."
+detail,,,,Qual critério de decisão cita ROI no caso da Maria?,ROI esperado em até 6 meses.,"Critério de decisão que cita ROI no caso da Maria: ROI esperado em até 6 meses por redução de retrabalho. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: ROI esperado em até 6 meses por redução de retrabalho. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]",True,"A resposta cita ""ROI esperado em até 6 meses"", respondendo diretamente à questão."
+detail,,,,Qual a preocupação de Carla com esforço manual?,Reduzir esforço no fechamento.,Preocupação de Carla: reduzir o esforço manual em conciliações bancárias e no fechamento financeiro. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0],True,"A resposta menciona ""reduzir o esforço manual em conciliações bancárias e no fechamento financeiro"", alinhado ao esperado."
+detail,,,,Que tipo de exportação de relatórios Carla deseja?,Exportação de relatórios em PDF e CSV.,"Exportação de relatórios em PDF/CSV. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: Exportação de relatórios em PDF/CSV.",True,"A resposta menciona ""Exportação de relatórios em PDF/CSV"", que corresponde ao esperado e responde à questão."
+detail,,,,Qual a infraestrutura que impacta Pedro?,Integração com balanças.,"Infraestrutura local heterogênea. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: Infraestrutura local heterogênea. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]",False,"A resposta menciona ""infraestrutura local heterogênea"", mas não cita ""integração com balanças"" como o impacto esperado."
+detail,,,,Quais upgrades são mencionados para o Produto A?,Upgrades de suporte avançado e add‑ons.,"Assunção: Empresa X
+
+Upgrades mencionados para o Produto A (Empresa X):
+- Opções de upgrade para suporte avançado e add‑ons específicos. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Se for Empresa Y: não há upgrades mencionados. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta cita ""suporte avançado e add‑ons específicos"", que corresponde aos upgrades esperados e responde à questão."
+detail,,,,O que a contratação anual do Produto A implica?,Renovação automática anual.,"Assunção: Empresa X.
+
+O que a contratação anual do Produto A implica (com base no KB da Empresa X):
+- Modelo de contratação: assinatura anual com renovação automática. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Pagamento: disponível parcelamento em 30/60 dias. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Garantia: padrão de 12 meses para defeitos de fabricação. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Itens incluídos:
+  - instalação no ambiente do cliente;
+  - treinamento inicial para a equipe;
+  - suporte básico durante o período de garantia. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+- Observações e Upgrades: opções de upgrade para suporte avançado e add-ons específicos. [semantic/tests/rag/data/empresa_x/products/produto_a.md#0]
+
+Se for Empresa Y: 
+- Pagamento: boleto em 45 dias (não há 30/60); 
+- Garantia: 6 meses para defeitos de fabricação; 
+- Suporte: por e‑mail em horário comercial; 
+- Itens incluídos: manual digital; suporte por e‑mail. [semantic/tests/rag/data/empresa_y/products/produto_a.md#0]",True,"A resposta menciona ""assinatura anual com renovação automática"", respondendo diretamente à questão sobre a implicação da contratação anual."
+detail,,,,O Produto A da Empresa Y inclui suporte por qual canal?,Suporte por e‑mail.,e-mail [semantic/tests/rag/data/empresa_y/products/produto_a.md#0],True,"A resposta menciona ""e-mail"", que corresponde ao canal de suporte esperado na questão."
+detail,,,,Qual é a prioridade de canal do Serviço B?,Prioridade de canal: e‑mail.,"Assunção: Empresa X.
+
+- Prioridade de canal do Serviço B: portal do cliente. [empresa_x/services/servico_b.md#0] [semantic/tests/rag/data/empresa_x/services/servico_b.md#0]
+
+Se for Empresa Y: e-mail. [empresa_y/services/servico_b.md#0] [semantic/tests/rag/data/empresa_y/services/servico_b.md#0]",False,"A resposta indica ""portal do cliente"" como prioridade para o Serviço B da Empresa X, enquanto o esperado era ""e‑mail""."
+detail,,,,Qual prazo Pedro busca para início?,Início em 30 dias.,"30 dias. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]
+
+Assunção: Empresa X.
+
+Se for Empresa Y: 30 dias. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]",True,"A resposta cita ""30 dias"", que corresponde ao prazo esperado para início."
+detail,,,,Que relatórios João espera no painel?,Relatórios exportáveis.,"Assunção: Empresa X. Se for Empresa Y: relatórios com a mesma estrutura, dados regionais diferentes.
+
+Relatórios que João espera no painel (com base no KB):
+- Relatório de Lead — João (Empresa X). [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+- Visibilidade consolidada de vendas e estoque por região e categoria de produto. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+- Indicadores de vendas em tempo quase real por fazenda/região. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+- Projeções de demanda/estoque e alertas de ruptura. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+- Comparativos de desempenho por canal e mix de produtos (incluindo marketplace). [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]
+- Integração com marketplace e relatórios exportáveis com APIs documentadas para a equipe de dados. [semantic/tests/rag/data/empresa_x/lead_reports/lead_joao.md#0]",True,"A resposta cita explicitamente ""relatórios exportáveis"" e detalha os tipos de relatórios esperados, respondendo à questão."
+detail,,,,O que a Maria quer reduzir na operação?,Reduzir retrabalho na operação.,"Maria quer reduzir retrabalho na operação. [semantic/tests/rag/data/empresa_x/lead_reports/lead_maria.md#0]
+
+Assunção: Empresa X. Se for Empresa Y: não há evidência no KB sobre o objetivo de Maria.",True,"A resposta afirma explicitamente ""Maria quer reduzir retrabalho na operação"", respondendo diretamente à questão."
+detail,,,,O que Carla busca evitar no fechamento?,Evitar erros no fechamento.,Carla busca reduzir o esforço manual em conciliações bancárias e fechamento financeiro. [semantic/tests/rag/data/empresa_y/lead_reports/lead_carla.md#0],False,"A resposta menciona ""reduzir o esforço manual"", mas não cita ""evitar erros"", que era o foco da questão."
+detail,,,,Qual preocupação de Pedro em relação a validade?,Evitar perdas por vencimento.,"Assunção: Empresa X.
+Se for Empresa Y: Pedro está preocupado com reduzir perdas por validade dos itens perecíveis e com melhorar a acurácia do estoque em tempo real. [semantic/tests/rag/data/empresa_y/lead_reports/lead_pedro.md#0]",True,"""Pedro está preocupado com reduzir perdas por validade dos itens perecíveis"" responde diretamente à preocupação com evitar perdas por vencimento."

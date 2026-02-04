@@ -160,7 +160,8 @@ health:
 	@echo
 
 setup-planning-db:
-	@echo "Aplicando schema de planning no PostgreSQL..."
+	@echo "Aplicando schema de planning no PostgreSQL (05 + 06 RAG)..."
 	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/05_planning_schema.sql
-	@echo "✅ Schema de planning aplicado com sucesso!"
+	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/06_rag_planning.sql
+	@echo "✅ Schema de planning e RAG (project_id) aplicados com sucesso!"
 

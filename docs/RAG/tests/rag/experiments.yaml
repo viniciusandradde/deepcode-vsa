@@ -1,0 +1,20 @@
+experiments:
+  - name: exp1
+    chunking: semantic
+    search_type: vector
+    use_hyde: false
+    match_threshold: 0.50
+  
+  - name: exp2
+    chunking: semantic
+    search_type: hybrid_union
+    use_hyde: true
+    match_threshold: 0.50
+    
+
+  - name: exp3
+    chunking: semantic
+    search_type: hybrid_rrf
+    use_hyde: false
+    match_threshold: 0.50
+  

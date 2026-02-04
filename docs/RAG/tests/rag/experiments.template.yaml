@@ -1,0 +1,171 @@
+# Template de Experimentos — todas as combinações principais
+#
+# Como usar
+# - Copie um subconjunto destes itens para `tests/rag/experiments.yaml`
+# - ou renomeie este arquivo para substituir o atual (cuidado: pode demorar muito) 
+# - Ajuste thresholds e rerankers conforme necessário por cenário
+#
+# Dimensões cobertas neste template
+# - chunking ∈ {fixed, markdown, semantic}
+# - search_type ∈ {vector, text, hybrid_rrf, hybrid_union}
+# - use_hyde ∈ {false, true}
+# (Total: 3 × 4 × 2 = 24 combinações)
+#
+# Observações
+# - match_threshold (opcional) atua apenas na parte vetorial (vector/hybrid_rrf/union)
+# - reranker: 'cohere' (opcional) reordena top‑N (requer COHERE_API_KEY)
+# - Filtros (client_id/empresa) são aplicados no pipeline, não aqui
+
+experiments:
+  # -------- fixed --------
+  - name: fixed_vector
+    chunking: fixed
+    search_type: vector
+    use_hyde: false
+  - name: fixed_vector_hyde
+    chunking: fixed
+    search_type: vector
+    use_hyde: true
+
+  - name: fixed_text
+    chunking: fixed
+    search_type: text
+    use_hyde: false
+  - name: fixed_text_hyde
+    chunking: fixed
+    search_type: text
+    use_hyde: true
+
+  - name: fixed_hybrid_rrf
+    chunking: fixed
+    search_type: hybrid_rrf
+    use_hyde: false
+  - name: fixed_hybrid_rrf_hyde
+    chunking: fixed
+    search_type: hybrid_rrf
+    use_hyde: true
+
+  - name: fixed_hybrid_union
+    chunking: fixed
+    search_type: hybrid_union
+    use_hyde: false
+  - name: fixed_hybrid_union_hyde
+    chunking: fixed
+    search_type: hybrid_union
+    use_hyde: true
+
+  # -------- markdown --------
+  - name: md_vector
+    chunking: markdown
+    search_type: vector
+    use_hyde: false
+  - name: md_vector_hyde
+    chunking: markdown
+    search_type: vector
+    use_hyde: true
+
+  - name: md_text
+    chunking: markdown
+    search_type: text
+    use_hyde: false
+  - name: md_text_hyde
+    chunking: markdown
+    search_type: text
+    use_hyde: true
+
+  - name: md_hybrid_rrf
+    chunking: markdown
+    search_type: hybrid_rrf
+    use_hyde: false
+  - name: md_hybrid_rrf_hyde
+    chunking: markdown
+    search_type: hybrid_rrf
+    use_hyde: true
+
+  - name: md_hybrid_union
+    chunking: markdown
+    search_type: hybrid_union
+    use_hyde: false
+  - name: md_hybrid_union_hyde
+    chunking: markdown
+    search_type: hybrid_union
+    use_hyde: true
+
+  # -------- semantic --------
+  
+   - name: sem_vector
+    chunking: semantic
+    search_type: vector
+    use_hyde: false
+    match_threshold: 0.50
+  - name: sem_vector_hyde
+    chunking: semantic
+    search_type: vector
+    use_hyde: true
+    match_threshold: 0.50
+  - name: sem_vector_rerank
+    chunking: semantic
+    search_type: vector
+    use_hyde: false
+    reranker: cohere
+    match_threshold: 0.50
+
+  - name: sem_text
+    chunking: semantic
+    search_type: text
+    use_hyde: false
+    match_threshold: 0.60
+  - name: sem_text_hyde
+    chunking: semantic
+    search_type: text
+    use_hyde: true
+    match_threshold: 0.60
+
+  - name: sem_hybrid_rrf
+    chunking: semantic
+    search_type: hybrid_rrf
+    use_hyde: false
+    match_threshold: 0.75
+  - name: sem_hybrid_rrf_hyde
+    chunking: semantic
+    search_type: hybrid_rrf
+    use_hyde: true
+    match_threshold: 0.75
+  - name: sem_hybrid_rrf_rerank
+    chunking: semantic
+    search_type: hybrid_rrf
+    use_hyde: false
+    reranker: cohere
+    match_threshold: 0.75
+
+  - name: sem_hybrid_union
+    chunking: semantic
+    search_type: hybrid_union
+    use_hyde: false
+    match_threshold: 0.75
+
+  - name: sem_hybrid_union_hyde
+    chunking: semantic
+    search_type: hybrid_union
+    use_hyde: true
+    match_threshold: 0.75
+
+  # -------- exemplos opcionais (descomente para usar) --------
+  # - name: md_hybrid_rrf_t050
+  #   chunking: markdown
+  #   search_type: hybrid_rrf
+  #   use_hyde: false
+  #   match_threshold: 0.50
+
+  # - name: sem_hybrid_rrf_t075
+  #   chunking: semantic
+  #   search_type: hybrid_rrf
+  #   use_hyde: false
+  #   match_threshold: 0.75
+
+  # - name: sem_hybrid_rrf_rerank
+  #   chunking: semantic
+  #   search_type: hybrid_rrf
+  #   use_hyde: false
+  #   reranker: cohere  # requer COHERE_API_KEY
+

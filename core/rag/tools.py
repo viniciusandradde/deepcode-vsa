@@ -1,16 +1,17 @@
 """RAG tools : kb_search_client with parameterizable search and optional reranking.
 
 Filter policy:
-- Priority: client_id > empresa; without filter → no query (logical error).
+- At least one of client_id, empresa, chunking, or project_id must be set.
 """
 
 from typing import Any, Dict, List, Optional
 import os
 
 from langchain_core.tools import tool
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_openai import ChatOpenAI
 
 from core.database import get_conn
+from core.rag.ingestion import _get_embedding_client
 
 
 def vec_to_literal(v: List[float]) -> str:
@@ -26,10 +27,11 @@ def query_candidates(
     empresa: Optional[str],
     chunking: Optional[str],
     query_embedding: Optional[List[float]],
-    match_threshold: Optional[float]
+    match_threshold: Optional[float],
+    project_id: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Get candidates from Postgres according to search type.
-    
+
     Returns dicts with doc_path, chunk_ix, content, score, meta.
     """
     params: Dict[str, Any] = {
@@ -39,8 +41,9 @@ def query_candidates(
         "chunking": chunking,
         "query": query,
         "threshold": match_threshold,
+        "project_id": project_id,
     }
-    
+
     with get_conn() as conn:
         with conn.cursor() as cur:
             results: List[Dict[str, Any]] = []
@@ -49,12 +52,12 @@ def query_candidates(
                     raise RuntimeError("search_type=vector requires query embedding")
                 vec_lit = vec_to_literal(query_embedding)
                 cur.execute(
-                    "select doc_path, chunk_ix, content, score, meta from public.kb_vector_search(%(vec)s, %(k)s, %(threshold)s, %(client_id)s, %(empresa)s, %(chunking)s)",
+                    "select doc_path, chunk_ix, content, score, meta from public.kb_vector_search(%(vec)s, %(k)s, %(threshold)s, %(client_id)s, %(empresa)s, %(chunking)s, %(project_id)s)",
                     {**params, "vec": vec_lit},
                 )
             elif search_type in ("text",):
                 cur.execute(
-                    "select doc_path, chunk_ix, content, score, meta from public.kb_text_search(%(query)s, %(k)s, %(client_id)s, %(empresa)s, %(chunking)s)",
+                    "select doc_path, chunk_ix, content, score, meta from public.kb_text_search(%(query)s, %(k)s, %(client_id)s, %(empresa)s, %(chunking)s, %(project_id)s)",
                     params,
                 )
             elif search_type in ("hybrid", "hybrid_rrf"):
@@ -62,7 +65,7 @@ def query_candidates(
                     raise RuntimeError("search_type=hybrid requires query embedding")
                 vec_lit = vec_to_literal(query_embedding)
                 cur.execute(
-                    "select doc_path, chunk_ix, content, score, meta from public.kb_hybrid_search(%(query)s, %(vec)s, %(k)s, %(threshold)s, %(client_id)s, %(empresa)s, %(chunking)s)",
+                    "select doc_path, chunk_ix, content, score, meta from public.kb_hybrid_search(%(query)s, %(vec)s, %(k)s, %(threshold)s, %(client_id)s, %(empresa)s, %(chunking)s, %(project_id)s)",
                     {**params, "vec": vec_lit},
                 )
             elif search_type in ("hybrid_union",):
@@ -70,7 +73,7 @@ def query_candidates(
                     raise RuntimeError("search_type=hybrid_union requires query embedding")
                 vec_lit = vec_to_literal(query_embedding)
                 cur.execute(
-                    "select doc_path, chunk_ix, content, score, meta from public.kb_hybrid_union(%(query)s, %(vec)s, %(k)s, %(threshold)s, %(client_id)s, %(empresa)s, %(chunking)s)",
+                    "select doc_path, chunk_ix, content, score, meta from public.kb_hybrid_union(%(query)s, %(vec)s, %(k)s, %(threshold)s, %(client_id)s, %(empresa)s, %(chunking)s, %(project_id)s)",
                     {**params, "vec": vec_lit},
                 )
             else:
@@ -175,27 +178,28 @@ def kb_search_client(
     client_id: Optional[str] = None,
     empresa: Optional[str] = None,
     chunking: Optional[str] = None,
+    project_id: Optional[str] = None,
     tags: Optional[List[str]] = None,
     use_hyde: bool = False,
     match_threshold: Optional[float] = None,
 ) -> List[Dict[str, Any]]:
     """Search KB with filters and optional reranking.
-    
-    Filter policy:
-    - Prefer client_id when available; otherwise empresa.
-    - For test/benchmark scenarios, allow global query when filtering by 'chunking'.
+
+    Filter policy: at least one of client_id, empresa, chunking, or project_id must be set.
     """
-    # Filter policy
-    if not client_id and not empresa and not chunking:
-        raise RuntimeError("KB query without filter (client_id/empresa) or without 'chunking' is not allowed")
-    
-    # Embedding only when necessary
+    # Filter policy: allow query when any filter is set
+    if not client_id and not empresa and not chunking and not project_id:
+        raise RuntimeError(
+            "KB query without filter (client_id/empresa/chunking/project_id) is not allowed"
+        )
+
+    # Embedding only when necessary (usa OPENAI_API_KEY, não OpenRouter)
     query_emb: Optional[List[float]] = None
     if search_type != "text":
-        emb = OpenAIEmbeddings(model="text-embedding-3-small")
+        emb = _get_embedding_client()
         q_for_embed = hyde(query) if use_hyde else query
         query_emb = emb.embed_query(q_for_embed)
-    
+
     # Candidates from Postgres
     candidates = query_candidates(
         query,
@@ -206,6 +210,7 @@ def kb_search_client(
         chunking,
         query_emb,
         match_threshold,
+        project_id=project_id,
     )
     
     # Optional reranking

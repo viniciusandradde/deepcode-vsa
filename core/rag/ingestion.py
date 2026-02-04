@@ -1,5 +1,6 @@
 """RAG ingestion pipeline: staging → chunks → embeddings → PostgreSQL."""
 
+import os
 from typing import List, Dict, Any, Optional, TypedDict
 from json import dumps as json_dumps
 import hashlib
@@ -14,14 +15,31 @@ from core.rag.loaders import load_and_split_dir, split_text
 from typing import Dict, Any
 
 
+def _get_embedding_client() -> OpenAIEmbeddings:
+    """OpenAI embeddings client. Requires OPENAI_API_KEY (real OpenAI key, not OpenRouter)."""
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError(
+            "RAG embeddings requer OPENAI_API_KEY (chave da OpenAI para api.openai.com). "
+            "Chaves do OpenRouter (sk-or-...) não funcionam no endpoint de embeddings."
+        )
+    if api_key.startswith("sk-or-"):
+        raise RuntimeError(
+            "RAG embeddings requer uma chave da OpenAI (OPENAI_API_KEY), não do OpenRouter. "
+            "Chaves sk-or-... são do OpenRouter e não funcionam em api.openai.com/embeddings. "
+            "Defina OPENAI_API_KEY com uma chave de https://platform.openai.com/api-keys"
+        )
+    return OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=api_key)
+
+
 def vec_to_literal(v: List[float]) -> str:
     """Convert float vector to pgvector literal: "[v1, v2, ...]"."""
     return "[" + ",".join(f"{x:.6f}" for x in v) + "]"
 
 
 def embed_texts(texts: List[str]) -> List[List[float]]:
-    """Generate embeddings for texts (OpenAI)."""
-    emb = OpenAIEmbeddings(model="text-embedding-3-small")
+    """Generate embeddings for texts (OpenAI api.openai.com)."""
+    emb = _get_embedding_client()
     return emb.embed_documents(texts)
 
 
