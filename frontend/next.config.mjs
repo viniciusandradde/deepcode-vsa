@@ -4,6 +4,7 @@ import withPWA from "next-pwa";
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
+  allowedDevOrigins: ["agente-ai.hospitalevangelico.com.br"],
   experimental: {
     serverActions: {
       allowedOrigins: ["localhost", "agente-ai.hospitalevangelico.com.br"],
