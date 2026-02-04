@@ -542,13 +542,13 @@ async def stream_chat(request: ChatRequest):
                         if not hasattr(chunk, 'tool_calls') or not chunk.tool_calls:
                             content_str = _content_to_str(chunk.content)
                             if content_str:
-                            data = {
-                                "type": "content",
+                                data = {
+                                    "type": "content",
                                     "content": content_str,
-                                "thread_id": thread_id,
-                                "model": request.model
-                            }
-                            yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                                    "thread_id": thread_id,
+                                    "model": request.model
+                                }
+                                yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
                                 
                 logger.info("[STREAM] Sending done event")
                 yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"

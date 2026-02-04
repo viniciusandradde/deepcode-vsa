@@ -66,6 +66,7 @@ async def initialize_checkpointer():
         _async_pool = AsyncConnectionPool(
             conninfo=db_url,
             max_size=20,
+            open=False,
             kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row}
         )
         await _async_pool.open()

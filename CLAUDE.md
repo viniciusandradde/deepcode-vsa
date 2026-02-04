@@ -432,6 +432,7 @@ See `docs/adr/` for complete decision records:
 - `docs/PRD.md` - Original PRD (CLI-focused, **outdated**)
 - `docs/PRD-REVISADO.md` - **Revised PRD** (Chat-First approach) ⭐
 - `docs/INTEGRACAO-METODOLOGIAS-CHAT.md` - Implementation guide for ITIL integration ⭐
+- `docs/n8n-workflows.md` - Workflows n8n que espelham a API VSA (chat, agentes, threads, planning, RAG) e uso via MCP; JSONs em `docs/n8n/`
 - `pyproject.toml` - Python project metadata and dependencies
 - `backend/langgraph.json` - LangGraph Studio configuration
 - `Makefile` - Common development commands
