@@ -1,4 +1,4 @@
-"""RAG tools: kb_search_client with parameterizable search and optional reranking.
+"""RAG tools : kb_search_client with parameterizable search and optional reranking.
 
 Filter policy:
 - Priority: client_id > empresa; without filter → no query (logical error).
