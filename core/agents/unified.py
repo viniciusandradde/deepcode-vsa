@@ -455,8 +455,163 @@ class UnifiedAgent(BaseAgent):
         if not self.enable_planning:
             return {}
         
-        # For now, return empty plan - will be enhanced
-        return {"plan": [], "current_step": 0}
+        # Get context from state
+        task_category = state.get("task_category", "conversa")
+        priority = state.get("priority", "medio")
+        gut_score = state.get("gut_score", 0)
+        gut_details = state.get("gut_details", {})
+        messages = state.get("messages", [])
+        
+        if not messages:
+            return {"plan": [], "current_step": 0}
+        
+        # Get last user message
+        last_message = messages[-1]
+        if not hasattr(last_message, "content"):
+            return {"plan": [], "current_step": 0}
+        
+        user_message = last_message.content
+        
+        # Build context for planner
+        context_info = f"""
+Categoria ITIL: {task_category.upper()}
+Prioridade: {priority.upper()}
+GUT Score: {gut_score}
+GUT Detalhes: G={gut_details.get('gravidade', 3)}, U={gut_details.get('urgencia', 3)}, T={gut_details.get('tendencia', 3)}
+
+Mensagem do usuário: {user_message}
+
+Ferramentas disponíveis:
+- glpi_get_tickets: Listar tickets GLPI (params: limit, status, search)
+- glpi_get_ticket_details: Detalhes de ticket (params: ticket_id)
+- glpi_create_ticket: Criar ticket (params: title, content, urgency, impact) [WRITE - requires_confirm=true]
+- zabbix_get_alerts: Listar alertas Zabbix (params: limit, severity, host_name)
+- zabbix_get_host: Detalhes de host (params: host_name)
+- linear_get_issues: Listar issues Linear (params: team_name, status, limit)
+- linear_create_issue: Criar issue Linear (params: title, description, team_name) [WRITE - requires_confirm=true]
+- tavily_search: Busca web com IA (params: query)
+
+IMPORTANTE: Para operações WRITE (create_ticket, create_issue), sempre definir requires_confirm=true.
+"""
+        
+        # Enhanced prompt based on category
+        category_specific_prompt = self._get_category_specific_prompt(task_category)
+        
+        planning_messages = [
+            SystemMessage(content=PLANNER_SYSTEM_PROMPT),
+            SystemMessage(content=context_info),
+            SystemMessage(content=category_specific_prompt),
+            HumanMessage(content=f"Crie um plano de ação para: {user_message}")
+        ]
+        
+        # Use fast model for planning to save costs
+        model = self._fast_model if self._fast_model else self.model
+        
+        try:
+            response = model.invoke(planning_messages)
+            content = response.content.strip()
+            
+            # Extract JSON from markdown code blocks if present
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0]
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0]
+            
+            # Parse JSON response
+            import json
+            plan_data = json.loads(content.strip())
+            
+            plan = plan_data.get("plan", [])
+            
+            dbg(f"Planner created {len(plan)} steps for category={task_category}")
+            
+            return {
+                "plan": plan,
+                "current_step": 0,
+            }
+            
+        except json.JSONDecodeError as e:
+            dbg(f"Planner JSON parse error: {e}")
+            # Fallback: create simple plan based on category
+            fallback_plan = self._create_fallback_plan(task_category, user_message)
+            return {"plan": fallback_plan, "current_step": 0}
+        except Exception as e:
+            dbg(f"Planner error: {e}")
+            return {"plan": [], "current_step": 0}
+    
+    def _get_category_specific_prompt(self, category: str) -> str:
+        """Get category-specific planning guidance."""
+        category = category.lower()
+        
+        if category == "incidente":
+            return """
+Para INCIDENTES, siga o fluxo ITIL:
+1. DIAGNÓSTICO: Coletar informações (glpi_get_tickets, zabbix_get_alerts)
+2. ANÁLISE: Identificar impacto e urgência
+3. RESOLUÇÃO: Se tiver workaround, sugerir
+4. DOCUMENTAÇÃO: Criar ticket GLPI se necessário (requires_confirm=true)
+Priorize rapidez e contenção do impacto.
+"""
+        elif category == "problema":
+            return """
+Para PROBLEMAS, siga análise de causa raiz:
+1. COLETA: Buscar histórico de incidentes relacionados
+2. ANÁLISE: Identificar padrões e recorrências
+3. INVESTIGAÇÃO: Consultar alertas de monitoramento
+4. DOCUMENTAÇÃO: Criar ticket de Problem Management
+Foque em encontrar a causa raiz, não apenas sintomas.
+"""
+        elif category == "mudanca":
+            return """
+Para MUDANÇAS, siga processo de Change Management:
+1. AVALIAÇÃO: Entender escopo e impacto
+2. PLANEJAMENTO: Definir passos e recursos
+3. APROVAÇÃO: Solicitar confirmação (requires_confirm=true)
+4. DOCUMENTAÇÃO: Criar issue Linear para rastreamento
+Enfatize planejamento e aprovação antes de executar.
+"""
+        elif category == "requisicao":
+            return """
+Para REQUISIÇÕES, siga processo de Service Request:
+1. VALIDAÇÃO: Verificar se é requisição padrão
+2. APROVAÇÃO: Se necessário, solicitar aprovação
+3. EXECUÇÃO: Criar ticket ou issue
+4. COMUNICAÇÃO: Informar usuário sobre prazo
+Foque em atendimento rápido e padronizado.
+"""
+        else:
+            return "Para conversas gerais, não é necessário plano estruturado. Responda diretamente."
+    
+    def _create_fallback_plan(self, category: str, message: str) -> List[Dict[str, Any]]:
+        """Create simple fallback plan when LLM planning fails."""
+        category = category.lower()
+        
+        # Default: just gather information
+        plan = [
+            {
+                "tool": "glpi_get_tickets",
+                "params": {"limit": 5},
+                "requires_confirm": False,
+                "description": "Consultar últimos tickets GLPI"
+            }
+        ]
+        
+        if category == "incidente":
+            plan.append({
+                "tool": "zabbix_get_alerts",
+                "params": {"limit": 5, "severity": "high"},
+                "requires_confirm": False,
+                "description": "Verificar alertas críticos no Zabbix"
+            })
+        elif category == "problema":
+            plan.append({
+                "tool": "glpi_get_tickets",
+                "params": {"limit": 10, "search": "recorrente"},
+                "requires_confirm": False,
+                "description": "Buscar incidentes recorrentes"
+            })
+        
+        return plan
     
     def _try_format_tool_results_as_report(self, messages: List[AnyMessage]) -> Optional[str]:
         """If last messages are tool results from GLPI/Zabbix/Linear, format with core.reports (no LLM)."""
