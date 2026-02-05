@@ -1,0 +1,157 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { listSchedules, deleteSchedule, pauseSchedule, resumeSchedule } from '@/lib/api/scheduler';
+import type { Schedule } from '@/types/automation';
+
+/**
+ * Table/Grid displaying active scheduled jobs
+ */
+export function ScheduleList() {
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchSchedules = async () => {
+        try {
+            const data = await listSchedules();
+            setSchedules(data.schedules);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load schedules');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSchedules();
+    }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Tem certeza que deseja remover este agendamento?')) return;
+        try {
+            await deleteSchedule(id);
+            setSchedules(prev => prev.filter(s => s.id !== id));
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Erro ao remover');
+        }
+    };
+
+    const handlePause = async (id: string) => {
+        try {
+            await pauseSchedule(id);
+            fetchSchedules();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Erro ao pausar');
+        }
+    };
+
+    const handleResume = async (id: string) => {
+        try {
+            await resumeSchedule(id);
+            fetchSchedules();
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Erro ao retomar');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
+                <div className="animate-pulse space-y-3">
+                    <div className="h-4 bg-zinc-800 rounded w-1/4"></div>
+                    <div className="h-10 bg-zinc-800 rounded"></div>
+                    <div className="h-10 bg-zinc-800 rounded"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-red-400">
+                <p className="font-medium">❌ Erro ao carregar agendamentos</p>
+                <p className="text-sm opacity-70 mt-1">{error}</p>
+                <button onClick={fetchSchedules} className="mt-2 text-sm underline">Tentar novamente</button>
+            </div>
+        );
+    }
+
+    if (schedules.length === 0) {
+        return (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 text-center">
+                <p className="text-zinc-500 text-lg">📅 Nenhum agendamento ativo</p>
+                <p className="text-zinc-600 text-sm mt-2">Crie um novo agendamento para começar</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+            <table className="w-full text-sm">
+                <thead className="bg-zinc-800/50">
+                    <tr className="text-zinc-400 text-left">
+                        <th className="px-4 py-3 font-medium">Nome</th>
+                        <th className="px-4 py-3 font-medium">CRON</th>
+                        <th className="px-4 py-3 font-medium">Canal</th>
+                        <th className="px-4 py-3 font-medium">Próxima Execução</th>
+                        <th className="px-4 py-3 font-medium text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800">
+                    {schedules.map((schedule) => (
+                        <tr key={schedule.id} className="hover:bg-zinc-800/30 transition-colors">
+                            <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-emerald-500' : 'bg-zinc-500'}`}></span>
+                                    <span className="text-zinc-200 font-medium">{schedule.name}</span>
+                                </div>
+                            </td>
+                            <td className="px-4 py-3 text-zinc-400 font-mono text-xs">{schedule.cron}</td>
+                            <td className="px-4 py-3">
+                                <span className="px-2 py-1 rounded text-xs bg-zinc-800 text-zinc-300 capitalize">
+                                    {schedule.config.channel === 'telegram' && '💬 '}
+                                    {schedule.config.channel === 'teams' && '🟦 '}
+                                    {schedule.config.channel === 'whatsapp' && '💚 '}
+                                    {schedule.config.channel}
+                                </span>
+                            </td>
+                            <td className="px-4 py-3 text-zinc-400 text-xs">
+                                {schedule.next_run
+                                    ? new Date(schedule.next_run).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+                                    : '-'
+                                }
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                    {schedule.enabled ? (
+                                        <button
+                                            onClick={() => handlePause(schedule.id)}
+                                            className="px-2 py-1 text-xs rounded bg-amber-900/30 text-amber-400 hover:bg-amber-900/50 transition-colors"
+                                        >
+                                            ⏸️ Pausar
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleResume(schedule.id)}
+                                            className="px-2 py-1 text-xs rounded bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50 transition-colors"
+                                        >
+                                            ▶️ Retomar
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => handleDelete(schedule.id)}
+                                        className="px-2 py-1 text-xs rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}

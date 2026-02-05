@@ -67,7 +67,7 @@ interface ChatMessage {
 export default function ProjectDetailPage() {
   const params = useParams();
   const projectId = params.id as string;
-  
+
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,18 +175,18 @@ export default function ProjectDetailPage() {
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    
+
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         const res = await fetch(`/api/v1/planning/projects/${projectId}/documents`, {
           method: "POST",
           body: formData,
         });
-        
+
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.detail || "Erro no upload");
@@ -202,7 +202,7 @@ export default function ProjectDetailPage() {
 
   const handleDeleteDocument = async (docId: string) => {
     if (!confirm("Excluir este documento?")) return;
-    
+
     try {
       const res = await fetch(`/api/v1/planning/projects/${projectId}/documents/${docId}`, {
         method: "DELETE",
@@ -435,18 +435,20 @@ export default function ProjectDetailPage() {
     if (!content) return;
     const html = markdownToHtml(content);
     try {
-      if (navigator.clipboard && "write" in navigator.clipboard) {
+      // Use rich clipboard API if available
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
         const item = new ClipboardItem({
           "text/html": new Blob([html], { type: "text/html" }),
           "text/plain": new Blob([content], { type: "text/plain" }),
         });
         await navigator.clipboard.write([item]);
       } else {
-        await navigator.clipboard.writeText(content);
+        // Fallback to simple text copy
+        await navigator.clipboard?.writeText(content);
       }
       setCopyStatus("Copiado!");
       setTimeout(() => setCopyStatus("Copiar (Word/Docs)"), 2000);
-    } catch (e) {
+    } catch {
       setCopyStatus("Falha ao copiar");
       setTimeout(() => setCopyStatus("Copiar (Word/Docs)"), 2000);
     }
@@ -762,15 +764,13 @@ export default function ProjectDetailPage() {
                           if (msg.role !== "assistant" || !msg.content.trim()) return;
                           setSelectedChatIndex(index);
                         }}
-                        className={`p-2 rounded-lg text-sm border-2 shadow-sm ${
-                          msg.role === "user"
-                            ? "bg-slate-50 border-slate-300 text-slate-900"
-                            : `bg-white border-slate-200 text-slate-900 ${
-                                selectedChatIndex === index
-                                  ? "ring-2 ring-vsa-orange/40"
-                                  : ""
-                              }`
-                        }`}
+                        className={`p-2 rounded-lg text-sm border-2 shadow-sm ${msg.role === "user"
+                          ? "bg-slate-50 border-slate-300 text-slate-900"
+                          : `bg-white border-slate-200 text-slate-900 ${selectedChatIndex === index
+                            ? "ring-2 ring-vsa-orange/40"
+                            : ""
+                          }`
+                          }`}
                       >
                         <p className="text-xs text-slate-500 mb-1">
                           {msg.role === "user" ? "Você" : "VSA"}
