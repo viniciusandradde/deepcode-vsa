@@ -20,7 +20,7 @@ from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode
+from langgraph.prebuilt import ToolNode, tools_condition
 
 from core.agents.base import BaseAgent
 
@@ -314,18 +314,17 @@ class UnifiedAgent(BaseAgent):
                 builder.add_edge("classifier", "executor")
         
         # Executor → Tools (if tools called) or Responder
-        builder.add_conditional_edges(
-            "executor",
-            self._route_after_executor,
-            {
-                "tools": "tools",
-                "responder": "responder",
-            }
-        )
-        
-        # Tools → Executor (loop back for more tool calls)
         if self.tools:
+            # Use prebuilt tools_condition when tools are available
+            builder.add_conditional_edges(
+                "executor",
+                tools_condition,
+            )
+            # Tools → Executor (loop back for more tool calls)
             builder.add_edge("tools", "executor")
+        else:
+            # No tools: direct path to responder
+            builder.add_edge("executor", "responder")
         
         # Responder → END
         builder.add_edge("responder", END)

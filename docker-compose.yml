@@ -105,7 +105,7 @@ services:
     networks:
       - ai_agent_network
     restart: unless-stopped
-    command: sh -c "rm -rf .next && pnpm run dev"
+    command: sh -c "npm install -g pnpm@10.26.0 && pnpm install && rm -rf .next && pnpm run dev"
 
 volumes:
   postgres_data:

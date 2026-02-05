@@ -11,3 +11,6 @@ public/workbox-*.js
 public/workbox-*.js.map
 public/fallback-*.js
 
+# pnpm
+.pnpm-store/
+.pnpm-debug.log
