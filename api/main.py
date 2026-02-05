@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import chat, rag, agents, threads, reports, planning, config
+from api.routes import chat, rag, agents, threads, reports, planning, config, automation, queue
 from core.checkpointing import initialize_checkpointer, cleanup_checkpointer
+from core.scheduler import get_scheduler_service
 
 # Configure LangSmith tracing
 # LangSmith is automatically enabled when LANGCHAIN_API_KEY is set
@@ -36,11 +37,29 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"⚠️  Checkpointer initialization failed: {e}")
         print("ℹ️  Application will continue with MemorySaver fallback")
+    
+    # Start scheduler
+    try:
+        scheduler = get_scheduler_service()
+        scheduler.start()
+        print("✅ Scheduler service started")
+    except Exception as e:
+        print(f"⚠️  Scheduler initialization failed: {e}")
 
     yield
 
     # Shutdown
     print("🛑 Shutting down application...")
+    
+    # Stop scheduler
+    try:
+        scheduler = get_scheduler_service()
+        scheduler.shutdown(wait=True)
+        print("✅ Scheduler service stopped")
+    except Exception as e:
+        print(f"⚠️  Scheduler shutdown failed: {e}")
+    
+    # Cleanup checkpointer
     try:
         await cleanup_checkpointer()
     except Exception as e:
@@ -71,6 +90,8 @@ app.include_router(threads.router, prefix="/api/v1/threads", tags=["threads"])
 app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"])
 app.include_router(planning.router, prefix="/api/v1/planning", tags=["planning"])
 app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
+app.include_router(automation.router, prefix="/api/v1/automation", tags=["automation"])
+app.include_router(queue.router, prefix="/api/v1/queue", tags=["queue"])
 
 
 @app.get("/")

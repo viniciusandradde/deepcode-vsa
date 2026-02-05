@@ -60,18 +60,93 @@ services:
       ZABBIX_API_TOKEN: ${ZABBIX_API_TOKEN:-}
       # Linear Integration (Phase 1)
       LINEAR_API_KEY: ${LINEAR_API_KEY:-}
+      # Redis/Celery
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
     ports:
       - "8000:8000"
     volumes:
       - .:/app
       - backend_cache:/root/.cache
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
       - ai_agent_network
     restart: unless-stopped
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Redis - Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: ai_agent_redis
+    command: redis-server --appendonly yes --appendfsync everysec
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai_agent_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ai_agent_celery_worker
+    command: celery -A core.celery_app worker --loglevel=info --concurrency=4 -Q agent,reports,notifications
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ai_agent_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2:-true}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-ai-agent-template}
+      GLPI_BASE_URL: ${GLPI_BASE_URL:-}
+      GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:-}
+      LINEAR_API_KEY: ${LINEAR_API_KEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    networks:
+      - ai_agent_network
+    restart: unless-stopped
+
+  # Flower - Monitoring Dashboard
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: ai_agent_flower
+    command: celery -A core.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      - redis
+      - celery_worker
+    volumes:
+      - .:/app
+    networks:
+      - ai_agent_network
+    restart: unless-stopped
 
   # Frontend (Next.js)
   frontend:
@@ -111,6 +186,8 @@ volumes:
   postgres_data:
     driver: local
   backend_cache:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

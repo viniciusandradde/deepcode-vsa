@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepCode VSA | Enterprise Cockpit</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            950: '#050505',
+                            900: '#0a0a0a',
+                            800: '#121212',
+                        },
+                        brand: {
+                            primary: '#F97316',   // Laranja
+                            secondary: '#3B82F6', // Azul
+                            dark: '#9a3412',
+                        }
+                    },
+                    boxShadow: {
+                        'glow-orange': '0 0 30px -5px rgba(249, 115, 22, 0.3)',
+                        'glow-blue': '0 0 30px -5px rgba(59, 130, 246, 0.3)',
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050505;
+            color: #e5e5e5;
+            overflow: hidden;
+            /* App Shell: No global scroll */
+        }
+
+        /* Ambient Lighting */
+        .ambient-light {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Scrollbar Invisível mas funcional */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Scrollbar Estilizada para áreas de conteúdo */
+        .styled-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .styled-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .styled-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .styled-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Chart Container */
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body class="flex h-screen w-screen selection:bg-brand-primary selection:text-white">
+
+    <!-- Ambient Background -->
+    <div class="ambient-light bg-brand-primary top-[-200px] left-[-200px] animate-float"></div>
+    <div class="ambient-light bg-brand-secondary bottom-[-200px] right-[-200px] animate-float"
+        style="animation-delay: 2s;"></div>
+
+    <!-- Sidebar -->
+    <aside
+        class="w-20 lg:w-72 flex-shrink-0 border-r border-white/5 bg-obsidian-950/50 backdrop-blur-xl flex flex-col justify-between z-20 transition-all duration-300 group">
+        <div>
+            <!-- Logo Area -->
+            <div class="h-20 flex items-center px-6 border-b border-white/5">
+                <div
+                    class="relative w-8 h-8 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg shadow-glow-orange">
+                    <span class="text-white font-bold">D</span>
+                </div>
+                <div class="ml-4 opacity-0 lg:opacity-100 transition-opacity duration-300 lg:block hidden">
+                    <h1 class="font-bold text-white tracking-tight">DeepCode</h1>
+                    <p class="text-[10px] text-gray-500 font-mono">Enterprise VSA</p>
+                </div>
+            </div>
+
+            <!-- Nav -->
+            <nav class="p-4 space-y-2">
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/5 border border-white/5 text-white shadow-lg relative overflow-hidden group/item">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-primary"></div>
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 text-brand-primary"></i>
+                    <span class="hidden lg:block font-medium text-sm">Dashboard</span>
+                </a>
+
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors group/item">
+                    <i data-lucide="message-square"
+                        class="w-5 h-5 group-hover/item:text-brand-secondary transition-colors"></i>
+                    <span class="hidden lg:block font-medium text-sm">Chat IA</span>
+                </a>
+
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors group/item">
+                    <i data-lucide="trello" class="w-5 h-5 group-hover/item:text-brand-primary transition-colors"></i>
+                    <span class="hidden lg:block font-medium text-sm">Linear Boards</span>
+                </a>
+
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors group/item">
+                    <i data-lucide="bar-chart-2"
+                        class="w-5 h-5 group-hover/item:text-brand-secondary transition-colors"></i>
+                    <span class="hidden lg:block font-medium text-sm">Relatórios</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 border border-white/10">
+                </div>
+                <div class="hidden lg:block">
+                    <p class="text-sm text-white font-medium">Admin User</p>
+                    <p class="text-xs text-gray-500">Online</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative z-10 overflow-hidden">
+
+        <!-- Header / Command Bar -->
+        <header
+            class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-obsidian-950/30 backdrop-blur-md">
+            <div class="flex items-center gap-4">
+                <h2 class="text-xl font-semibold text-white">Visão Geral</h2>
+                <div
+                    class="hidden md:flex items-center px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-gray-500">
+                    <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                    Sistema Operacional
+                </div>
+            </div>
+
+            <!-- Search / Command Palette Trigger -->
+            <div class="relative w-96 hidden md:block group">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i data-lucide="search"
+                        class="h-4 w-4 text-gray-500 group-focus-within:text-brand-secondary transition-colors"></i>
+                </div>
+                <input type="text"
+                    class="block w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg leading-5 bg-black/20 text-gray-300 placeholder-gray-500 focus:outline-none focus:border-brand-secondary/50 focus:ring-1 focus:ring-brand-secondary/50 sm:text-sm transition-all"
+                    placeholder="Buscar comando (Cmd+K)...">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span class="text-gray-600 text-xs border border-white/10 px-1.5 rounded">⌘K</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button
+                    class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors relative">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span
+                        class="absolute top-2 right-2 w-2 h-2 bg-brand-primary rounded-full border border-black"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Workspace -->
+        <div class="flex-1 overflow-y-auto p-8 styled-scroll space-y-8">
+
+            <!-- Welcome Section -->
+            <div class="flex flex-col md:flex-row justify-between items-end gap-4">
+                <div>
+                    <h3 class="text-3xl font-bold text-white mb-2">Olá, Vinicius</h3>
+                    <p class="text-gray-400">Aqui está o resumo da performance dos seus agentes hoje.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button
+                        class="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                        Gerenciar Agentes
+                    </button>
+                    <button
+                        class="px-4 py-2 rounded-lg bg-brand-primary hover:bg-brand-dark text-white shadow-glow-orange transition-all text-sm font-medium flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Novo Relatório
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Metric 1 -->
+                <div
+                    class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-brand-primary/10 rounded-lg text-brand-primary">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-mono text-green-400 flex items-center gap-1">
+                            <i data-lucide="arrow-up-right" class="w-3 h-3"></i> +12%
+                        </span>
+                    </div>
+                    <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Requests/Min</div>
+                    <div class="text-2xl font-bold text-white mt-1">1,240</div>
+                    <div
+                        class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-primary to-transparent opacity-50">
+                    </div>
+                </div>
+
+                <!-- Metric 2 -->
+                <div
+                    class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-brand-secondary/10 rounded-lg text-brand-secondary">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-mono text-green-400 flex items-center gap-1">
+                            <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 99.9%
+                        </span>
+                    </div>
+                    <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Success Rate</div>
+                    <div class="text-2xl font-bold text-white mt-1">98.5%</div>
+                    <div
+                        class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-secondary to-transparent opacity-50">
+                    </div>
+                </div>
+
+                <!-- Metric 3 -->
+                <div
+                    class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-purple-500/10 rounded-lg text-purple-500">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-mono text-orange-400 flex items-center gap-1">
+                            <i data-lucide="minus" class="w-3 h-3"></i> 0.2s
+                        </span>
+                    </div>
+                    <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Latência Média</div>
+                    <div class="text-2xl font-bold text-white mt-1">45ms</div>
+                    <div
+                        class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-transparent opacity-50">
+                    </div>
+                </div>
+
+                <!-- Metric 4 -->
+                <div
+                    class="glass-panel p-5 rounded-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="p-2 bg-pink-500/10 rounded-lg text-pink-500">
+                            <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-xs font-mono text-gray-500">Hoje</span>
+                    </div>
+                    <div class="text-gray-400 text-xs font-medium uppercase tracking-wider">Erros Críticos</div>
+                    <div class="text-2xl font-bold text-white mt-1">0</div>
+                    <div
+                        class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 to-transparent opacity-50">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Split -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Chart Area (Large) -->
+                <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="text-lg font-bold text-white">Throughput de Eventos</h4>
+                        <select
+                            class="bg-black/20 border border-white/10 text-xs text-gray-300 rounded px-2 py-1 outline-none focus:border-brand-secondary">
+                            <option>Últimas 24h</option>
+                            <option>Última Semana</option>
+                        </select>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity (List) -->
+                <div class="glass-panel p-0 rounded-2xl flex flex-col overflow-hidden">
+                    <div class="p-6 border-b border-white/5 bg-white/5 backdrop-blur-md">
+                        <h4 class="text-lg font-bold text-white">Atividade Recente</h4>
+                    </div>
+                    <div class="flex-1 overflow-y-auto styled-scroll p-4 space-y-2 max-h-[300px]">
+                        <!-- Item 1 -->
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+                            <div class="w-2 h-2 rounded-full bg-brand-primary mt-1"></div>
+                            <div class="flex-1">
+                                <p
+                                    class="text-sm text-gray-200 font-medium group-hover:text-brand-primary transition-colors">
+                                    Relatório Linear Gerado</p>
+                                <p class="text-xs text-gray-500">Há 2 minutos • Agente Reporter</p>
+                            </div>
+                            <i data-lucide="chevron-right"
+                                class="w-4 h-4 text-gray-600 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                        <!-- Item 2 -->
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+                            <div class="w-2 h-2 rounded-full bg-brand-secondary mt-1"></div>
+                            <div class="flex-1">
+                                <p
+                                    class="text-sm text-gray-200 font-medium group-hover:text-brand-secondary transition-colors">
+                                    Backup Database</p>
+                                <p class="text-xs text-gray-500">Há 15 minutos • System</p>
+                            </div>
+                            <i data-lucide="chevron-right"
+                                class="w-4 h-4 text-gray-600 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                        <!-- Item 3 -->
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+                            <div class="w-2 h-2 rounded-full bg-green-500 mt-1"></div>
+                            <div class="flex-1">
+                                <p
+                                    class="text-sm text-gray-200 font-medium group-hover:text-green-400 transition-colors">
+                                    Deploy Staging v2.1</p>
+                                <p class="text-xs text-gray-500">Há 1 hora • CI/CD</p>
+                            </div>
+                            <i data-lucide="chevron-right"
+                                class="w-4 h-4 text-gray-600 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                        <!-- Item 4 -->
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+                            <div class="w-2 h-2 rounded-full bg-brand-primary mt-1"></div>
+                            <div class="flex-1">
+                                <p
+                                    class="text-sm text-gray-200 font-medium group-hover:text-brand-primary transition-colors">
+                                    Sync Zabbix Alerts</p>
+                                <p class="text-xs text-gray-500">Há 2 horas • Agente Monitor</p>
+                            </div>
+                            <i data-lucide="chevron-right"
+                                class="w-4 h-4 text-gray-600 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div class="p-3 border-t border-white/5 text-center">
+                        <button class="text-xs text-brand-secondary hover:text-white transition-colors font-medium">Ver
+                            Histórico Completo</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Chart Config
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+
+            // Gradients
+            const orangeGrad = ctx.createLinearGradient(0, 0, 0, 300);
+            orangeGrad.addColorStop(0, 'rgba(249, 115, 22, 0.5)');
+            orangeGrad.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
+
+            const blueGrad = ctx.createLinearGradient(0, 0, 0, 300);
+            blueGrad.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+            blueGrad.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '23:59'],
+                    datasets: [
+                        {
+                            label: 'Processamento IA',
+                            data: [12, 19, 35, 105, 80, 120, 95],
+                            borderColor: '#F97316',
+                            backgroundColor: orangeGrad,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#050505',
+                            pointBorderColor: '#F97316',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Integrações',
+                            data: [30, 35, 40, 60, 55, 70, 65],
+                            borderColor: '#3B82F6',
+                            backgroundColor: blueGrad,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#050505',
+                            pointBorderColor: '#3B82F6',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#9ca3af', font: { family: 'Inter' } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#6b7280' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#6b7280' }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
