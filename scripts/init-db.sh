@@ -16,13 +16,11 @@ SQL_DIR="/docker-entrypoint-initdb.d/sql/kb"
 if [ -d "$SQL_DIR" ]; then
     echo "Executando scripts SQL de inicialização..."
     
-    # Executar scripts em ordem específica
-    for script in "$SQL_DIR/01_init.sql" "$SQL_DIR/02_indexes.sql" "$SQL_DIR/03_functions.sql"; do
+    # Executar scripts em ordem numerada (01, 02, 03, ...)
+    for script in $(ls "$SQL_DIR"/*.sql 2>/dev/null | sort -V); do
         if [ -f "$script" ]; then
             echo "Executando: $(basename $script)"
             psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f "$script"
-        else
-            echo "Aviso: Script não encontrado: $script"
         fi
     done
 else

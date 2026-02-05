@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepCode VSA | Design System Audit</title>
+    
+    <!-- Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config for "Obsidian" Theme -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            950: '#050505', // Deep Void base
+                            900: '#0a0a0a', // Radial gradient end
+                            800: '#121212', // Surface
+                        },
+                        // Cores da Logo (Laranja e Azul)
+                        brand: {
+                            primary: '#F97316',   // Laranja Tech (Ação/Energia)
+                            secondary: '#3B82F6', // Azul Deep (Confiança/Tech)
+                            dark: '#9a3412',      // Laranja Escuro para profundidade
+                        }
+                    },
+                    boxShadow: {
+                        'glow-brand': '0 0 40px -10px rgba(249, 115, 22, 0.4)', // Laranja Glow
+                        'glow-blue': '0 0 40px -10px rgba(59, 130, 246, 0.4)',  // Azul Glow
+                        'glass-panel': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+                        'hero-glow': 'radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.15) 0%, rgba(5, 5, 5, 0) 70%)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Setup */
+        body {
+            background-color: #050505;
+            color: #e5e5e5;
+            overflow: hidden;
+            font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+        }
+
+        /* Ambient Lighting Orbs */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism V3 - Modern Clean */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-panel:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Gradient Text Utility */
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-gradient-brand {
+            background: linear-gradient(135deg, #F97316 0%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 10px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .active-nav {
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0) 100%);
+            border-left: 3px solid #F97316;
+            color: white;
+        }
+        
+        .chart-container { position: relative; width: 100%; height: 300px; }
+    </style>
+</head>
+<body class="flex h-screen w-screen text-sm antialiased selection:bg-brand-primary selection:text-white">
+
+    <!-- Ambient Lighting (Gradual Brand Colors: Orange & Blue) -->
+    <div class="ambient-orb w-[500px] h-[500px] bg-brand-primary/15 top-[-100px] left-[-100px]"></div>
+    <div class="ambient-orb w-[400px] h-[400px] bg-brand-secondary/15 bottom-[-50px] right-[-50px]"></div>
+    <div class="ambient-orb w-[300px] h-[300px] bg-brand-primary/10 top-[20%] right-[30%] animate-pulse-slow"></div>
+
+    <!-- 1. Sidebar Moderna -->
+    <aside class="w-72 flex-shrink-0 border-r border-white/5 bg-obsidian-950/50 backdrop-blur-xl flex flex-col justify-between z-20" id="sidebar">
+        <div>
+            <div class="p-8 pb-6">
+                <div class="flex items-center gap-4">
+                    <!-- Logo Icon with Gradient -->
+                    <div class="relative w-10 h-10 flex items-center justify-center">
+                        <div class="absolute inset-0 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-xl opacity-20 blur-md"></div>
+                        <div class="relative w-full h-full bg-gradient-to-br from-brand-primary to-brand-secondary rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner border border-white/10">
+                            V
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-bold tracking-tight text-white text-lg leading-tight">DeepCode</h1>
+                        <p class="text-xs text-brand-secondary font-medium tracking-wide">VSA System v2.0</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="px-4 space-y-1">
+                <div class="px-4 pb-2 text-[10px] uppercase tracking-widest text-gray-500 font-bold opacity-70">Menu Principal</div>
+                
+                <button onclick="switchTab('dashboard')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all active-nav group" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 group-hover:text-brand-primary transition-colors"></i>
+                    <span class="font-medium">Visão Geral</span>
+                </button>
+
+                <div class="pt-6 px-4 pb-2 text-[10px] uppercase tracking-widest text-gray-500 font-bold opacity-70">Design Tokens</div>
+                
+                <button onclick="switchTab('layout')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all group" data-tab="layout">
+                    <i data-lucide="layout-template" class="w-5 h-5 group-hover:text-brand-secondary transition-colors"></i>
+                    <span class="font-medium">Layout & Grid</span>
+                </button>
+                <button onclick="switchTab('colors')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all group" data-tab="colors">
+                    <i data-lucide="palette" class="w-5 h-5 group-hover:text-brand-primary transition-colors"></i>
+                    <span class="font-medium">Paleta Obsidian</span>
+                </button>
+                <button onclick="switchTab('effects')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all group" data-tab="effects">
+                    <i data-lucide="sparkles" class="w-5 h-5 group-hover:text-brand-secondary transition-colors"></i>
+                    <span class="font-medium">Sombras & Efeitos</span>
+                </button>
+                <button onclick="switchTab('typography')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-r-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all group" data-tab="typography">
+                    <i data-lucide="type" class="w-5 h-5 group-hover:text-brand-primary transition-colors"></i>
+                    <span class="font-medium">Tipografia</span>
+                </button>
+            </nav>
+        </div>
+        
+        <div class="p-4 border-t border-white/5 bg-black/20">
+            <div class="glass-panel p-4 rounded-xl flex items-center gap-3 bg-gradient-to-r from-white/5 to-transparent border border-white/5">
+                <div class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-brand-primary"></span>
+                </div>
+                <div>
+                    <p class="text-xs text-white font-medium">Status do Sistema</p>
+                    <p class="text-[10px] text-gray-400">Online & Atualizado</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-hidden flex flex-col relative z-10">
+        <!-- Header Glass -->
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-obsidian-950/30 backdrop-blur-md">
+            <div class="flex flex-col">
+                <h2 class="text-lg font-semibold text-white flex items-center gap-2" id="page-title">
+                    Visão Geral do Audit
+                </h2>
+                <span class="text-xs text-gray-500 font-mono" id="page-subtitle">Dashboard Interativo</span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5 text-xs text-gray-400 font-mono">
+                    <i data-lucide="git-branch" class="w-3.5 h-3.5 text-brand-secondary"></i> 
+                    <span>main</span>
+                </div>
+                <button class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-xs font-bold hover:shadow-glow-brand transition-all flex items-center gap-2 group hover:scale-105 active:scale-95">
+                    <i data-lucide="file-down" class="w-4 h-4"></i> Exportar
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-8 lg:p-12 scroll-smooth" id="content-area">
+            
+            <!-- SECTION: DASHBOARD -->
+            <div id="view-dashboard" class="space-y-12 animate-fade-in block">
+                <!-- Hero Section -->
+                <div class="relative rounded-3xl p-10 overflow-hidden border border-white/10 group">
+                    <!-- Hero Gradient Background -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-brand-primary/10 via-obsidian-900 to-obsidian-900 z-0"></div>
+                    <div class="absolute right-0 top-0 w-[400px] h-[400px] bg-brand-secondary/10 blur-[100px] rounded-full z-0 pointer-events-none"></div>
+                    
+                    <div class="relative z-10 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-brand-primary/30 bg-brand-primary/10 text-brand-primary text-xs font-bold uppercase tracking-wider mb-4">
+                            <span class="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></span>
+                            Design System v2.0
+                        </div>
+                        <h3 class="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                            Evolução Visual <br>
+                            <span class="text-gradient-brand">DeepCode Obsidian</span>
+                        </h3>
+                        <p class="text-gray-400 text-lg leading-relaxed mb-8 max-w-xl">
+                            Uma interface imersiva projetada para alta performance. Combinando estética "Deep Void" com a energia do Laranja e a confiança do Azul.
+                        </p>
+                        <div class="flex gap-4">
+                            <button onclick="switchTab('colors')" class="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white font-medium transition-all backdrop-blur-sm flex items-center gap-2 group">
+                                Explorar Cores <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Decorative Graphic -->
+                    <div class="absolute right-[-50px] top-[50%] transform -translate-y-1/2 opacity-30 md:opacity-50 pointer-events-none">
+                        <div class="w-[300px] h-[300px] border border-white/10 rounded-full animate-float flex items-center justify-center">
+                            <div class="w-[200px] h-[200px] border border-brand-primary/30 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Card 1 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+                            <i data-lucide="palette" class="w-24 h-24 text-brand-primary"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 rounded-lg bg-brand-primary/10 flex items-center justify-center mb-4 text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-colors">
+                                <i data-lucide="moon" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Estética</h4>
+                            <div class="text-2xl font-bold text-white mb-2">Deep Void</div>
+                            <p class="text-sm text-gray-500 leading-relaxed">Fundo preto profundo (#050505) para máximo contraste e elegância moderna.</p>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-brand-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+                            <i data-lucide="zap" class="w-24 h-24 text-brand-secondary"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 rounded-lg bg-brand-secondary/10 flex items-center justify-center mb-4 text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white transition-colors">
+                                <i data-lucide="activity" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Performance</h4>
+                            <div class="text-2xl font-bold text-white mb-2">Glass Shell</div>
+                            <p class="text-sm text-gray-500 leading-relaxed">Layout fluido sem scroll global, imitando aplicação nativa de alta resposta.</p>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-brand-secondary to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+                            <i data-lucide="sparkles" class="w-24 h-24 text-white"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center mb-4 text-white group-hover:bg-white group-hover:text-black transition-colors">
+                                <i data-lucide="fingerprint" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Interação</h4>
+                            <div class="text-2xl font-bold text-white mb-2">Feedback Tátil</div>
+                            <p class="text-sm text-gray-500 leading-relaxed">Micro-interações de escala e brilho que respondem a cada toque do usuário.</p>
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="glass-panel p-8 rounded-2xl">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h4 class="text-lg font-semibold text-white">Cobertura do Design System</h4>
+                            <p class="text-sm text-gray-500">Distribuição das novas diretrizes aplicadas.</p>
+                        </div>
+                        <button class="p-2 rounded-lg hover:bg-white/5 transition-colors">
+                            <i data-lucide="more-horizontal" class="text-gray-400"></i>
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="auditChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: LAYOUT -->
+            <div id="view-layout" class="space-y-10 animate-fade-in hidden">
+                <div class="max-w-4xl border-l-2 border-brand-secondary pl-6">
+                    <h3 class="text-3xl font-bold text-white mb-2">Grid & Estrutura</h3>
+                    <p class="text-gray-400 text-lg">
+                        Um sistema de layout <strong>Glass-Shell</strong> que ocupa 100% da viewport, eliminando scrolls desnecessários.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Visual Demo -->
+                    <div class="glass-panel p-8 rounded-2xl flex items-center justify-center bg-black/40">
+                        <div class="relative w-full aspect-video border border-white/10 rounded-xl bg-obsidian-900 shadow-2xl flex overflow-hidden">
+                            <!-- Sidebar Mock -->
+                            <div class="w-1/3 border-r border-white/5 bg-white/5 flex flex-col gap-3 p-4">
+                                <div class="w-8 h-8 rounded-full bg-white/10 mb-4"></div>
+                                <div class="w-full h-2 rounded-full bg-white/5"></div>
+                                <div class="w-2/3 h-2 rounded-full bg-white/5"></div>
+                                <div class="mt-auto w-full h-10 rounded bg-brand-primary/20 border border-brand-primary/30"></div>
+                            </div>
+                            <!-- Content Mock -->
+                            <div class="flex-1 p-4 flex flex-col gap-4 relative">
+                                <div class="w-full h-8 rounded bg-white/5 mb-2"></div>
+                                <div class="flex-1 rounded border border-dashed border-white/10 flex items-center justify-center">
+                                    <span class="text-xs text-gray-600 font-mono">Fluid Content Area</span>
+                                </div>
+                                <!-- Grid Lines Overlay -->
+                                <div class="absolute inset-0 pointer-events-none" style="background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 20px 20px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="space-y-4">
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-brand-primary group hover:bg-white/5 transition-colors">
+                            <h5 class="text-white font-bold flex items-center gap-2 mb-2">
+                                <i data-lucide="columns" class="w-4 h-4 text-brand-primary"></i>
+                                Sidebar Inteligente
+                            </h5>
+                            <p class="text-sm text-gray-400">
+                                Comporta-se como uma gaveta (Drawer) em mobile com <strong>Backdrop Blur</strong> intenso para focar a atenção.
+                            </p>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-brand-secondary group hover:bg-white/5 transition-colors">
+                            <h5 class="text-white font-bold flex items-center gap-2 mb-2">
+                                <i data-lucide="maximize" class="w-4 h-4 text-brand-secondary"></i>
+                                Container Fluido
+                            </h5>
+                            <p class="text-sm text-gray-400">
+                                Área central limitada a <code>max-w-5xl</code> para evitar fadiga visual em monitores ultrawide.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: COLORS -->
+            <div id="view-colors" class="space-y-10 animate-fade-in hidden">
+                <div class="max-w-4xl border-l-2 border-brand-primary pl-6">
+                    <h3 class="text-3xl font-bold text-white mb-2">Cores da Marca (Gradual)</h3>
+                    <p class="text-gray-400 text-lg">
+                        As cores <strong>Laranja Tech</strong> e <strong>Azul Deep</strong> são aplicadas através de gradientes e luzes, evitando blocos sólidos cansativos.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Brand Gradient Primary -->
+                    <div class="col-span-full mb-4">
+                        <div class="h-32 w-full rounded-2xl bg-gradient-to-r from-brand-primary to-brand-secondary relative flex items-center justify-center shadow-glow-brand group cursor-pointer" onclick="copyToClipboard('gradient-brand')">
+                            <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
+                            <span class="text-white font-bold text-2xl tracking-widest drop-shadow-md">BRAND GRADIENT</span>
+                            <div class="absolute bottom-3 right-4 text-[10px] text-white/80 font-mono bg-black/20 px-2 py-1 rounded">linear-gradient(135deg)</div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Colors -->
+                    <div class="group cursor-pointer" onclick="copyToClipboard('#F97316')">
+                        <div class="h-40 rounded-2xl bg-brand-primary relative overflow-hidden shadow-lg transition-transform hover:-translate-y-1">
+                            <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+                            <div class="absolute bottom-4 left-4">
+                                <p class="text-white font-bold">Tech Orange</p>
+                                <p class="text-white/60 text-xs font-mono">#F97316</p>
+                            </div>
+                            <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="copy" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group cursor-pointer" onclick="copyToClipboard('#3B82F6')">
+                        <div class="h-40 rounded-2xl bg-brand-secondary relative overflow-hidden shadow-lg transition-transform hover:-translate-y-1">
+                            <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+                            <div class="absolute bottom-4 left-4">
+                                <p class="text-white font-bold">Deep Blue</p>
+                                <p class="text-white/60 text-xs font-mono">#3B82F6</p>
+                            </div>
+                            <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="copy" class="w-4 h-4 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Backgrounds -->
+                    <div class="group cursor-pointer" onclick="copyToClipboard('#050505')">
+                        <div class="h-40 rounded-2xl bg-[#050505] border border-white/10 relative overflow-hidden shadow-lg transition-transform hover:-translate-y-1">
+                            <div class="absolute bottom-4 left-4">
+                                <p class="text-white font-bold">Deep Void</p>
+                                <p class="text-gray-500 text-xs font-mono">#050505</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group cursor-pointer" onclick="copyToClipboard('glass')">
+                        <div class="h-40 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 relative overflow-hidden shadow-lg transition-transform hover:-translate-y-1">
+                            <!-- Checker pattern for transparency -->
+                            <div class="absolute inset-0 -z-10 opacity-10" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 10px 10px;"></div>
+                            <div class="absolute bottom-4 left-4">
+                                <p class="text-white font-bold">Glass Surface</p>
+                                <p class="text-gray-500 text-xs font-mono">White Alpha 5%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: EFFECTS -->
+            <div id="view-effects" class="space-y-10 animate-fade-in hidden">
+                <div class="max-w-4xl border-l-2 border-white pl-6">
+                    <h3 class="text-3xl font-bold text-white mb-2">Sombras & Luz</h3>
+                    <p class="text-gray-400 text-lg">
+                        Substituímos sombras pretas por <strong>Colored Glows</strong> que simulam emissão de luz neon.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Glow Demo -->
+                    <div class="glass-panel p-10 rounded-2xl flex flex-col items-center justify-center gap-10 bg-black/40">
+                        <div class="text-center">
+                            <button class="px-8 py-4 bg-brand-primary text-white font-bold rounded-xl shadow-glow-brand transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_-10px_rgba(249,115,22,0.6)] border border-brand-primary/50 relative overflow-hidden group">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    Botão Neon <i data-lucide="zap" class="w-4 h-4"></i>
+                                </span>
+                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-700"></div>
+                            </button>
+                            <p class="mt-4 text-xs text-gray-500 font-mono">shadow-glow-brand</p>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 rounded-full bg-brand-secondary shadow-glow-blue animate-pulse-slow"></div>
+                            <div class="w-12 h-12 rounded-full bg-brand-primary shadow-glow-brand animate-pulse-slow delay-75"></div>
+                            <div class="w-12 h-12 rounded-full bg-white shadow-[0_0_30px_rgba(255,255,255,0.4)] animate-pulse-slow delay-150"></div>
+                        </div>
+                    </div>
+
+                    <!-- Glass Card Demo -->
+                    <div class="relative h-80 rounded-2xl overflow-hidden flex items-center justify-center border border-white/10">
+                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-60" alt="Background">
+                        
+                        <div class="glass-panel p-8 rounded-2xl max-w-xs text-center relative z-10 backdrop-blur-xl border border-white/20 shadow-2xl">
+                            <h4 class="text-xl font-bold text-white mb-2">Vidro Fosco</h4>
+                            <p class="text-sm text-gray-200 mb-4 opacity-90">
+                                O efeito de vidro adiciona profundidade mantendo o contexto do fundo visível.
+                            </p>
+                            <div class="h-1 w-20 bg-white/30 rounded-full mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: TYPOGRAPHY -->
+            <div id="view-typography" class="space-y-10 animate-fade-in hidden">
+                <div class="max-w-4xl border-l-2 border-brand-primary pl-6">
+                    <h3 class="text-3xl font-bold text-white mb-2">Tipografia</h3>
+                    <p class="text-gray-400 text-lg">
+                        Clara distinção: <strong>Inter</strong> para UI e <strong>JetBrains Mono</strong> para dados técnicos.
+                    </p>
+                </div>
+
+                <div class="glass-panel p-10 rounded-2xl space-y-8">
+                    <!-- Heading Spec -->
+                    <div class="border-b border-white/10 pb-8">
+                        <span class="text-xs font-mono text-brand-primary mb-2 block uppercase tracking-wider">Display / Headings</span>
+                        <h1 class="text-5xl font-bold text-white mb-2 tracking-tight">The quick brown fox</h1>
+                        <p class="text-gray-500 font-sans">Inter Bold • Tracking Tight</p>
+                    </div>
+
+                    <!-- Body Spec -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <span class="text-xs font-mono text-brand-secondary mb-2 block uppercase tracking-wider">UI Body</span>
+                            <p class="text-base text-gray-300 leading-relaxed font-sans">
+                                O texto de interface deve ter excelente legibilidade em fundos escuros. Usamos um cinza levemente aquecido (#e5e5e5) em vez de branco puro para evitar fadiga ocular.
+                            </p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-mono text-gray-400 mb-2 block uppercase tracking-wider">Code / Data</span>
+                            <div class="bg-black/40 rounded-lg p-4 border border-white/10 font-mono text-sm text-gray-300">
+                                <span class="text-brand-primary">const</span> <span class="text-brand-secondary">designSystem</span> = {<br>
+                                &nbsp;&nbsp;theme: <span class="text-green-400">'Obsidian'</span>,<br>
+                                &nbsp;&nbsp;version: <span class="text-orange-400">2.0</span><br>
+                                };
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-10 right-10 bg-obsidian-900/90 backdrop-blur-xl border border-brand-primary/30 text-white px-6 py-4 rounded-xl shadow-2xl shadow-brand-primary/10 transform translate-y-24 opacity-0 transition-all duration-500 z-50 flex items-center gap-4">
+        <div class="p-2 bg-brand-primary/20 rounded-full text-brand-primary">
+            <i data-lucide="check-circle" class="w-6 h-6"></i>
+        </div>
+        <div>
+            <h4 class="text-sm font-bold">Copiado!</h4>
+            <p class="text-xs text-gray-400" id="toast-message">Código transferido para o clipboard.</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        // Tabs Logic
+        function switchTab(tabId) {
+            // Hide all
+            document.querySelectorAll('[id^="view-"]').forEach(el => {
+                el.classList.add('hidden', 'opacity-0', 'translate-y-4');
+                el.classList.remove('block', 'opacity-100', 'translate-y-0');
+            });
+            
+            // Show target with animation
+            const target = document.getElementById(`view-${tabId}`);
+            target.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                target.classList.remove('opacity-0', 'translate-y-4');
+                target.classList.add('block', 'opacity-100', 'translate-y-0');
+            }, 10);
+
+            // Update Nav Styles
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active-nav', 'text-white', 'bg-white/5');
+                btn.classList.add('text-gray-400');
+            });
+            const activeBtn = document.querySelector(`button[data-tab="${tabId}"]`);
+            activeBtn.classList.add('active-nav', 'text-white');
+            activeBtn.classList.remove('text-gray-400');
+
+            // Update Header
+            const titles = {
+                'dashboard': 'Visão Geral',
+                'layout': 'Layout & Grid',
+                'colors': 'Paleta Obsidian',
+                'effects': 'Sombras & Efeitos',
+                'typography': 'Tipografia'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+            document.getElementById('page-subtitle').innerText = tabId === 'dashboard' ? 'Dashboard Interativo' : 'Diretrizes Técnicas';
+        }
+
+        // Clipboard
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3000);
+        }
+
+        // Chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('auditChart').getContext('2d');
+            
+            // Gradient Fills (Updated to Orange/Blue)
+            const gradPrimary = ctx.createLinearGradient(0, 0, 0, 300);
+            gradPrimary.addColorStop(0, 'rgba(249, 115, 22, 0.6)'); // Orange
+            gradPrimary.addColorStop(1, 'rgba(249, 115, 22, 0.05)');
+
+            const gradSecondary = ctx.createLinearGradient(0, 0, 0, 300);
+            gradSecondary.addColorStop(0, 'rgba(59, 130, 246, 0.6)'); // Blue
+            gradSecondary.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Layout', 'Cores', 'Efeitos', 'Tipografia'],
+                    datasets: [{
+                        label: 'Implementação',
+                        data: [90, 100, 85, 95],
+                        backgroundColor: [gradPrimary, gradSecondary, gradPrimary, gradSecondary],
+                        borderColor: ['#F97316', '#3B82F6', '#F97316', '#3B82F6'],
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#666' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: '#999', font: { family: 'Inter' } }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
