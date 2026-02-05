@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import chat, rag, agents, threads, reports, planning, config, automation, queue
+from api.routes import chat, rag, agents, threads, reports, planning, config, automation, queue, projects
 from core.checkpointing import initialize_checkpointer, cleanup_checkpointer
 from core.scheduler import get_scheduler_service
 
@@ -92,6 +92,7 @@ app.include_router(planning.router, prefix="/api/v1/planning", tags=["planning"]
 app.include_router(config.router, prefix="/api/v1/config", tags=["config"])
 app.include_router(automation.router, prefix="/api/v1/automation", tags=["automation"])
 app.include_router(queue.router, prefix="/api/v1/queue", tags=["queue"])
+app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
 
 
 @app.get("/")

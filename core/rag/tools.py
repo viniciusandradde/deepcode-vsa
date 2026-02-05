@@ -166,15 +166,31 @@ def apply_rerank(
 def _get_project_embedding_model(project_id: str) -> str:
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Tenta tabela nova 'projects' (settings->>embedding_model)
             cur.execute(
-                "SELECT embedding_model FROM planning_projects WHERE id = %s",
+                "SELECT settings->>'embedding_model' FROM projects WHERE id = %s",
                 (project_id,),
             )
             row = cur.fetchone()
-            if not row:
-                raise RuntimeError("Projeto não encontrado para busca RAG")
-            model = row[0] if isinstance(row, tuple) else row.get("embedding_model")
-            return (model or "openai").strip().lower()
+            if row:
+                return (row[0] or "openai").strip().lower()
+            
+            # Fallback para tabela antiga 'planning_projects' (se existir)
+            try:
+                cur.execute(
+                    "SELECT embedding_model FROM planning_projects WHERE id = %s",
+                    (project_id,),
+                )
+                row = cur.fetchone()
+                if row:
+                    return (row[0] or "openai").strip().lower()
+            except Exception:
+                pass
+
+            # Default global se não encontrar projeto (evita crash)
+            # return "openai"
+            # Ou lançar erro se preferir strictness
+            raise RuntimeError(f"Projeto {project_id} não encontrado para busca RAG")
 
 
 def hyde(query: str) -> str:

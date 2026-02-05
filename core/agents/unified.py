@@ -22,6 +22,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 
+from langchain_core.runnables import RunnableConfig
 from core.agents.base import BaseAgent
 
 
@@ -690,7 +691,11 @@ Foque em atendimento rápido e padronizado.
             dbg(f"Report format failed: {e}")
             return None
 
-    def _executor_node(self, state: UnifiedAgentState) -> Dict[str, Any]:
+    from langchain_core.runnables import RunnableConfig
+
+    # ... (imports)
+
+    def _executor_node(self, state: UnifiedAgentState, config: RunnableConfig) -> Dict[str, Any]:
         """Execute actions using tools."""
         dbg("Executor node executing...")
 
@@ -718,7 +723,15 @@ Foque em atendimento rápido e padronizado.
             model_with_tools = self.model
 
         # Prepare messages with system prompt
-        full_messages = [SystemMessage(content=self.system_prompt)]
+        # CRITICAL: Project Context Injection
+        project_instructions = config.get("configurable", {}).get("custom_instructions")
+        
+        final_system_prompt = self.system_prompt
+        if project_instructions:
+            final_system_prompt += f"\n\n=== PROJECT INSTRUCTIONS ===\n{project_instructions}"
+            dbg(f"Injected project instructions: {project_instructions[:50]}...")
+
+        full_messages = [SystemMessage(content=final_system_prompt)]
         if context_parts:
             full_messages.append(SystemMessage(content="\n".join(context_parts)))
         full_messages.extend(messages)
