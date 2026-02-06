@@ -24,7 +24,10 @@ def planning_list_projects(
     status: Optional[str] = None,
     limit: int = 10,
 ) -> str:
-    """Lista projetos de planejamento.
+    """Lista projetos de planejamento estratégico (roadmap, sprints, entregas).
+
+    NÃO usar para: eventos de TI, alertas, tickets, monitoramento ou status operacional.
+    Usar APENAS quando o usuário pedir explicitamente sobre projetos, planejamento ou roadmap.
 
     Args:
         status: Filtrar por status (draft, active, completed, archived)
@@ -90,7 +93,8 @@ def planning_list_projects(
 
 @tool
 def planning_get_project(project_id: str) -> str:
-    """Obtém detalhes de um projeto de planejamento específico.
+    """Obtém detalhes de um projeto de planejamento estratégico específico (etapas, orçamento).
+    NÃO usar para tickets, alertas ou monitoramento.
 
     Args:
         project_id: ID do projeto (UUID)
@@ -159,7 +163,8 @@ def planning_create_project(
     description: Optional[str] = None,
     dry_run: bool = True,
 ) -> str:
-    """Cria um novo projeto de planejamento.
+    """Cria um novo projeto de planejamento estratégico (roadmap).
+    NÃO usar para criar tickets GLPI ou issues Linear.
 
     Args:
         title: Título do projeto
@@ -221,7 +226,8 @@ def planning_analyze_project(
     project_id: str,
     focus_area: str = "Geral",
 ) -> str:
-    """Analisa documentos de um projeto e gera insights usando IA.
+    """Analisa documentos de um projeto de planejamento estratégico e gera insights usando IA.
+    NÃO usar para análise de tickets, alertas ou eventos operacionais.
 
     Args:
         project_id: ID do projeto (UUID)

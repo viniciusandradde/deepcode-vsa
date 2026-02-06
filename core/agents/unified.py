@@ -647,13 +647,13 @@ Foque em atendimento rápido e padronizado.
             if isinstance(m, ToolMessage):
                 name = tool_calls_by_id.get(getattr(m, "tool_call_id", ""), "")
                 if name not in report_tools:
-                    return None
+                    continue  # Skip non-report tools (e.g. planning) instead of aborting
                 try:
                     import json
                     content = m.content if isinstance(m.content, str) else str(m.content)
                     data = json.loads(content) if content.strip().startswith("{") else None
                     if not data:
-                        return None
+                        continue
                     if name == "glpi_get_tickets":
                         glpi_data = data
                     elif name == "zabbix_get_alerts":
@@ -661,7 +661,7 @@ Foque em atendimento rápido e padronizado.
                     elif name == "linear_get_issues":
                         linear_data = data
                 except Exception:
-                    return None
+                    continue
         if not glpi_data and not zabbix_data and not linear_data:
             return None
         try:
@@ -731,6 +731,17 @@ Foque em atendimento rápido e padronizado.
         if context_parts:
             full_messages.append(SystemMessage(content="\n".join(context_parts)))
         full_messages.extend(messages)
+
+        # Truncate large ToolMessages to save tokens (~750 tokens per 3000 chars)
+        MAX_TOOL_RESULT_CHARS = 3000
+        truncated_messages = []
+        for msg in full_messages:
+            if isinstance(msg, ToolMessage) and isinstance(msg.content, str) and len(msg.content) > MAX_TOOL_RESULT_CHARS:
+                truncated = msg.content[:MAX_TOOL_RESULT_CHARS] + f"\n\n... [truncado, original: {len(msg.content)} chars]"
+                truncated_messages.append(ToolMessage(content=truncated, tool_call_id=msg.tool_call_id, name=msg.name))
+            else:
+                truncated_messages.append(msg)
+        full_messages = truncated_messages
 
         try:
             response = model_with_tools.invoke(full_messages)

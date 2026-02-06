@@ -106,6 +106,14 @@ INTENT_PATTERNS = {
         r"(issues?|tarefas?|linear|backlog)(\s+(do\s+)?linear)?\.?$",
         re.I,
     ),
+    # Análise composta: "análise completa dos eventos da semana", "relatório operacional",
+    # "resumo dos eventos", "overview de incidentes"
+    "dashboard_analysis": re.compile(
+        r"(an[aá]lis[ea]r?|relat[oó]rio|resumo|overview|revis[aã]o|fa[cç]a\s+an[aá]lise)"
+        r"\s+(completa?\s+)?(d[aoe]s?\s+)?"
+        r"(eventos?|semana|operac|incidentes?|atividades?|chamados?|alertas?)",
+        re.I,
+    ),
 }
 
 
@@ -189,7 +197,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
                 return format_linear_report(result.output), True
             return f"**Erro Linear:** {result.error}", False
 
-        elif intent == "dashboard":
+        elif intent in ("dashboard", "dashboard_analysis"):
             glpi_data = None
             zabbix_data = None
 
@@ -197,7 +205,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
                 from core.tools.glpi import get_client as get_glpi_client
 
                 client = get_glpi_client()
-                result = await client.get_tickets(limit=10)
+                result = await client.get_tickets(limit=15)
                 if result.success:
                     glpi_data = result.output
                 else:
@@ -209,7 +217,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
                 from core.tools.zabbix import get_client as get_zabbix_client
 
                 client = get_zabbix_client()
-                result = await client.get_problems(limit=10, severity=3)
+                result = await client.get_problems(limit=15, severity=3)
                 if result.success:
                     zabbix_data = {
                         "problems": result.output,

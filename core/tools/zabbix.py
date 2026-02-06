@@ -16,14 +16,20 @@ def get_client() -> ZabbixClient:
         _client = ZabbixClient(settings)
     return _client
 
+# Fields the LLM needs from each Zabbix problem (slim output)
+_PROBLEM_SUMMARY_KEYS = {"eventid", "name", "severity", "clock", "opdata", "acknowledged", "host_name"}
+
+
 @tool
 async def zabbix_get_alerts(
     min_severity: int = 3,
     limit: int = 10,
     active_only: bool = True
 ) -> dict:
-    """Get active alerts (problems) from Zabbix.
-    
+    """Busca alertas e problemas ativos no Zabbix (monitoramento de infraestrutura).
+    Usar para: alertas críticos, problemas de rede/servidores, eventos de monitoramento, status de hosts.
+    Retorna: eventid, nome do alerta, severidade, horário, host afetado.
+
     Args:
         min_severity: Minimum severity (0-5). 3=Average, 4=High, 5=Disaster.
         limit: Max results.
@@ -35,11 +41,16 @@ async def zabbix_get_alerts(
         result = await client.get_problems(severity=min_severity, limit=limit)
         if not result.success:
             return {"error": result.error}
-        
+
         problems = result.output if isinstance(result.output, list) else []
+        # Slim down to essential fields only (token optimization)
+        slim_problems = [
+            {k: v for k, v in p.items() if k in _PROBLEM_SUMMARY_KEYS}
+            for p in problems
+        ]
         return {
-            "count": len(problems),
-            "problems": problems,
+            "count": len(slim_problems),
+            "problems": slim_problems,
             "min_severity": min_severity
         }
     except Exception as e:

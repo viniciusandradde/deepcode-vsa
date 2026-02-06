@@ -78,8 +78,8 @@ class ZabbixClient:
             with_hosts: If True, enriches each problem with host name via trigger.get
         """
         params = {
-            "output": "extend",
-            "selectTags": "extend",
+            "output": ["eventid", "name", "severity", "clock", "opdata", "acknowledged", "objectid"],
+            "selectTags": ["tag", "value"],
             "sortfield": ["eventid"],
             "sortorder": "DESC",
             "recent": True,

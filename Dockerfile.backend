@@ -22,7 +22,6 @@ COPY core/ /app/core/
 COPY api/ /app/api/
 COPY backend/ /app/backend/
 COPY sql/ /app/sql/
-COPY scripts/ /app/scripts/
 COPY models.yaml /app/models.yaml
 
 # Expor porta

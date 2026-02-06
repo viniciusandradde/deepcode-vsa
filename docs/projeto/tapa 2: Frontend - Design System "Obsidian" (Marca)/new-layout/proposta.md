@@ -1,36 +1,68 @@
-O objetivo é sair de uma "Ferramenta de Admin" para um "Cockpit de Comando".
+1. Problemas Atuais de Design & Código
+Fragmentação de Estilos (CSS vs Tailwind):
 
-A. Estética "Glass-Shell" Imersiva (Obsidian v2.0)
-Implementar o conceito aprovado de Deep Void com as cores da marca (Laranja/Azul).
+Código: Existem definições em vsa-design-tokens.css (variáveis CSS puras), globals.css e configurações no tailwind.config.ts.
 
-Layout App-Like: O corpo da página (body) deve ser overflow: hidden. Apenas os containers de conteúdo (Chat, Tabelas) devem ter scroll. Isso dá a sensação de aplicativo nativo, não de site.
+Problema: Isso gera uma "dupla verdade". Um desenvolvedor pode usar bg-obsidian-950 (Tailwind) enquanto outro usa var(--bg-deep-void) (CSS), criando inconsistências visuais sutis.
 
-Vidro Fosco Dinâmico: Utilizar backdrop-filter: blur(20px) com uma textura de ruído (noise texture) em 2% de opacidade sobre os painéis. Isso evita o aspecto "plástico" e adiciona textura premium.
+Ação: Centralizar tudo no tailwind.config.ts consumindo variáveis CSS apenas se necessário para temas dinâmicos.
 
-Ambient Lighting (Luz Ambiente): Usar orbs de luz difusa (Laranja no canto superior esquerdo, Azul no inferior direito) fixos no fundo, movendo-se muito lentamente (animação CSS float) para dar vida ao fundo preto.
+Ausência de Feedback de Estado Assíncrono:
 
-B. Micro-interações e Feedback Tátil
-Uma aplicação empresarial deve parecer "viva".
+Visual: Os formulários (ScheduleForm.tsx) parecem ter estados de loading básicos, mas para uma tarefa que vai para uma fila (Celery), o usuário precisa de feedback visual de "Enfileirado", "Processando" e "Concluído".
 
-Hover States Avançados: Botões não mudam apenas de cor. Eles devem ter um leve scale(1.02) e um aumento no box-shadow (Glow) da cor correspondente (Laranja ou Azul).
+Código: Faltam componentes de Skeleton ou Optimistic UI nas listas de agendamento.
 
-Skeleton Screens: Nunca use spinners de carregamento para áreas grandes. Use "Skeletons" (barras pulsantes cinza-escuro) que imitam o layout do conteúdo que está por vir (tabelas, textos). Isso reduz a ansiedade de espera.
+Estrutura de Pastas Híbrida:
 
-Transições de Rota: Implementar Framer Motion para que, ao trocar de aba na Sidebar, o conteúdo antigo desapareça suavemente e o novo deslize para dentro.
+Existe uma mistura de src/app/automation (nova feature) com src/app/planning (legado). A navegação entre esses módulos precisa ser fluida, não parecendo dois apps diferentes.
 
-C. Command Palette (Cmd+K)
-Recurso essencial em ferramentas modernas (como Linear, Vercel, VS Code).
+🟠 2. Inconsistências Identificadas
+Tipografia: O arquivo typography.csv sugere um sistema, mas o layout.tsx e globals.css importam fontes, mas nem sempre aplicam as classes de utilitários (font-sans, font-mono) consistentemente em todos os componentes.
 
-Implementar um modal de busca global acessível por Ctrl+K ou Cmd+K.
+Sombras: O novo sistema pede "Glows Coloridos" (shadow-glow-brand), mas componentes legados (Card, Button) ainda usam sombras pretas padrão (shadow-sm, shadow-md).
 
-Permite navegar entre projetos, buscar issues do Linear, iniciar um novo chat ou mudar o tema sem tirar a mão do teclado.
+🟡 3. Diagnóstico do Design System
+Status: Em Transição (Híbrido).
 
-1. Propostas de Melhoria de Performance (Engenharia)
-A. Frontend: Virtualização e Optimistic UI
-O chat e as tabelas de relatórios podem ficar pesados com muitos dados.
+Avaliação: Você tem os tokens (cores Laranja/Azul e Obsidian definidos), mas a aplicação nos componentes base (src/components/ui) ainda é parcial. O "Glassmorphism" está definido em classes utilitárias, mas não é o padrão de todo o sistema ainda.
 
-Virtualização de Listas: Usar react-virtuoso ou tanstack-virtual nas janelas de chat. Isso renderiza apenas as mensagens visíveis na tela, permitindo chats com 10.000 mensagens sem travar o navegador.
+🟢 4. Proposta de Design System: "Obsidian Automation"
+Para o módulo de agendamento, aplicaremos o Obsidian Strict Mode:
 
-Optimistic Updates: Quando o usuário enviar uma mensagem ou editar uma issue, a interface deve atualizar instantaneamente, antes mesmo da resposta do servidor. Se der erro, reverte-se com um Toast de aviso.
+Surface: Vidro Fosco (bg-white/5 + backdrop-blur-xl).
 
-Code Splitting Agressivo: Garantir que bibliotecas pesadas (como gráficos ou editores de código) sejam carregadas via dynamic imports do Next.js apenas quando necessárias.
+Accent: Laranja (#F97316) para ações de escrita/criação (Prompts).
+
+Feedback: Azul (#3B82F6) para status de sistema e monitoramento (Workers).
+
+Interação: Inputs grandes, estilo terminal, para incentivar prompts naturais.
+
+🔵 5. Plano de Ação & Implementação
+Abaixo, apresento a implementação completa da página Automation Studio, já corrigindo os problemas de design e integrando com o seu backend de Workers.
+
+Passo 1: Atualizar Componente de Lista (Visual Glass + Status)
+Refatoração do ScheduleList para usar o visual Obsidian e tratar status.
+src/components/automation/ScheduleList.tsx
+6 de fev., 14:07
+
+Passo 2: Monitor de Recursos (HUD)
+Este componente conecta visualmente o usuário à infraestrutura (Redis/Celery).
+src/components/automation/TaskMonitor.tsx
+6 de fev., 14:07
+
+Abrir
+
+Passo 3: Página Principal (Dashboard de Automação)
+A página que orquestra tudo, implementando o layout Glass-Shell.
+src/app/settings/automation/page.tsx
+6 de fev., 14:07
+
+Abrir
+
+Resumo da Entrega
+Consistência: A página utiliza estritamente o sistema "Obsidian" (classes glass-panel, cores brand-*).
+
+Integração: Conecta-se diretamente aos endpoints de API do Scheduler e Celery.
+
+UX: Adiciona feedback visual (Toast, Loading Spinners, Status Bars) que faltava na análise inicial.

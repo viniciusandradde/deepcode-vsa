@@ -44,13 +44,19 @@ async def glpi_create_ticket(
         return {"error": result.error}
     return result.output
 
+# Fields the LLM actually needs (slim output saves ~3,000 tokens per call)
+_TICKET_SUMMARY_KEYS = {"id", "name", "status", "priority", "urgency", "date", "date_mod", "type"}
+
+
 @tool
 async def glpi_get_tickets(
     status: Optional[List[int]] = None,
     limit: int = 10
 ) -> dict:
-    """Get list of tickets from GLPI.
-    
+    """Busca tickets/chamados de suporte no GLPI (helpdesk).
+    Usar para: listar chamados abertos, novos, pendentes, buscar tickets por status.
+    Retorna: id, nome, status, prioridade, urgência, data de abertura.
+
     Args:
         status: Optional list of status IDs to filter (1=New, 2=Processing, etc.)
         limit: Max number of tickets to return (default 10)
@@ -62,16 +68,37 @@ async def glpi_get_tickets(
             status = [int(s.strip()) for s in status.split(",")]
         except:
             pass
-            
+
     result = await client.get_tickets(status, limit)
     if not result.success:
         return {"error": result.error}
-    return result.output
+
+    # Slim down ticket JSON to essential fields only (token optimization)
+    tickets = result.output.get("tickets", [])
+    slim_tickets = [
+        {k: v for k, v in t.items() if k in _TICKET_SUMMARY_KEYS}
+        for t in tickets
+    ]
+    return {"tickets": slim_tickets, "count": len(slim_tickets)}
+
+# Fields to drop from ticket details (bulky, zero value for LLM)
+_TICKET_DETAIL_DROP_KEYS = {
+    "links",                       # 16+ API URL objects (~2K chars)
+    "content",                     # HTML duplicate of name
+    "sla_waiting_duration", "ola_waiting_duration",
+    "waiting_duration", "close_delay_stat", "solve_delay_stat",
+    "takeintoaccount_delay_stat", "actiontime",
+    "begin_waiting_date", "slalevels_id_ttr",
+    "olalevels_id_ttr", "olalevels_id_tto",
+    "internal_time_to_resolve", "internal_time_to_own",
+    "time_to_own",
+}
+
 
 @tool
 async def glpi_get_ticket_details(ticket_id: int) -> dict:
-    """Get full details of a specific GLPI ticket.
-    
+    """Busca detalhes completos de um ticket GLPI específico.
+
     Args:
         ticket_id: The ID of the ticket
     """
@@ -79,4 +106,10 @@ async def glpi_get_ticket_details(ticket_id: int) -> dict:
     result = await client.get_ticket(ticket_id)
     if not result.success:
         return {"error": result.error}
+
+    # Strip bulky fields (links array with 16+ API URLs, HTML content)
+    ticket = result.output.get("ticket", result.output)
+    if isinstance(ticket, dict):
+        slim = {k: v for k, v in ticket.items() if k not in _TICKET_DETAIL_DROP_KEYS}
+        return {"ticket": slim}
     return result.output
