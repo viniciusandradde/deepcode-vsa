@@ -42,6 +42,18 @@ export async function createSchedule(payload: ScheduleCreateRequest): Promise<Sc
 }
 
 /**
+ * Get a specific scheduled job by ID
+ */
+export async function getSchedule(jobId: string): Promise<Schedule> {
+    const response = await fetch(`${API_BASE}/automation/schedule/${jobId}`);
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(error.detail || 'Failed to get schedule');
+    }
+    return response.json();
+}
+
+/**
  * Delete a scheduled job
  */
 export async function deleteSchedule(jobId: string): Promise<void> {

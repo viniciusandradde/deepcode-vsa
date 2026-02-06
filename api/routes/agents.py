@@ -40,8 +40,12 @@ async def invoke_agent(agent_id: str, request: AgentInvokeRequest):
             result = await agent.ainvoke(request.input, request.config)
             return AgentResponse(output=result, agent_id=agent_id)
         elif agent_id == "vsa":
-            from core.agents.vsa import VSAAgent
-            agent = VSAAgent(model_name="google/gemini-2.5-flash")
+            # VSAAgent foi migrado para UnifiedAgent com ITIL habilitado
+            agent = create_unified_agent(
+                model_name="google/gemini-2.5-flash",
+                enable_itil=True,
+                enable_planning=True,
+            )
             result = await agent.ainvoke(request.input, request.config)
             return AgentResponse(output=result, agent_id=agent_id)
         else:

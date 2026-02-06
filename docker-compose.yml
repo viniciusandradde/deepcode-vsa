@@ -139,6 +139,7 @@ services:
       - "5555:5555"
     environment:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      FLOWER_UNAUTHENTICATED_API: "true"
     depends_on:
       - redis
       - celery_worker

@@ -7,53 +7,87 @@ import type { Schedule } from '@/types/automation';
 
 /**
  * Converte expressão CRON para texto legível
+ * Suporta formato CRON padrão e formato APScheduler (ex: cron[month='*', ...])
  */
 function cronToHuman(cron: string): string {
-    // Formato: minuto hora dia mês dia_da_semana
-    // Também aceita formato APScheduler: cron[month='*', day='*', day_of_week='*', hour='9', minute='0']
+    // Formato APScheduler: cron[month='*', day='*', day_of_week='*', hour='9', minute='0']
+    if (cron.includes("cron[") || cron.includes("hour='") || cron.includes("minute='")) {
+        // Extrair valores usando regex mais específicos
+        const hourMatch = cron.match(/hour='([^']+)'/);
+        const minuteMatch = cron.match(/minute='([^']+)'/);
+        const dowMatch = cron.match(/day_of_week='([^']+)'/);
 
-    // Tentar extrair de formato APScheduler
-    const apMatch = cron.match(/hour='(\d+|\*)'.*minute='(\d+|\*)'/i);
-    if (apMatch) {
-        const hour = apMatch[1];
-        const minute = apMatch[2];
-
-        const dayMatch = cron.match(/day_of_week='([^']+)'/i);
-        const dow = dayMatch ? dayMatch[1] : '*';
+        const hour = hourMatch ? hourMatch[1] : '*';
+        const minute = minuteMatch ? minuteMatch[1] : '*';
+        const dow = dowMatch ? dowMatch[1] : '*';
 
         return formatSchedule(minute, hour, dow);
     }
 
-    // Formato CRON padrão
+    // Formato CRON padrão: minuto hora dia mês dia_da_semana
     const parts = cron.trim().split(/\s+/);
     if (parts.length >= 5) {
         const [minute, hour, , , dayOfWeek] = parts;
         return formatSchedule(minute, hour, dayOfWeek);
     }
 
-    return cron; // Fallback
+    // Fallback - tentar extrair qualquer padrão hora:minuto
+    const timeMatch = cron.match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+        return `Às ${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
+    }
+
+    return "Agendado"; // Fallback genérico
 }
 
 function formatSchedule(minute: string, hour: string, dayOfWeek: string): string {
     const dowNames: Record<string, string> = {
         '0': 'Dom', '1': 'Seg', '2': 'Ter', '3': 'Qua',
-        '4': 'Qui', '5': 'Sex', '6': 'Sáb', '*': ''
+        '4': 'Qui', '5': 'Sex', '6': 'Sáb',
+        'sun': 'Dom', 'mon': 'Seg', 'tue': 'Ter', 'wed': 'Qua',
+        'thu': 'Qui', 'fri': 'Sex', 'sat': 'Sáb',
+        '*': ''
     };
 
+    // Tratar intervalos como */5
+    if (minute.includes('/')) {
+        const interval = minute.split('/')[1];
+        return `A cada ${interval} min`;
+    }
+
+    if (hour.includes('/')) {
+        const interval = hour.split('/')[1];
+        return `A cada ${interval}h`;
+    }
+
+    // Formatar horário
     const time = hour !== '*' && minute !== '*'
         ? `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`
-        : 'A cada hora';
+        : hour !== '*'
+            ? `${hour.padStart(2, '0')}:00`
+            : 'A cada hora';
 
-    if (dayOfWeek === '*') {
+    // Se não tem dia da semana específico
+    if (dayOfWeek === '*' || dayOfWeek === '') {
+        if (time === 'A cada hora') return time;
         return `Diário às ${time}`;
     }
 
-    const dowParts = dayOfWeek.split(',').map(d => dowNames[d.trim()] || d);
-    if (dowParts.length === 1) {
+    // Mapear dia da semana
+    const dowParts = dayOfWeek.toLowerCase().split(',').map(d => {
+        const trimmed = d.trim();
+        return dowNames[trimmed] || trimmed;
+    });
+
+    if (dowParts.length === 1 && dowParts[0]) {
         return `${dowParts[0]} às ${time}`;
     }
 
-    return `${dowParts.join(', ')} às ${time}`;
+    if (dowParts.filter(Boolean).length > 0) {
+        return `${dowParts.filter(Boolean).join(', ')} às ${time}`;
+    }
+
+    return `Diário às ${time}`;
 }
 
 /**

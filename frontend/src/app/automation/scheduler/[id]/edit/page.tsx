@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { getSchedule } from '@/lib/api/scheduler';
 import { ScheduleForm } from '@/components/automation/ScheduleForm';
+import type { Schedule, ScheduleConfig } from '@/types/automation';
 
 export default function EditSchedulePage() {
     const params = useParams();
@@ -10,22 +12,70 @@ export default function EditSchedulePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [scheduleId, setScheduleId] = useState<string>('');
+    const [initialData, setInitialData] = useState<{
+        name: string;
+        prompt: string;
+        cron: string;
+        channel: ScheduleConfig['channel'];
+        targetId: string;
+    } | undefined>(undefined);
 
     useEffect(() => {
         const id = params.id as string;
-        if (id) {
-            setScheduleId(decodeURIComponent(id));
-            setLoading(false);
-        } else {
+        if (!id) {
             setError('ID do agendamento não encontrado');
             setLoading(false);
+            return;
         }
+
+        const decodedId = decodeURIComponent(id);
+        setScheduleId(decodedId);
+
+        // Carregar dados do agendamento
+        async function loadSchedule() {
+            try {
+                const schedule = await getSchedule(decodedId);
+
+                // Extrair expressão CRON do formato APScheduler se necessário
+                let cronExpression = schedule.cron;
+                if (cronExpression.includes("cron[")) {
+                    // Tentar converter de volta para CRON padrão
+                    const hourMatch = cronExpression.match(/hour='([^']+)'/);
+                    const minuteMatch = cronExpression.match(/minute='([^']+)'/);
+                    const dowMatch = cronExpression.match(/day_of_week='([^']+)'/);
+                    const dayMatch = cronExpression.match(/day='([^']+)'/);
+                    const monthMatch = cronExpression.match(/month='([^']+)'/);
+
+                    const minute = minuteMatch ? minuteMatch[1] : '*';
+                    const hour = hourMatch ? hourMatch[1] : '*';
+                    const day = dayMatch ? dayMatch[1] : '*';
+                    const month = monthMatch ? monthMatch[1] : '*';
+                    const dow = dowMatch ? dowMatch[1] : '*';
+
+                    cronExpression = `${minute} ${hour} ${day} ${month} ${dow}`;
+                }
+
+                setInitialData({
+                    name: schedule.name,
+                    prompt: schedule.prompt,
+                    cron: cronExpression,
+                    channel: schedule.config.channel,
+                    targetId: schedule.config.target_id,
+                });
+                setLoading(false);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Erro ao carregar agendamento');
+                setLoading(false);
+            }
+        }
+
+        loadSchedule();
     }, [params.id]);
 
     if (loading) {
         return (
             <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-                <div className="animate-pulse text-zinc-500">Carregando...</div>
+                <div className="animate-pulse text-zinc-500">Carregando agendamento...</div>
             </div>
         );
     }
@@ -61,7 +111,7 @@ export default function EditSchedulePage() {
                         ← Voltar
                     </button>
                     <h1 className="text-2xl font-bold text-zinc-100">✏️ Editar Agendamento</h1>
-                    <p className="text-zinc-500 mt-1 text-sm font-mono">{scheduleId}</p>
+                    <p className="text-zinc-500 mt-1 text-sm">{initialData?.name || scheduleId}</p>
                 </div>
 
                 {/* Form */}
@@ -69,6 +119,7 @@ export default function EditSchedulePage() {
                     <ScheduleForm
                         editMode
                         scheduleId={scheduleId}
+                        initialData={initialData}
                         onSuccess={() => router.push('/automation/scheduler')}
                     />
                 </div>
