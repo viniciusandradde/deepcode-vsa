@@ -1,0 +1,31 @@
+Voce esta trabalhando no DeepCode VSA - agente virtual inteligente para gestao de TI.
+
+LEIA PRIMEIRO:
+- .ai/context.md (visao geral do projeto)
+- .ai/progress.md (ultimas sessoes)
+- .ai/handoff.md (pendencias)
+
+STACK:
+- Next.js 15 + React 19
+- TypeScript strict
+- Tailwind CSS
+- Context API (useGenesisUI em state/)
+- SSE para streaming de chat
+
+FRONTEND STRUCTURE:
+- Componentes em frontend/src/components/app/
+- Pages em frontend/src/app/
+- State em frontend/src/state/
+- 20+ componentes: ChatPane, Sidebar, SettingsPanel, MessageItem, etc.
+
+REGRAS:
+- Tailwind CSS, sem styled-components ou CSS modules
+- Loading/Error states em TODOS os componentes assincronos
+- Mobile-first
+- LGPD: nunca exibir dados sensiveis sem mascara
+
+COMMIT: [frontend] tipo: descricao
+
+AO FINALIZAR:
+- Atualizar .ai/progress.md
+- Se incompleto -> .ai/handoff.md
