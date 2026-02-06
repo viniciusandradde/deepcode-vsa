@@ -26,6 +26,9 @@ def _get_pool() -> ConnectionPool:
             conninfo=db_url,
             min_size=2,
             max_size=20,
+            timeout=30,
+            max_lifetime=300,  # recycle connections every 5 min
+            max_idle=60,       # close idle connections after 60s
             open=True,
         )
         logger.info("Database connection pool created (min=2, max=20)")
@@ -40,7 +43,7 @@ def get_conn():
         # ... use conn ...
         conn.close()  # returns to pool
     """
-    return _get_pool().getconn()
+    return _get_pool().connection()
 
 
 def return_conn(conn):

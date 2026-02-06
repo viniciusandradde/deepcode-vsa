@@ -2,6 +2,7 @@
 
 import json
 import logging
+from contextlib import contextmanager
 from typing import Optional
 
 from langchain_core.tools import tool
@@ -12,11 +13,12 @@ from core.database import get_conn
 logger = logging.getLogger(__name__)
 
 
+@contextmanager
 def _get_conn_with_dict_row():
     """Get connection with dict row factory."""
-    conn = get_conn()
-    conn.row_factory = dict_row
-    return conn
+    with get_conn() as conn:
+        conn.row_factory = dict_row
+        yield conn
 
 
 @tool

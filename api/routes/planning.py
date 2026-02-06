@@ -41,11 +41,14 @@ router = APIRouter()
 # =============================================================================
 
 
+from contextlib import contextmanager
+
+@contextmanager
 def _get_conn_with_dict_row():
     """Get connection with dict row factory."""
-    conn = get_conn()
-    conn.row_factory = dict_row
-    return conn
+    with get_conn() as conn:
+        conn.row_factory = dict_row
+        yield conn
 
 
 def _resolve_embedding_model(model_id: Optional[str]) -> str:
@@ -347,9 +350,9 @@ async def upload_document(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Erro ao extrair texto: {e}")
 
-        # Save to database
-        with _get_conn_with_dict_row() as conn:
-            with conn.cursor() as cur:
+        # Save to database — use cursor-level row_factory for robustness
+        with get_conn() as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
                 # Check if project exists
                 cur.execute("SELECT id FROM planning_projects WHERE id = %s", (str(project_id),))
                 if not cur.fetchone():
@@ -404,6 +407,49 @@ async def delete_document(project_id: UUID, document_id: UUID):
     except Exception as e:
         logger.error(f"Error deleting document: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Erro ao excluir documento: {e}")
+
+
+@router.post("/projects/{project_id}/reingest")
+async def reingest_project_documents(project_id: UUID, background_tasks: BackgroundTasks):
+    """Re-trigger RAG ingestion for all documents in a project.
+
+    Use when documents were uploaded but chunking/embedding failed (e.g. pool exhaustion).
+    """
+    try:
+        with get_conn() as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(
+                    "SELECT id, file_name, content FROM planning_documents WHERE project_id = %s",
+                    (str(project_id),),
+                )
+                docs = cur.fetchall()
+
+        if not docs:
+            raise HTTPException(status_code=404, detail="Nenhum documento encontrado no projeto")
+
+        queued = 0
+        for doc in docs:
+            content_bytes = doc["content"].encode("utf-8") if doc["content"] else b""
+            if not content_bytes:
+                continue
+            background_tasks.add_task(
+                ingest_project_document_task,
+                project_id=project_id,
+                document_id=doc["id"],
+                content_bytes=content_bytes,
+                filename=doc["file_name"] or "doc",
+            )
+            queued += 1
+
+        return {
+            "message": f"Re-ingestão enfileirada para {queued} documento(s)",
+            "documents": queued,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error re-ingesting documents: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro na re-ingestão: {e}")
 
 
 # =============================================================================

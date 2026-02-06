@@ -111,3 +111,4 @@ def _upsert_planning_chunks(rows: list, project_id: UUID) -> None:
                         str(project_id),
                     ),
                 )
+        conn.commit()

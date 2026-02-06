@@ -135,8 +135,8 @@ async def health():
     try:
         from core.database import get_conn
 
-        conn = get_conn()
-        conn.close()
+        with get_conn() as conn:
+            conn.execute("SELECT 1")
         checks["checks"]["database"] = True
     except Exception:
         checks["checks"]["database"] = False

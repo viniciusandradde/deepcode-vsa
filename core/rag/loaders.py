@@ -80,6 +80,18 @@ def split_text(
                     "headers": split.metadata,
                 },
             })
+        # Fallback to fixed if markdown splitter produced no chunks
+        if not chunks:
+            resolved = "fixed"
+            fallback = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap,
+                separators=["\n\n", "\n", " ", ""],
+            )
+            for chunk_text in fallback.split_text(text):
+                chunks.append({
+                    "content": chunk_text,
+                    "meta": {"chunking": "fixed", "fallback_from": "markdown"},
+                })
     
     elif strategy == "semantic":
         if embedder is None:

@@ -133,10 +133,8 @@ async def list_threads() -> Dict[str, Any]:
     da lista (delete lógico), mas os dados permanecem para auditoria.
     """
     try:
-        conn = get_conn()
-        try:
+        with get_conn() as conn:
             with conn.cursor() as cur:
-                # Usa o timestamp dentro do JSON do checkpoint como last_ts
                 cur.execute(
                     """
                     SELECT
@@ -151,8 +149,6 @@ async def list_threads() -> Dict[str, Any]:
                     """
                 )
                 rows = cur.fetchall()
-        finally:
-            conn.close()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar threads: {e}")
 
@@ -200,21 +196,17 @@ async def delete_thread(thread_id: str):
     mas oculta a sessão da lista retornada em /api/v1/threads.
     """
     try:
-        conn = get_conn()
-        try:
-            # Usar contexto de transação para garantir COMMIT
-            with conn:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        """
-                        INSERT INTO archived_threads (thread_id)
-                        VALUES (%s)
-                        ON CONFLICT (thread_id) DO NOTHING
-                        """,
-                        (thread_id,),
-                    )
-        finally:
-            conn.close()
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO archived_threads (thread_id)
+                    VALUES (%s)
+                    ON CONFLICT (thread_id) DO NOTHING
+                    """,
+                    (thread_id,),
+                )
+            conn.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao arquivar thread {thread_id}: {e}")
 
