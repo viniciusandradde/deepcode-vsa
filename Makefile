@@ -201,9 +201,11 @@ queue-test:
 	@echo ""
 
 schedule-test:
+	@test -n "$$TELEGRAM_BOT_TOKEN" || (echo "Set TELEGRAM_BOT_TOKEN env var first" && exit 1)
+	@test -n "$$TELEGRAM_CHAT_ID" || (echo "Set TELEGRAM_CHAT_ID env var first" && exit 1)
 	@echo "Criando agendamento de teste (Universal Scheduler)..."
 	curl -X POST http://localhost:8000/api/v1/automation/schedule \
 	  -H "Content-Type: application/json" \
-	  -d '{"cron": "*/2 * * * *", "prompt": "Teste Agendado via Make", "name": "Healthcheck Make Schedule", "config": {"channel": "telegram", "target_id": "-1002700260795", "credentials": {"token": "7669622249:AAH6M5AHZiHDliih17g9Sj6-Oduu8CrDgcQ"}}, "enabled": true}'
+	  -d '{"cron": "*/2 * * * *", "prompt": "Teste Agendado via Make", "name": "Healthcheck Make Schedule", "config": {"channel": "telegram", "target_id": "'$$TELEGRAM_CHAT_ID'", "credentials": {"token": "'$$TELEGRAM_BOT_TOKEN'"}}, "enabled": true}'
 	@echo ""
-	@echo "✅ Agendamento criado! Verifique logs com 'make logs-backend' ou 'make logs-worker'"
+	@echo "Agendamento criado! Verifique logs com 'make logs-backend' ou 'make logs-worker'"

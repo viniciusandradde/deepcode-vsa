@@ -304,7 +304,6 @@ def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
         if include_examples:
             prompt = prompt + VSA_EXAMPLES_PROMPT
         return prompt + suffix
-        return f"Você é um assistente útil. Hoje é {data_atual} (fuso de São Paulo). Seja direto e preciso nas respostas."
 
 
 @router.post("", response_model=ChatResponse)

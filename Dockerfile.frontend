@@ -1,22 +1,21 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Definir variável de ambiente CI para pnpm
+# Definir variavel de ambiente CI para pnpm
 ENV CI=true
 
 # Instalar pnpm globalmente
 RUN npm install -g pnpm@10.26.0
 
-# Copiar todo o código do frontend primeiro
+# Copiar todo o codigo do frontend primeiro
 COPY frontend/ .
 
-# Instalar dependências com pnpm
+# Instalar dependencias com pnpm
 RUN pnpm install --frozen-lockfile || pnpm install
 
 # Expor porta
 EXPOSE 3000
 
-# Comando padrão (pode ser sobrescrito no docker-compose)
+# Comando padrao (pode ser sobrescrito no docker-compose)
 CMD ["pnpm", "run", "dev"]
-

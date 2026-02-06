@@ -1,3 +1,12 @@
+# Environment and secrets - CRITICAL
+.env
+.env.*
+!.env.example
+
+# Version control
+.git/
+.gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -11,6 +20,9 @@ env/
 *.egg-info/
 dist/
 build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # Node
 node_modules/
@@ -19,6 +31,7 @@ yarn-debug.log*
 yarn-error.log*
 .next/
 out/
+.pnpm-store/
 
 # IDEs
 .vscode/
@@ -26,15 +39,6 @@ out/
 *.swp
 *.swo
 *~
-
-# Git
-.git/
-.gitignore
-
-# Environment
-.env
-.env.local
-.env.*.local
 
 # Documentation
 *.md
@@ -50,6 +54,7 @@ Thumbs.db
 
 # Docker
 docker-compose.yml
+docker-compose.*.yml
 Dockerfile*
 .dockerignore
 
@@ -57,3 +62,12 @@ Dockerfile*
 scripts/
 Makefile
 
+# Claude/AI config (may contain cached credentials context)
+.claude/
+.agent/
+
+# Tests
+tests/
+
+# Temporary files
+tmp/

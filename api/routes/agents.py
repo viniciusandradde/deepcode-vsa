@@ -16,7 +16,6 @@ async def list_agents():
         "agents": [
             {"id": "simple", "name": "Simple Agent", "description": "Basic agent with dynamic tools"},
             {"id": "unified", "name": "Unified Agent", "description": "Combined agent with ITIL classification, GUT scoring, and multi-intent planning"},
-            {"id": "vsa", "name": "VSA Agent", "description": "Virtual Support Agent with ITIL methodology (legacy)"},
         ]
     }
 
@@ -30,17 +29,8 @@ async def invoke_agent(agent_id: str, request: AgentInvokeRequest):
             agent = create_simple_agent(model_name="google/gemini-2.5-flash")
             result = await agent.ainvoke(request.input, request.config)
             return AgentResponse(output=result, agent_id=agent_id)
-        elif agent_id == "unified":
+        elif agent_id in ("unified", "vsa"):
             from core.agents.unified import create_unified_agent
-            agent = create_unified_agent(
-                model_name="google/gemini-2.5-flash",
-                enable_itil=True,
-                enable_planning=True,
-            )
-            result = await agent.ainvoke(request.input, request.config)
-            return AgentResponse(output=result, agent_id=agent_id)
-        elif agent_id == "vsa":
-            # VSAAgent foi migrado para UnifiedAgent com ITIL habilitado
             agent = create_unified_agent(
                 model_name="google/gemini-2.5-flash",
                 enable_itil=True,
@@ -50,6 +40,7 @@ async def invoke_agent(agent_id: str, request: AgentInvokeRequest):
             return AgentResponse(output=result, agent_id=agent_id)
         else:
             raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent invocation error: {str(e)}")
-

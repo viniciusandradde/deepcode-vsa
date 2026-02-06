@@ -4,13 +4,32 @@ import withPWA from "next-pwa";
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
-  allowedDevOrigins: ["agente-ai.hospitalevangelico.com.br"],
+  allowedDevOrigins: [
+    process.env.ALLOWED_DEV_ORIGIN || "localhost",
+  ].filter(Boolean),
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost", "agente-ai.hospitalevangelico.com.br"],
+      allowedOrigins: [
+        "localhost",
+        process.env.ALLOWED_DEV_ORIGIN || "",
+      ].filter(Boolean),
     },
   },
-  // Proxy para API backend - necessário quando acessado via domínio/proxy reverso
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
+  // Proxy para API backend
   async rewrites() {
     const backendUrl = process.env.API_BASE_URL || "http://backend:8000";
     return [
@@ -20,11 +39,10 @@ const nextConfig = {
       },
     ];
   },
-  // Desabilitar cache em desenvolvimento para evitar problemas de módulos ausentes
+  // Desabilitar cache em desenvolvimento para evitar problemas de modulos ausentes
   ...(process.env.NODE_ENV === "development" && {
     webpack: (config, { dev, isServer }) => {
       if (dev) {
-        // Desabilitar cache do webpack em desenvolvimento
         config.cache = false;
       }
       return config;
@@ -38,5 +56,3 @@ export default withPWA({
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
 })(nextConfig);
-
-

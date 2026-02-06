@@ -133,11 +133,20 @@ async def generate_linear_report(
     try:
         logger.info(f"[Task {self.request.id}] Gerando relatório Linear: {project_id}")
         
-        from core.reports.linear import LinearReportGenerator
+        from core.reports.linear import format_linear_report
+        from core.integrations.linear_client import LinearClient
         from core.notifications import notification_service
-        
-        generator = LinearReportGenerator()
-        report = await generator.generate_report(project_id, format=format)
+        from core.config import get_settings
+
+        settings = get_settings()
+        client = LinearClient(api_key=settings.linear.api_key)
+        try:
+            result = await client.get_issues(limit=50)
+            if not result.success:
+                raise Exception(f"Failed to fetch Linear issues: {result.error}")
+            report = format_linear_report(result.output)
+        finally:
+            await client.close()
         
         logger.info(f"[Task {self.request.id}] ✅ Relatório gerado")
         

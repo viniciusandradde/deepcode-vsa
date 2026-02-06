@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { apiBaseUrl } from "@/lib/config";
 
@@ -28,7 +29,7 @@ export async function POST() {
   try {
     // Cria uma nova thread/sessão
     // Gera um ID único para a sessão
-    const threadId = `thread-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const threadId = `thread-${Date.now()}-${randomUUID().slice(0, 12)}`;
     
     return NextResponse.json({ 
       thread_id: threadId,

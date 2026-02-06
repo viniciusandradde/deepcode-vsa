@@ -84,7 +84,7 @@ class DatabaseSettings(BaseSettings):
     port: int = Field(default=5432)
     database: str = Field(default="deepcode_vsa", validation_alias=AliasChoices("DB_DATABASE", "DB_NAME"))
     user: str = Field(default="postgres")
-    password: str = Field(default="deepcode")
+    password: str = Field(default="")
 
     @property
     def connection_string(self) -> str:

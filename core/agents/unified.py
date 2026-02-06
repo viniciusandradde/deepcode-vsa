@@ -691,10 +691,6 @@ Foque em atendimento rápido e padronizado.
             dbg(f"Report format failed: {e}")
             return None
 
-    from langchain_core.runnables import RunnableConfig
-
-    # ... (imports)
-
     def _executor_node(self, state: UnifiedAgentState, config: RunnableConfig) -> Dict[str, Any]:
         """Execute actions using tools."""
         dbg("Executor node executing...")
@@ -764,17 +760,6 @@ Foque em atendimento rápido e padronizado.
             return "executor"
         else:
             return "executor"
-    
-    def _route_after_executor(self, state: UnifiedAgentState) -> str:
-        """Decide where to go after execution."""
-        messages = state.get("messages", [])
-        
-        if messages:
-            last_message = messages[-1]
-            if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-                return "tools"
-        
-        return "responder"
     
     # --- Public Interface ---
     

@@ -2,27 +2,31 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Instalar dependências do sistema
+# Instalar dependencias do sistema
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar arquivos de dependências
+# Copiar arquivos de dependencias
 COPY requirements.txt /app/
 COPY backend/requirements.txt /app/backend-requirements.txt
 
-# Instalar dependências Python
+# Instalar dependencias Python
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r backend-requirements.txt
 
-# Copiar código da aplicação
-COPY . /app/
+# Copiar codigo da aplicacao (respects .dockerignore)
+COPY core/ /app/core/
+COPY api/ /app/api/
+COPY backend/ /app/backend/
+COPY sql/ /app/sql/
+COPY scripts/ /app/scripts/
+COPY models.yaml /app/models.yaml
 
 # Expor porta
 EXPOSE 8000
 
-# Comando padrão (pode ser sobrescrito no docker-compose)
+# Comando padrao (pode ser sobrescrito no docker-compose)
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-

@@ -1,42 +1,57 @@
-"""Database utilities for PostgreSQL connection."""
+"""Database utilities for PostgreSQL connection with connection pooling."""
 
-import os
+import logging
+
 import psycopg
-from dotenv import load_dotenv
+from psycopg_pool import ConnectionPool
 
+from core.config import get_settings
 
-load_dotenv()
+logger = logging.getLogger(__name__)
+
+_pool: ConnectionPool | None = None
 
 
 def get_db_url() -> str:
-    """Build PostgreSQL connection URL from environment variables.
-    
-    Returns:
-        PostgreSQL connection string
-        
-    Raises:
-        RuntimeError: If required environment variables are missing
-    """
-    user = os.getenv("DB_USER")
-    pwd = os.getenv("DB_PASSWORD")
-    host = os.getenv("DB_HOST")
-    port = os.getenv("DB_PORT", "5432")
-    name = os.getenv("DB_NAME")
-    
-    if not all([user, pwd, host, name]):
-        raise RuntimeError(
-            "Defina DB_USER, DB_PASSWORD, DB_HOST, DB_NAME e opcionalmente DB_PORT/DB_SSLMODE"
+    """Build PostgreSQL connection URL from settings (with URL-encoded password)."""
+    return get_settings().database.connection_string
+
+
+def _get_pool() -> ConnectionPool:
+    """Get or create the connection pool (lazy singleton)."""
+    global _pool
+    if _pool is None:
+        db_url = get_db_url()
+        _pool = ConnectionPool(
+            conninfo=db_url,
+            min_size=2,
+            max_size=20,
+            open=True,
         )
-    
-    sslmode = os.getenv("DB_SSLMODE", "require")
-    return f"postgresql://{user}:{pwd}@{host}:{port}/{name}?sslmode={sslmode}"
+        logger.info("Database connection pool created (min=2, max=20)")
+    return _pool
 
 
 def get_conn():
-    """Get PostgreSQL connection.
-    
-    Returns:
-        psycopg connection object
-    """
-    return psycopg.connect(get_db_url())
+    """Get PostgreSQL connection from pool.
 
+    Returns a context-managed connection. Usage:
+        conn = get_conn()
+        # ... use conn ...
+        conn.close()  # returns to pool
+    """
+    return _get_pool().getconn()
+
+
+def return_conn(conn):
+    """Return a connection to the pool."""
+    _get_pool().putconn(conn)
+
+
+def close_pool():
+    """Close the connection pool. Call during shutdown."""
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+        logger.info("Database connection pool closed")

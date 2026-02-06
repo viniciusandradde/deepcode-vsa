@@ -1,55 +1,21 @@
 """Linear.app GraphQL API Client.
 
 Reference: https://developers.linear.app/docs/graphql/working-with-the-graphql-api
+
+All mutations use GraphQL variables to prevent injection attacks.
 """
 
 import httpx
 from typing import Any, Optional, List
-from ..config import get_settings
 
-
-class ToolResult:
-    """Simple result wrapper."""
-    def __init__(self, success: bool, output: dict | str, operation: str, error: str | None = None):
-        self.success = success
-        self.output = output
-        self.operation = operation
-        self.error = error
-
-    @classmethod
-    def ok(cls, output, operation):
-        return cls(True, output, operation)
-
-    @classmethod
-    def fail(cls, error, operation):
-        return cls(False, {}, operation, error)
-
-
-def _escape_graphql_string(s: str) -> str:
-    """Escape string para uso em query GraphQL.
-    
-    Escapa caracteres especiais que quebram a sintaxe GraphQL:
-    - Barras invertidas (\\)
-    - Aspas duplas (")
-    - Quebras de linha (\\n, \\r)
-    - Tabs (\\t)
-    """
-    if not s:
-        return ""
-    return (
-        s.replace("\\", "\\\\")  # barra invertida primeiro
-         .replace('"', '\\"')    # aspas duplas
-         .replace("\n", "\\n")   # quebra de linha
-         .replace("\r", "\\r")   # carriage return
-         .replace("\t", "\\t")   # tab
-    )
+from .tool_result import ToolResult
 
 
 class LinearClient:
     """Linear.app GraphQL API client.
 
     Implements issue management, project tracking, and team operations.
-    Uses GraphQL for all API calls.
+    Uses GraphQL with parameterized variables for all API calls.
     """
 
     def __init__(self, api_key: str):
@@ -122,27 +88,34 @@ class LinearClient:
         limit: int = 10,
         assignee_id: Optional[str] = None,
     ) -> ToolResult:
-        """Get issues from Linear.
-
-        Args:
-            team_id: Filter by team ID
-            state: Filter by state name (e.g., "In Progress", "Backlog")
-            limit: Max results
-            assignee_id: Filter by assignee user ID
-        """
-        # Build filter object
+        """Get issues from Linear."""
         filter_parts = []
+        variables: dict[str, Any] = {}
+
         if team_id:
-            filter_parts.append(f'team: {{ id: {{ eq: "{team_id}" }} }}')
+            filter_parts.append('team: { id: { eq: $teamId } }')
+            variables["teamId"] = team_id
         if state:
-            filter_parts.append(f'state: {{ name: {{ eq: "{state}" }} }}')
+            filter_parts.append('state: { name: { eq: $stateName } }')
+            variables["stateName"] = state
         if assignee_id:
-            filter_parts.append(f'assignee: {{ id: {{ eq: "{assignee_id}" }} }}')
+            filter_parts.append('assignee: { id: { eq: $assigneeId } }')
+            variables["assigneeId"] = assignee_id
+
+        # Build variable declarations for the query
+        var_decls = []
+        if team_id:
+            var_decls.append("$teamId: String!")
+        if state:
+            var_decls.append("$stateName: String!")
+        if assignee_id:
+            var_decls.append("$assigneeId: String!")
 
         filter_str = ", ".join(filter_parts) if filter_parts else ""
+        var_decl_str = f"({', '.join(var_decls)})" if var_decls else ""
 
         query = f"""
-        query {{
+        query {var_decl_str} {{
           issues(
             first: {limit}
             {f'filter: {{ {filter_str} }}' if filter_str else ''}
@@ -176,7 +149,7 @@ class LinearClient:
         }}
         """
 
-        result = await self._graphql_query(query)
+        result = await self._graphql_query(query, variables if variables else None)
 
         if not result.success:
             return result
@@ -193,104 +166,53 @@ class LinearClient:
 
     async def get_issue(self, issue_id: str) -> ToolResult:
         """Get single issue details by ID or identifier (e.g., 'ENG-123')."""
-
-        # Determine if it's an ID (UUID) or identifier (PROJECT-123)
-        if "-" in issue_id and not issue_id.count("-") > 4:
-            # Likely an identifier like ENG-123
-            query = f"""
-            query {{
-              issue(id: "{issue_id}") {{
+        query = """
+        query($issueId: String!) {
+          issue(id: $issueId) {
+            id
+            identifier
+            title
+            description
+            priority
+            priorityLabel
+            state {
+              name
+              type
+            }
+            assignee {
+              id
+              name
+              email
+            }
+            team {
+              id
+              name
+              key
+            }
+            labels {
+              nodes {
                 id
-                identifier
-                title
-                description
-                priority
-                priorityLabel
-                state {{
-                  name
-                  type
-                }}
-                assignee {{
-                  id
-                  name
-                  email
-                }}
-                team {{
-                  id
-                  name
-                  key
-                }}
-                labels {{
-                  nodes {{
-                    id
-                    name
-                  }}
-                }}
-                comments {{
-                  nodes {{
-                    id
-                    body
-                    user {{
-                      name
-                    }}
-                    createdAt
-                  }}
-                }}
-                createdAt
-                updatedAt
-                url
-              }}
-            }}
-            """
-        else:
-            # It's a UUID
-            query = f"""
-            query {{
-              issue(id: "{issue_id}") {{
+                name
+              }
+            }
+            comments {
+              nodes {
                 id
-                identifier
-                title
-                description
-                priority
-                priorityLabel
-                state {{
+                body
+                user {
                   name
-                  type
-                }}
-                assignee {{
-                  id
-                  name
-                  email
-                }}
-                team {{
-                  id
-                  name
-                  key
-                }}
-                labels {{
-                  nodes {{
-                    id
-                    name
-                  }}
-                }}
-                comments {{
-                  nodes {{
-                    id
-                    body
-                    user {{
-                      name
-                    }}
-                    createdAt
-                  }}
-                }}
+                }
                 createdAt
-                updatedAt
-                url
-              }}
-            }}
-            """
+              }
+            }
+            createdAt
+            updatedAt
+            url
+          }
+        }
+        """
 
-        result = await self._graphql_query(query)
+        result = await self._graphql_query(query, {"issueId": issue_id})
 
         if not result.success:
             return result
@@ -319,37 +241,7 @@ class LinearClient:
         label_ids: Optional[List[str]] = None,
         dry_run: bool = True
     ) -> ToolResult:
-        """Create a new issue in Linear.
-
-        Args:
-            team_id: Team ID where issue will be created
-            title: Issue title
-            description: Issue description (supports Markdown)
-            priority: Priority (0=No priority, 1=Urgent, 2=High, 3=Normal, 4=Low)
-            state_id: Optional workflow state ID
-            assignee_id: Optional user ID to assign
-            label_ids: Optional list of label IDs
-            dry_run: If True, simulate without creating
-        """
-        # Build input object (escape strings para evitar erro de sintaxe GraphQL)
-        input_parts = [
-            f'teamId: "{team_id}"',
-            f'title: "{_escape_graphql_string(title)}"',
-            f'description: "{_escape_graphql_string(description)}"',
-            f'priority: {priority}'
-        ]
-
-        if state_id:
-            input_parts.append(f'stateId: "{state_id}"')
-        if assignee_id:
-            input_parts.append(f'assigneeId: "{assignee_id}"')
-        if label_ids:
-            label_ids_str = ", ".join([f'"{lid}"' for lid in label_ids])
-            input_parts.append(f'labelIds: [{label_ids_str}]')
-
-        input_str = ", ".join(input_parts)
-
-        # Dry run - return preview
+        """Create a new issue in Linear using GraphQL variables."""
         if dry_run:
             return ToolResult.ok(
                 {
@@ -368,9 +260,45 @@ class LinearClient:
                 operation="create_issue"
             )
 
+        variables: dict[str, Any] = {
+            "teamId": team_id,
+            "title": title,
+            "description": description,
+            "priority": priority,
+        }
+        if state_id:
+            variables["stateId"] = state_id
+        if assignee_id:
+            variables["assigneeId"] = assignee_id
+        if label_ids:
+            variables["labelIds"] = label_ids
+
+        # Build variable declarations
+        var_decls = [
+            "$teamId: String!",
+            "$title: String!",
+            "$description: String!",
+            "$priority: Int!",
+        ]
+        input_fields = [
+            "teamId: $teamId",
+            "title: $title",
+            "description: $description",
+            "priority: $priority",
+        ]
+        if state_id:
+            var_decls.append("$stateId: String!")
+            input_fields.append("stateId: $stateId")
+        if assignee_id:
+            var_decls.append("$assigneeId: String!")
+            input_fields.append("assigneeId: $assigneeId")
+        if label_ids:
+            var_decls.append("$labelIds: [String!]!")
+            input_fields.append("labelIds: $labelIds")
+
         mutation = f"""
-        mutation {{
-          issueCreate(input: {{ {input_str} }}) {{
+        mutation({', '.join(var_decls)}) {{
+          issueCreate(input: {{ {', '.join(input_fields)} }}) {{
             success
             issue {{
               id
@@ -382,7 +310,7 @@ class LinearClient:
         }}
         """
 
-        result = await self._graphql_query(mutation)
+        result = await self._graphql_query(mutation, variables)
 
         if not result.success:
             return result
@@ -436,23 +364,23 @@ class LinearClient:
 
     async def get_workflow_states(self, team_id: str) -> ToolResult:
         """Get workflow states for a team."""
-        query = f"""
-        query {{
-          team(id: "{team_id}") {{
-            states {{
-              nodes {{
+        query = """
+        query($teamId: String!) {
+          team(id: $teamId) {
+            states {
+              nodes {
                 id
                 name
                 type
                 color
                 description
-              }}
-            }}
-          }}
-        }}
+              }
+            }
+          }
+        }
         """
 
-        result = await self._graphql_query(query)
+        result = await self._graphql_query(query, {"teamId": team_id})
 
         if not result.success:
             return result
@@ -470,13 +398,7 @@ class LinearClient:
         body: str,
         dry_run: bool = True
     ) -> ToolResult:
-        """Add a comment to an issue.
-
-        Args:
-            issue_id: Issue ID
-            body: Comment text (supports Markdown)
-            dry_run: If True, simulate without creating
-        """
+        """Add a comment to an issue using GraphQL variables."""
         if dry_run:
             return ToolResult.ok(
                 {
@@ -490,23 +412,23 @@ class LinearClient:
                 operation="add_comment"
             )
 
-        mutation = f"""
-        mutation {{
-          commentCreate(input: {{
-            issueId: "{issue_id}"
-            body: "{_escape_graphql_string(body)}"
-          }}) {{
+        mutation = """
+        mutation($issueId: String!, $body: String!) {
+          commentCreate(input: {
+            issueId: $issueId
+            body: $body
+          }) {
             success
-            comment {{
+            comment {
               id
               body
               createdAt
-            }}
-          }}
-        }}
+            }
+          }
+        }
         """
 
-        result = await self._graphql_query(mutation)
+        result = await self._graphql_query(mutation, {"issueId": issue_id, "body": body})
 
         if not result.success:
             return result
@@ -538,18 +460,7 @@ class LinearClient:
         priority: int = 0,
         dry_run: bool = True
     ) -> ToolResult:
-        """Create a project in Linear.
-
-        Args:
-            team_id: Team ID where project will be created
-            name: Project name
-            description: Project description (Markdown)
-            summary: Short summary (max 255 chars)
-            start_date: Start date (YYYY-MM-DD)
-            target_date: Target date (YYYY-MM-DD)
-            priority: 0=None, 1=Urgent, 2=High, 3=Medium, 4=Low
-            dry_run: If True, simulate without creating
-        """
+        """Create a project in Linear using GraphQL variables."""
         if dry_run:
             return ToolResult.ok(
                 {
@@ -568,25 +479,43 @@ class LinearClient:
                 operation="create_project"
             )
 
-        input_parts = [
-            f'teamIds: ["{team_id}"]',
-            f'name: "{_escape_graphql_string(name)}"',
+        variables: dict[str, Any] = {
+            "teamIds": [team_id],
+            "name": name,
+        }
+        var_decls = [
+            "$teamIds: [String!]!",
+            "$name: String!",
         ]
-        if description:
-            input_parts.append(f'description: "{_escape_graphql_string(description)}"')
-        if summary:
-            input_parts.append(f'summary: "{_escape_graphql_string(summary[:255])}"')
-        if start_date:
-            input_parts.append(f'startDate: "{start_date}"')
-        if target_date:
-            input_parts.append(f'targetDate: "{target_date}"')
-        if priority is not None and priority >= 0:
-            input_parts.append(f"priority: {priority}")
+        input_fields = [
+            "teamIds: $teamIds",
+            "name: $name",
+        ]
 
-        input_str = ", ".join(input_parts)
+        if description:
+            variables["description"] = description
+            var_decls.append("$description: String")
+            input_fields.append("description: $description")
+        if summary:
+            variables["summary"] = summary[:255]
+            var_decls.append("$summary: String")
+            input_fields.append("summary: $summary")
+        if start_date:
+            variables["startDate"] = start_date
+            var_decls.append("$startDate: TimelessDate")
+            input_fields.append("startDate: $startDate")
+        if target_date:
+            variables["targetDate"] = target_date
+            var_decls.append("$targetDate: TimelessDate")
+            input_fields.append("targetDate: $targetDate")
+        if priority is not None and priority >= 0:
+            variables["priority"] = priority
+            var_decls.append("$priority: Int")
+            input_fields.append("priority: $priority")
+
         mutation = f"""
-        mutation {{
-          projectCreate(input: {{ {input_str} }}) {{
+        mutation({', '.join(var_decls)}) {{
+          projectCreate(input: {{ {', '.join(input_fields)} }}) {{
             success
             project {{
               id
@@ -597,7 +526,7 @@ class LinearClient:
           }}
         }}
         """
-        result = await self._graphql_query(mutation)
+        result = await self._graphql_query(mutation, variables)
         if not result.success:
             return result
 
@@ -624,15 +553,7 @@ class LinearClient:
         description: str = "",
         dry_run: bool = True
     ) -> ToolResult:
-        """Create a milestone in a Linear project.
-
-        Args:
-            project_id: Project ID
-            name: Milestone name
-            target_date: Target date (YYYY-MM-DD)
-            description: Optional description
-            dry_run: If True, simulate without creating
-        """
+        """Create a milestone in a Linear project using GraphQL variables."""
         if dry_run:
             return ToolResult.ok(
                 {
@@ -648,19 +569,25 @@ class LinearClient:
                 operation="create_project_milestone"
             )
 
-        input_parts = [
-            f'projectId: "{project_id}"',
-            f'name: "{_escape_graphql_string(name)}"',
-        ]
-        if target_date:
-            input_parts.append(f'targetDate: "{target_date}"')
-        if description:
-            input_parts.append(f'description: "{_escape_graphql_string(description)}"')
+        variables: dict[str, Any] = {
+            "projectId": project_id,
+            "name": name,
+        }
+        var_decls = ["$projectId: String!", "$name: String!"]
+        input_fields = ["projectId: $projectId", "name: $name"]
 
-        input_str = ", ".join(input_parts)
+        if target_date:
+            variables["targetDate"] = target_date
+            var_decls.append("$targetDate: TimelessDate")
+            input_fields.append("targetDate: $targetDate")
+        if description:
+            variables["description"] = description
+            var_decls.append("$description: String")
+            input_fields.append("description: $description")
+
         mutation = f"""
-        mutation {{
-          projectMilestoneCreate(input: {{ {input_str} }}) {{
+        mutation({', '.join(var_decls)}) {{
+          projectMilestoneCreate(input: {{ {', '.join(input_fields)} }}) {{
             success
             projectMilestone {{
               id
@@ -670,7 +597,7 @@ class LinearClient:
           }}
         }}
         """
-        result = await self._graphql_query(mutation)
+        result = await self._graphql_query(mutation, variables)
         if not result.success:
             return result
 
@@ -698,13 +625,7 @@ class LinearClient:
         plan: dict,
         dry_run: bool = True
     ) -> ToolResult:
-        """Create project with milestones and tasks (issues).
-
-        Args:
-            team_id: Team ID
-            plan: Dict with keys project, milestones, tasks (see plan structure)
-            dry_run: If True, return preview only
-        """
+        """Create project with milestones and tasks (issues)."""
         proj = (plan.get("project") or {}).copy()
         milestones = plan.get("milestones") or []
         tasks = plan.get("tasks") or []
@@ -732,21 +653,14 @@ class LinearClient:
             )
 
         # 1. Create project
-        name = proj.get("name") or "Novo Projeto"
-        description = proj.get("description") or ""
-        summary = proj.get("summary") or ""
-        start_date = proj.get("startDate") or None
-        target_date = proj.get("targetDate") or None
-        priority = proj.get("priority", 0)
-
         res = await self.create_project(
             team_id=team_id,
-            name=name,
-            description=description,
-            summary=summary,
-            start_date=start_date,
-            target_date=target_date,
-            priority=priority,
+            name=proj.get("name") or "Novo Projeto",
+            description=proj.get("description") or "",
+            summary=proj.get("summary") or "",
+            start_date=proj.get("startDate") or None,
+            target_date=proj.get("targetDate") or None,
+            priority=proj.get("priority", 0),
             dry_run=False
         )
         if not res.success:
@@ -759,13 +673,11 @@ class LinearClient:
         milestone_name_to_id: dict[str, str] = {}
         for m in milestones:
             m_name = m.get("name") or ""
-            m_target = m.get("targetDate") or None
-            m_desc = m.get("description") or ""
             m_res = await self.create_project_milestone(
                 project_id=project_id,
                 name=m_name,
-                target_date=m_target,
-                description=m_desc,
+                target_date=m.get("targetDate") or None,
+                description=m.get("description") or "",
                 dry_run=False
             )
             if not m_res.success:
@@ -777,19 +689,15 @@ class LinearClient:
             if mid:
                 milestone_name_to_id[m_name] = mid
 
-        # 3. Create issues (tasks) and link to project (and optional milestone)
+        # 3. Create issues (tasks) and link to project
         created_issues = []
         for t in tasks:
             title = t.get("title") or "Tarefa"
-            t_desc = t.get("description") or ""
-            t_priority = t.get("priority", 3)
-            t_milestone_name = t.get("milestone")
-
             issue_res = await self.create_issue(
                 team_id=team_id,
                 title=title,
-                description=t_desc,
-                priority=t_priority,
+                description=t.get("description") or "",
+                priority=t.get("priority", 3),
                 dry_run=False
             )
             if not issue_res.success:
@@ -800,25 +708,35 @@ class LinearClient:
             issue_id = issue_res.output.get("issue_id")
             if not issue_id:
                 continue
-            created_issues.append({"title": title, "issue_id": issue_id, "identifier": issue_res.output.get("identifier")})
+            created_issues.append({
+                "title": title,
+                "issue_id": issue_id,
+                "identifier": issue_res.output.get("identifier"),
+            })
 
-            # Link issue to project (issueUpdate with projectId)
-            if project_id and issue_id:
-                update_input = f'id: "{issue_id}", projectId: "{project_id}"'
-                if t_milestone_name and milestone_name_to_id.get(t_milestone_name):
-                    mid = milestone_name_to_id[t_milestone_name]
-                    update_input += f', projectMilestoneId: "{mid}"'
-                update_mutation = f"""
-                mutation {{
-                  issueUpdate(input: {{ {update_input} }}) {{
-                    success
-                    issue {{ id identifier }}
-                  }}
-                }}
-                """
-                upd_res = await self._graphql_query(update_mutation)
-                if not upd_res.success:
-                    pass  # non-fatal: issue exists but not linked to project
+            # Link issue to project using GraphQL variables
+            t_milestone_name = t.get("milestone")
+            variables: dict[str, Any] = {
+                "issueId": issue_id,
+                "projectId": project_id,
+            }
+            var_decls = ["$issueId: String!", "$projectId: String!"]
+            input_fields = ["id: $issueId", "projectId: $projectId"]
+
+            if t_milestone_name and milestone_name_to_id.get(t_milestone_name):
+                variables["milestoneId"] = milestone_name_to_id[t_milestone_name]
+                var_decls.append("$milestoneId: String!")
+                input_fields.append("projectMilestoneId: $milestoneId")
+
+            update_mutation = f"""
+            mutation({', '.join(var_decls)}) {{
+              issueUpdate(input: {{ {', '.join(input_fields)} }}) {{
+                success
+                issue {{ id identifier }}
+              }}
+            }}
+            """
+            await self._graphql_query(update_mutation, variables)
 
         return ToolResult.ok(
             {
