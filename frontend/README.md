@@ -28,7 +28,13 @@ frontend/
 │   │   │   └── Sidebar.tsx       # Sidebar com configurações
 │   │   └── ui/                    # Componentes UI básicos
 │   ├── state/
-│   │   └── useGenesisUI.tsx      # State management
+│   │   ├── types.ts              # Shared types
+│   │   ├── error-utils.ts        # API error translation
+│   │   ├── use-local-storage-state.ts # localStorage hook
+│   │   ├── config-context.tsx    # Models & integration toggles
+│   │   ├── session-context.tsx   # Session CRUD
+│   │   ├── chat-context.tsx      # Messages & streaming
+│   │   └── useGenesisUI.tsx      # Facade hook (backward-compat)
 │   └── lib/
 │       └── config.ts              # Configuração de URLs
 ├── package.json
@@ -78,13 +84,16 @@ Sidebar com:
 - Lista de sessões ativas
 - Criação de novas sessões
 
-### useGenesisUI
+### State Management (split contexts)
 
-Hook de state management que fornece:
-- Gerenciamento de sessões
-- Mensagens por sessão
-- Configuração de modelo e ferramentas
-- Funções de envio de mensagens
+O estado do frontend foi refatorado de um monolito (1239 linhas) para 3 contextos focados:
+
+- **ConfigContext** (`config-context.tsx`) — Modelos LLM, toggles de integracao (GLPI, Zabbix, Linear, etc.)
+- **SessionContext** (`session-context.tsx`) — CRUD de sessoes, navegacao entre sessoes
+- **ChatContext** (`chat-context.tsx`) — Mensagens, streaming SSE, envio/edicao/reenvio
+
+O hook `useGenesisUI()` continua disponivel como facade backward-compatible que compoe os 3 contextos.
+Componentes podem opcionalmente usar `useConfig()`, `useSession()` ou `useChat()` diretamente para re-renders mais granulares.
 
 ## Integração com API
 

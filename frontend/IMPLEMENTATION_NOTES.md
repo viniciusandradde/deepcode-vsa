@@ -12,7 +12,8 @@
 
 **Frontend:**
 - Rota Next.js `/api/threads/[threadId]/messages/stream`
-- Integração no `useGenesisUI` hook
+- Streaming integrado no `ChatContext` (`chat-context.tsx`)
+- Facade backward-compatible via `useGenesisUI()` hook
 - Atualização em tempo real durante streaming
 - Fallback automático para modo não-streaming
 

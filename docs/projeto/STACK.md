@@ -92,9 +92,12 @@ template-vsa-tech/
 │         │                │                                       │
 │         └────────┬───────┘                                       │
 │                  ▼                                               │
-│         ┌───────────────┐                                        │
-│         │ useGenesisUI  │ (Context API + localStorage)          │
-│         └───────┬───────┘                                        │
+│    ┌────────────────────────────────────────┐                     │
+│    │ useGenesisUI (facade)                  │                     │
+│    │  ├─ ConfigContext  (models, toggles)   │                     │
+│    │  ├─ SessionContext (sessions CRUD)     │                     │
+│    │  └─ ChatContext    (messages, SSE)     │                     │
+│    └────────────────┬───────────────────────┘                     │
 └─────────────────┼───────────────────────────────────────────────┘
                   │ HTTP/SSE
                   ▼
@@ -1967,78 +1970,55 @@ frontend/src/
 ├── hooks/
 │   ├── useAudioRecorder.ts
 │   └── useToast.ts
-├── state/
-│   └── useGenesisUI.tsx    # Main state management
+├── state/                     # Split domain contexts (refactored)
+│   ├── types.ts               # Shared types
+│   ├── error-utils.ts         # API error translation
+│   ├── use-local-storage-state.ts # localStorage hook
+│   ├── config-context.tsx     # ConfigContext (models, toggles)
+│   ├── session-context.tsx    # SessionContext (session CRUD)
+│   ├── chat-context.tsx       # ChatContext (messages, streaming)
+│   └── useGenesisUI.tsx       # Facade hook (~70 lines)
 └── lib/
     ├── config.ts           # Configuration
     └── storage.ts          # LocalStorage utilities
 ```
 
-### 8.2 State Management (state/useGenesisUI.tsx)
+### 8.2 State Management (Split Domain Contexts)
 
+The frontend state was refactored from a 1239-line monolithic context into 3 focused domain contexts:
+
+**Provider nesting order:**
+```
+GenesisUIProvider (facade)
+  └─ ConfigProvider    (models, toggles — no deps)
+       └─ SessionProvider  (sessions — no deps on Config)
+             └─ ChatProvider   (messages, streaming — reads Config + Session)
+                   └─ {children}
+```
+
+**Contexts:**
+- `ConfigContext` (`config-context.tsx`): Models, selectedModelId, useTavily, enable* toggles
+- `SessionContext` (`session-context.tsx`): Sessions CRUD, currentSessionId, fetchSession
+- `ChatContext` (`chat-context.tsx`): Messages, streaming SSE, send/edit/resend/cancel
+
+**Facade (backward-compatible):**
 ```typescript
-"use client"
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
-import { storage, StoredSession, StoredMessage } from "@/lib/storage"
-import { clientApiBaseUrl } from "@/lib/config"
-
-// Types
-type Role = "user" | "assistant"
-
-export interface GenesisMessage {
-  id: string
-  role: Role
-  content: string
-  timestamp: number
-  modelId?: string
-  usedTavily?: boolean
-  editedAt?: number
+// useGenesisUI.tsx (~70 lines)
+export function useGenesisUI() {
+  const config = useConfig();
+  const session = useSession();
+  const chat = useChat();
+  return { ...config, ...session, ...chat };
 }
+```
 
-export interface GenesisSession {
-  id: string
-  title: string
-  createdAt: number
-}
-
-export interface ModelOption {
-  id: string
-  label: string
-  inputCost: number
-  outputCost: number
-}
-
-interface GenesisUIState {
-  isLoading: boolean
-  isSending: boolean
-  models: ModelOption[]
-  selectedModelId: string
-  setSelectedModelId: (id: string) => void
-  useTavily: boolean
-  setUseTavily: (value: boolean) => void
-  sessions: GenesisSession[]
-  currentSessionId: string
-  createSession: () => Promise<string | undefined>
-  selectSession: (id: string) => Promise<void>
-  renameSession: (id: string, title: string) => void
-  deleteSession: (id: string) => Promise<void>
-  messagesBySession: Record<string, GenesisMessage[]>
-  sendMessage: (content: string, useStreaming?: boolean) => Promise<void>
-  editingMessageId: string | null
-  setEditingMessageId: (id: string | null) => void
-  editMessage: (messageId: string, newContent: string) => void
-  resendMessage: (messageId: string) => Promise<void>
-}
-
-const GenesisUIContext = createContext<GenesisUIState | null>(null)
-
-export function useGenesisUI(): GenesisUIState {
-  const context = useContext(GenesisUIContext)
-  if (!context) {
-    throw new Error("useGenesisUI must be used within GenesisUIProvider")
-  }
-  return context
-}
+**Types** are shared via `state/types.ts`:
+```typescript
+export type Role = "user" | "assistant"
+export interface GenesisMessage { id: string; role: Role; content: string; ... }
+export interface GenesisSession { id: string; title: string; createdAt: number; ... }
+export interface ModelOption { id: string; label: string; inputCost: number; ... }
+```
 
 export function GenesisUIProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)

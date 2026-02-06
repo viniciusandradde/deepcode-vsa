@@ -57,8 +57,14 @@ deepcode-vsa/
 │   │   │   ├── ChatPane.tsx  # Main chat component
 │   │   │   ├── SettingsPanel.tsx # VSA toggles ⭐
 │   │   │   └── Sidebar.tsx   # Session management
-│   │   └── state/
-│   │       └── useGenesisUI.tsx # Global state (VSA flags)
+│   │   └── state/               # State management (split contexts)
+│   │       ├── types.ts         # Shared types
+│   │       ├── error-utils.ts   # API error translation
+│   │       ├── use-local-storage-state.ts # localStorage hook
+│   │       ├── config-context.tsx # Models, toggles (VSA flags)
+│   │       ├── session-context.tsx # Session CRUD
+│   │       ├── chat-context.tsx   # Messages, streaming SSE
+│   │       └── useGenesisUI.tsx   # Facade (backward-compat)
 │   └── models.yaml           # Available models
 ├── docs/                      # Documentation
 │   ├── PRD-REVISADO.md       # Product Requirements

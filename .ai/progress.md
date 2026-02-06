@@ -5,6 +5,51 @@
 
 ---
 
+## 2026-02-06 | Claude Code | Refactoring useGenesisUI (God Context -> 3 Domain Contexts)
+
+**Tarefa:** Refatorar monolito de estado do frontend (1239 linhas) em 3 contextos focados
+**Workstream:** frontend
+**IDE:** Claude Code
+
+**O que foi feito:**
+- Extraidos tipos compartilhados para `state/types.ts`
+- Extraidas utilidades de erro para `state/error-utils.ts`
+- Extraido hook `useLocalStorageState` para `state/use-local-storage-state.ts`
+- Criado `ConfigContext` (modelos, toggles de integracoes) em `state/config-context.tsx`
+- Criado `SessionContext` (sessoes CRUD) em `state/session-context.tsx`
+- Criado `ChatContext` (mensagens, streaming SSE) em `state/chat-context.tsx`
+- Reescrito `useGenesisUI.tsx` como facade de ~70 linhas (backward-compatible)
+- Corrigido bug de stale closure no `sendMessage` (5 flags de integracao faltando no dep array)
+- Atualizada documentacao: CLAUDE.md, .ai/context.md, .agent/ARCHITECTURE.md, RESUME-PROMPT.md, CODEBASE.md, frontend/README.md, IMPLEMENTATION_NOTES.md, handoff.md
+- Auto memory atualizado com nova arquitetura
+
+**Arquivos Criados:**
+- `frontend/src/state/types.ts` (69 linhas)
+- `frontend/src/state/error-utils.ts` (125 linhas)
+- `frontend/src/state/use-local-storage-state.ts` (33 linhas)
+- `frontend/src/state/config-context.tsx` (107 linhas)
+- `frontend/src/state/session-context.tsx` (190 linhas)
+- `frontend/src/state/chat-context.tsx` (727 linhas)
+
+**Arquivos Modificados:**
+- `frontend/src/state/useGenesisUI.tsx` (1239 -> 70 linhas)
+- `CLAUDE.md`, `.ai/context.md`, `.ai/handoff.md`, `.ai/progress.md`
+- `.agent/ARCHITECTURE.md`, `.agent/RESUME-PROMPT.md`
+- `docs/projeto/CODEBASE.md`, `frontend/README.md`, `frontend/IMPLEMENTATION_NOTES.md`
+
+**Decisoes Tomadas:**
+- Usar refs (configRef, sessionRef) para evitar stale closures no sendMessage
+- ChatContext consome ConfigContext e SessionContext (nesting: Config > Session > Chat)
+- Facade useGenesisUI() coordena deleteSession entre SessionContext e ChatContext
+- Nao alterar nenhum componente consumidor (backward-compat total)
+
+**Verificacao:**
+- `npx tsc --noEmit`: Zero erros novos (unico erro pre-existente: @jest/globals)
+- `npm run build`: Compiled successfully
+- Docker rebuild + restart: Frontend rodando OK
+
+---
+
 ## 2026-02-06 | Claude Code | Atualizacao .ai/ para projeto real
 
 **Tarefa:** Atualizar toda a estrutura .ai/ para refletir o estado real do DeepCode VSA

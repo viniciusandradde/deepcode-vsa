@@ -62,8 +62,14 @@ frontend/src/
 │   ├── ChatPane.tsx         # Main chat UI
 │   ├── SettingsPanel.tsx    # VSA toggles (GLPI, Zabbix, Linear)
 │   └── Sidebar.tsx          # Session management
-└── state/
-    └── useGenesisUI.tsx     # Global state (enableGLPI, enableZabbix, etc.)
+└── state/                   # Split domain contexts (refactored from monolith)
+    ├── types.ts             # Shared types (GenesisMessage, ModelOption, etc.)
+    ├── error-utils.ts       # API error translation (translateApiError)
+    ├── use-local-storage-state.ts # Reusable localStorage hook
+    ├── config-context.tsx   # ConfigContext (models, toggles: enableGLPI, etc.)
+    ├── session-context.tsx  # SessionContext (sessions CRUD, navigation)
+    ├── chat-context.tsx     # ChatContext (messages, streaming SSE, send/edit)
+    └── useGenesisUI.tsx     # Facade hook (~70 lines, backward-compatible)
 ```
 
 ---

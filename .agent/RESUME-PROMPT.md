@@ -42,7 +42,10 @@
 | Arquivo | Descrição |
 |---------|-----------|
 | `api/routes/chat.py` | Endpoints + VSA_ITIL_SYSTEM_PROMPT |
-| `frontend/src/state/useGenesisUI.tsx` | Estado global do frontend |
+| `frontend/src/state/useGenesisUI.tsx` | Facade de estado (compoe Config+Session+Chat contexts) |
+| `frontend/src/state/config-context.tsx` | Modelos, toggles de integracoes |
+| `frontend/src/state/session-context.tsx` | Sessoes CRUD |
+| `frontend/src/state/chat-context.tsx` | Mensagens, streaming SSE |
 | `frontend/src/components/app/ChatPane.tsx` | Interface de chat |
 | `frontend/src/components/app/ITILBadge.tsx` | Badge visual ITIL |
 | `frontend/src/components/app/SettingsPanel.tsx` | Toggles VSA |

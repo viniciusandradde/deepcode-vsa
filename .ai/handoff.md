@@ -26,6 +26,7 @@
 - [x] Multi-model LLM via OpenRouter (4 tiers)
 - [x] Estrutura `.ai/` atualizada para projeto real (v2.0)
 - [x] Estrutura `.agent/` com 40 skills, 21 agents, 12 workflows
+- [x] Frontend state refatorado: monolito (1239 linhas) -> 3 domain contexts + facade
 
 ### O que esta pendente
 

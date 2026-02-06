@@ -102,7 +102,7 @@ Após análise profunda do código base, identificamos que:
 | VSA Persistence | ✅ Produção | `useGenesisUI.tsx` | Persistência de toggles via localStorage |
 | Anti-Hallucination | ✅ Produção | `api/routes/chat.py` | Regras rígidas contra dados inventados |
 | **ChatPane** | ✅ Funcional | `frontend/src/components/app/ChatPane.tsx` | Interface de chat com streaming |
-| **useGenesisUI** | ✅ Funcional | `frontend/src/state/useGenesisUI.tsx` | State management (sessions, messages) |
+| **State Management** | ✅ Funcional | `frontend/src/state/` (3 contexts + facade) | ConfigContext, SessionContext, ChatContext + useGenesisUI facade |
 | **SimpleAgent** | ✅ Funcional | `core/agents/simple.py` | Agente básico com tools |
 | **WorkflowAgent** | ✅ Funcional | `core/agents/workflow.py` | Agente com intent classification |
 | **VSAAgent** | 🟡 Implementado | `core/agents/vsa.py` | Agente ITIL (não integrado) |

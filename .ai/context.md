@@ -97,7 +97,11 @@ O **DeepCode VSA** e um agente virtual inteligente para gestao de TI, com interf
 
 ### Frontend
 - **Framework:** Next.js 15 + React 19
-- **Estado:** Context API (useGenesisUI)
+- **Estado:** Context API (3 domain contexts + facade hook)
+  - `ConfigContext` — modelos, toggles de integracoes
+  - `SessionContext` — sessoes, CRUD, navegacao
+  - `ChatContext` — mensagens, streaming SSE, envio
+  - `useGenesisUI()` — facade backward-compatible que compoe os 3
 - **UI:** Tailwind CSS
 - **Streaming:** SSE (Server-Sent Events)
 
@@ -222,7 +226,14 @@ deepcode-vsa/
 │   │   │   ├── automation/        # Modulo scheduler
 │   │   │   └── api/               # Route handlers
 │   │   ├── components/app/        # 20+ componentes
-│   │   └── state/useGenesisUI.tsx # State management
+│   │   └── state/                 # State management (refatorado)
+│   │       ├── types.ts           # Tipos compartilhados
+│   │       ├── error-utils.ts     # Traducao de erros de API
+│   │       ├── use-local-storage-state.ts # Hook localStorage
+│   │       ├── config-context.tsx # ConfigContext (modelos, toggles)
+│   │       ├── session-context.tsx# SessionContext (sessoes CRUD)
+│   │       ├── chat-context.tsx   # ChatContext (mensagens, streaming)
+│   │       └── useGenesisUI.tsx   # Facade (~70 linhas, backward-compat)
 │   └── next.config.ts
 │
 ├── backend/                   # LangGraph Studio config

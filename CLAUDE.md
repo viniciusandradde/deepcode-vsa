@@ -423,7 +423,10 @@ See `docs/adr/` for complete decision records:
 
 ### Frontend
 - `frontend/src/components/app/ChatPane.tsx` - Main chat interface
-- `frontend/src/state/useGenesisUI.tsx` - State management (Context API)
+- `frontend/src/state/useGenesisUI.tsx` - Facade hook (composes 3 domain contexts)
+- `frontend/src/state/config-context.tsx` - ConfigContext (models, integration toggles)
+- `frontend/src/state/session-context.tsx` - SessionContext (session CRUD)
+- `frontend/src/state/chat-context.tsx` - ChatContext (messages, streaming SSE)
 - `frontend/src/components/app/Sidebar.tsx` - Session management sidebar
 - `frontend/src/app/planning/page.tsx` - Lista de projetos de planejamento
 - `frontend/src/app/planning/[id]/page.tsx` - Detalhe do projeto (upload, análise, etapas, orçamento)
@@ -463,7 +466,7 @@ Use these skills when working on related features by invoking them via the Skill
 
 - **Template origins**: This codebase evolved from an AI agent + RAG template. Some references to "template" and generic agent examples remain in comments. When in doubt, follow the PRD's IT management focus.
 
-- **Frontend**: Next.js 15 frontend in `frontend/` with React 19, Tailwind CSS, and state management via Context API. This is a supporting interface; the main product is the CLI.
+- **Frontend**: Next.js 15 frontend in `frontend/` with React 19, Tailwind CSS, and state management via 3 domain-specific React Contexts (ConfigContext, SessionContext, ChatContext) composed through a `useGenesisUI()` facade hook. This is the primary interface (Chat-First).
 
 - **Database**: PostgreSQL 16+ with pgvector extension required. Schema files in `sql/kb/` must be executed in order (01, 02, 03). The RAG database is used for knowledge base queries, not the primary VSA functionality.
 
