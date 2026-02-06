@@ -56,10 +56,13 @@ async def process_agent_prompt(
         # Importar aqui para evitar import circular
         from core.agents.unified import UnifiedAgent
         from core.notifications import notification_service
+        from core.config import get_settings
         
-        # Criar agente
+        settings = get_settings()
+        
+        # Criar agente com modelo padrão do config
         agent = UnifiedAgent(
-            model_name="openai/gpt-4-turbo",
+            model_name=settings.default_model_name,
             tools=[],
             enable_itil=True,
             enable_planning=True,

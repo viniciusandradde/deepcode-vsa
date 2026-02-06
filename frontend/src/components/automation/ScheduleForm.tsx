@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSchedule } from '@/lib/api/scheduler';
+import { createSchedule, updateSchedule } from '@/lib/api/scheduler';
 import type { ScheduleCreateRequest, ScheduleConfig } from '@/types/automation';
 
 const CRON_PRESETS = [
@@ -21,20 +21,37 @@ const CHANNEL_OPTIONS = [
 ];
 
 interface ScheduleFormProps {
+    editMode?: boolean;
+    scheduleId?: string;
+    initialData?: {
+        name: string;
+        prompt: string;
+        cron: string;
+        channel: ScheduleConfig['channel'];
+        targetId: string;
+    };
     onSuccess?: () => void;
 }
 
-export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
+export function ScheduleForm({ editMode = false, scheduleId, initialData, onSuccess }: ScheduleFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [name, setName] = useState('');
-    const [prompt, setPrompt] = useState('');
-    const [cron, setCron] = useState('0 9 * * *');
-    const [channel, setChannel] = useState<ScheduleConfig['channel']>('telegram');
-    const [targetId, setTargetId] = useState('');
+    const [name, setName] = useState(initialData?.name || '');
+    const [prompt, setPrompt] = useState(initialData?.prompt || '');
+    const [cron, setCron] = useState(initialData?.cron || '0 9 * * *');
+    const [channel, setChannel] = useState<ScheduleConfig['channel']>(initialData?.channel || 'telegram');
+    const [targetId, setTargetId] = useState(initialData?.targetId || '');
     const [token, setToken] = useState('');
+
+    // Se não houver initialData mas estiver em editMode, podemos tentar carregar
+    useEffect(() => {
+        if (editMode && scheduleId && !initialData) {
+            // Em um cenário real, faríamos fetch do schedule aqui
+            // Por ora, deixamos em branco para o usuário preencher
+        }
+    }, [editMode, scheduleId, initialData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,7 +71,11 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
                 enabled: true,
             };
 
-            await createSchedule(payload);
+            if (editMode && scheduleId) {
+                await updateSchedule(scheduleId, payload);
+            } else {
+                await createSchedule(payload);
+            }
 
             if (onSuccess) {
                 onSuccess();
@@ -62,7 +83,7 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
                 router.push('/automation/scheduler');
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Erro ao criar agendamento');
+            setError(err instanceof Error ? err.message : 'Erro ao salvar agendamento');
         } finally {
             setLoading(false);
         }
@@ -115,7 +136,7 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
             {/* CRON */}
             <div>
                 <label htmlFor="cron" className="block text-sm font-medium text-zinc-300 mb-2">
-                    Frequência (CRON)
+                    Frequência
                 </label>
                 <div className="flex gap-2 mb-2 flex-wrap">
                     {CRON_PRESETS.map((preset) => (
@@ -124,8 +145,8 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
                             type="button"
                             onClick={() => setCron(preset.value)}
                             className={`px-3 py-1 text-xs rounded-full transition-colors ${cron === preset.value
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                                 }`}
                         >
                             {preset.label}
@@ -142,7 +163,7 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
                     className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 font-mono text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
                 />
                 <p className="text-xs text-zinc-500 mt-1">
-                    Formato: minuto hora dia mês dia_da_semana
+                    Formato CRON: minuto hora dia mês dia_da_semana
                 </p>
             </div>
 
@@ -158,8 +179,8 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
                             type="button"
                             onClick={() => setChannel(opt.value as ScheduleConfig['channel'])}
                             className={`p-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${channel === opt.value
-                                    ? 'bg-emerald-600/20 border-2 border-emerald-500 text-emerald-400'
-                                    : 'bg-zinc-800 border-2 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                ? 'bg-emerald-600/20 border-2 border-emerald-500 text-emerald-400'
+                                : 'bg-zinc-800 border-2 border-zinc-700 text-zinc-400 hover:border-zinc-600'
                                 }`}
                         >
                             <span>{opt.icon}</span>
@@ -222,7 +243,7 @@ export function ScheduleForm({ onSuccess }: ScheduleFormProps) {
                     disabled={loading}
                     className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                    {loading ? 'Criando...' : '✅ Criar Agendamento'}
+                    {loading ? 'Salvando...' : editMode ? '💾 Salvar Alterações' : '✅ Criar Agendamento'}
                 </button>
             </div>
         </form>

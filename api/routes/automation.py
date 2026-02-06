@@ -220,3 +220,115 @@ async def resume_schedule(job_id: str):
         "message": "Agendamento resumido",
         "job_id": job_id
     }
+
+
+@router.post("/schedule/{job_id}/run")
+async def run_schedule_now(job_id: str):
+    """
+    Executa um agendamento imediatamente (para teste).
+    
+    Dispara a tarefa agora, independente do CRON configurado.
+    """
+    try:
+        scheduler = get_scheduler()
+        job = scheduler.get_job(job_id)
+        
+        if not job:
+            raise HTTPException(
+                status_code=404,
+                detail="Agendamento não encontrado"
+            )
+        
+        # Recuperar args do job
+        # APScheduler armazena em job.args: (prompt, channel_config, job_name)
+        raw_job = scheduler.scheduler.get_job(job_id)
+        if raw_job and raw_job.args:
+            prompt, channel_config, job_name = raw_job.args
+            
+            # Usar job executor diretamente (que enfileira no Celery)
+            from core.jobs import job_run_agent_prompt_sync
+            
+            # Executar job (ele enfileira no Celery automaticamente)
+            job_run_agent_prompt_sync(prompt, channel_config, job_name)
+            
+            logger.info(f"🚀 Agendamento disparado manualmente: {job_id}")
+            
+            return {
+                "message": f"Tarefa '{job_name}' disparada com sucesso",
+                "job_id": job_id,
+                "status": "enqueued"
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Não foi possível recuperar os parâmetros do job"
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error running schedule: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao executar agendamento: {str(e)}"
+        )
+
+
+@router.put("/schedule/{job_id}", response_model=ScheduleResponse)
+async def update_schedule(job_id: str, request: UniversalScheduleRequest):
+    """
+    Atualiza um agendamento existente.
+    
+    Remove o job antigo e cria um novo com as mesmas configurações.
+    """
+    try:
+        scheduler = get_scheduler()
+        
+        # Verificar se existe
+        existing = scheduler.get_job(job_id)
+        if not existing:
+            raise HTTPException(
+                status_code=404,
+                detail="Agendamento não encontrado"
+            )
+        
+        # Remover job antigo
+        scheduler.remove_job(job_id)
+        
+        # Converter config para dict
+        channel_config = {
+            "channel": request.config.channel,
+            "target_id": request.config.target_id,
+            **(request.config.credentials or {})
+        }
+        
+        # Criar novo job com mesmo ID
+        job_info = scheduler.add_prompt_job(
+            job_id=job_id,
+            name=request.name,
+            prompt=request.prompt,
+            cron=request.cron,
+            channel_config=channel_config
+        )
+        
+        logger.info(f"✏️ Agendamento atualizado: {request.name} ({job_id})")
+        
+        return ScheduleResponse(
+            id=job_info["id"],
+            name=request.name,
+            prompt=request.prompt,
+            cron=request.cron,
+            config=request.config,
+            enabled=request.enabled,
+            next_run=job_info["next_run"],
+            created_at=datetime.now()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error updating schedule: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao atualizar agendamento: {str(e)}"
+        )

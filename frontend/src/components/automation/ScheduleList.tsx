@@ -1,8 +1,60 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { listSchedules, deleteSchedule, pauseSchedule, resumeSchedule } from '@/lib/api/scheduler';
+import Link from 'next/link';
+import { listSchedules, deleteSchedule, pauseSchedule, resumeSchedule, runSchedule } from '@/lib/api/scheduler';
 import type { Schedule } from '@/types/automation';
+
+/**
+ * Converte expressão CRON para texto legível
+ */
+function cronToHuman(cron: string): string {
+    // Formato: minuto hora dia mês dia_da_semana
+    // Também aceita formato APScheduler: cron[month='*', day='*', day_of_week='*', hour='9', minute='0']
+
+    // Tentar extrair de formato APScheduler
+    const apMatch = cron.match(/hour='(\d+|\*)'.*minute='(\d+|\*)'/i);
+    if (apMatch) {
+        const hour = apMatch[1];
+        const minute = apMatch[2];
+
+        const dayMatch = cron.match(/day_of_week='([^']+)'/i);
+        const dow = dayMatch ? dayMatch[1] : '*';
+
+        return formatSchedule(minute, hour, dow);
+    }
+
+    // Formato CRON padrão
+    const parts = cron.trim().split(/\s+/);
+    if (parts.length >= 5) {
+        const [minute, hour, , , dayOfWeek] = parts;
+        return formatSchedule(minute, hour, dayOfWeek);
+    }
+
+    return cron; // Fallback
+}
+
+function formatSchedule(minute: string, hour: string, dayOfWeek: string): string {
+    const dowNames: Record<string, string> = {
+        '0': 'Dom', '1': 'Seg', '2': 'Ter', '3': 'Qua',
+        '4': 'Qui', '5': 'Sex', '6': 'Sáb', '*': ''
+    };
+
+    const time = hour !== '*' && minute !== '*'
+        ? `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`
+        : 'A cada hora';
+
+    if (dayOfWeek === '*') {
+        return `Diário às ${time}`;
+    }
+
+    const dowParts = dayOfWeek.split(',').map(d => dowNames[d.trim()] || d);
+    if (dowParts.length === 1) {
+        return `${dowParts[0]} às ${time}`;
+    }
+
+    return `${dowParts.join(', ')} às ${time}`;
+}
 
 /**
  * Table/Grid displaying active scheduled jobs
@@ -56,6 +108,15 @@ export function ScheduleList() {
         }
     };
 
+    const handleRun = async (id: string, name: string) => {
+        try {
+            const result = await runSchedule(id);
+            alert(`🚀 Tarefa "${name}" disparada!\nTask ID: ${result.task_id}`);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Erro ao executar');
+        }
+    };
+
     if (loading) {
         return (
             <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
@@ -93,7 +154,7 @@ export function ScheduleList() {
                 <thead className="bg-zinc-800/50">
                     <tr className="text-zinc-400 text-left">
                         <th className="px-4 py-3 font-medium">Nome</th>
-                        <th className="px-4 py-3 font-medium">CRON</th>
+                        <th className="px-4 py-3 font-medium">Frequência</th>
                         <th className="px-4 py-3 font-medium">Canal</th>
                         <th className="px-4 py-3 font-medium">Próxima Execução</th>
                         <th className="px-4 py-3 font-medium text-right">Ações</th>
@@ -108,7 +169,11 @@ export function ScheduleList() {
                                     <span className="text-zinc-200 font-medium">{schedule.name}</span>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-zinc-400 font-mono text-xs">{schedule.cron}</td>
+                            <td className="px-4 py-3">
+                                <span className="text-zinc-300 text-sm">
+                                    🕐 {cronToHuman(schedule.cron)}
+                                </span>
+                            </td>
                             <td className="px-4 py-3">
                                 <span className="px-2 py-1 rounded text-xs bg-zinc-800 text-zinc-300 capitalize">
                                     {schedule.config.channel === 'telegram' && '💬 '}
@@ -125,6 +190,18 @@ export function ScheduleList() {
                             </td>
                             <td className="px-4 py-3 text-right">
                                 <div className="flex items-center justify-end gap-2">
+                                    <button
+                                        onClick={() => handleRun(schedule.id, schedule.name)}
+                                        className="px-2 py-1 text-xs rounded bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 transition-colors"
+                                    >
+                                        🚀 Testar
+                                    </button>
+                                    <Link
+                                        href={`/automation/scheduler/${encodeURIComponent(schedule.id)}/edit`}
+                                        className="px-2 py-1 text-xs rounded bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 transition-colors"
+                                    >
+                                        ✏️ Editar
+                                    </Link>
                                     {schedule.enabled ? (
                                         <button
                                             onClick={() => handlePause(schedule.id)}

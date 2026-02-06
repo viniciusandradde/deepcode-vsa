@@ -108,6 +108,12 @@ class Settings(BaseSettings):
     app_name: str = "DeepCode VSA"
     debug: bool = False
     dry_run: bool = True  # Safe by default
+    
+    # Modelo padrão para tarefas agendadas
+    default_model_name: str = Field(
+        default="z-ai/glm-4.5-air:free",
+        validation_alias=AliasChoices("DEFAULT_MODEL_NAME")
+    )
 
     # Sub-settings
     glpi: GLPISettings = Field(default_factory=GLPISettings)

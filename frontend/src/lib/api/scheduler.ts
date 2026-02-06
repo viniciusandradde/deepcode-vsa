@@ -78,6 +78,36 @@ export async function resumeSchedule(jobId: string): Promise<void> {
 }
 
 /**
+ * Update an existing scheduled job
+ */
+export async function updateSchedule(jobId: string, payload: ScheduleCreateRequest): Promise<Schedule> {
+    const response = await fetch(`${API_BASE}/automation/schedule/${jobId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(error.detail || 'Failed to update schedule');
+    }
+    return response.json();
+}
+
+/**
+ * Run a scheduled job immediately (for testing)
+ */
+export async function runSchedule(jobId: string): Promise<{ task_id: string }> {
+    const response = await fetch(`${API_BASE}/automation/schedule/${jobId}/run`, {
+        method: 'POST',
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(error.detail || 'Failed to run schedule');
+    }
+    return response.json();
+}
+
+/**
  * Get queue statistics from Celery
  */
 export async function getQueueStats(): Promise<unknown> {
