@@ -3,6 +3,7 @@
 import httpx
 from typing import Any, Optional
 
+from ..cache import get_cached, set_cached
 from ..config import ZabbixSettings
 from .tool_result import ToolResult
 
@@ -77,6 +78,12 @@ class ZabbixClient:
             severity: Min severity (0-5) - Note: applied as filter after retrieval
             with_hosts: If True, enriches each problem with host name via trigger.get
         """
+        # --- Redis cache (TTL 60s — alerts change fast) ---
+        cache_key = f"zabbix:problems:{severity}:{limit}:{with_hosts}"
+        cached = get_cached(cache_key)
+        if cached is not None:
+            return ToolResult.ok(cached, operation="problem.get")
+
         params = {
             "output": ["eventid", "name", "severity", "clock", "opdata", "acknowledged", "objectid"],
             "selectTags": ["tag", "value"],
@@ -114,6 +121,10 @@ class ZabbixClient:
                             trigger_to_host[str(tid)] = name
                     for p in problems:
                         p["host_name"] = trigger_to_host.get(str(p.get("objectid")), "")
+
+        # Cache successful result (enriched with hosts)
+        if result.success:
+            set_cached(cache_key, result.output, ttl_seconds=60)
 
         return result
 

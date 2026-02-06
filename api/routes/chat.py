@@ -128,12 +128,24 @@ def _resolve_intent(message: str) -> str | None:
     return None
 
 
+CACHE_TTL = {
+    "glpi_tickets": 120,         # 2 min
+    "glpi_new_unassigned": 120,  # 2 min
+    "glpi_pending_old": 300,     # 5 min — very stable data
+    "zabbix_alerts": 60,         # 1 min — changes faster
+    "linear_issues": 180,        # 3 min
+    "dashboard": 90,             # 1.5 min — combines sources
+    "dashboard_analysis": 90,
+}
+
+
 async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
     """Gera relatório via código (sem LLM) baseado no intent detectado.
 
     Returns:
         (markdown_report, success)
     """
+    from core.cache import get_cached, set_cached
     from core.config import get_settings
     from core.reports import (
         format_glpi_report,
@@ -143,6 +155,16 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
         format_pending_old_report,
     )
     from core.reports.dashboard import format_dashboard_report
+
+    # --- Redis cache check ---
+    cache_key = f"report:{intent}"
+    cached = get_cached(cache_key)
+    if cached:
+        logger.info("⚡ [CACHE HIT] intent=%s", intent)
+        return cached["report"], cached["success"]
+
+    report_md: str | None = None
+    success = False
 
     try:
         settings = get_settings()
@@ -155,10 +177,12 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             client = get_client()
             result = await client.get_tickets_new_unassigned(min_age_hours=24, limit=20)
             if result.success:
-                return format_new_unassigned_report(
+                report_md = format_new_unassigned_report(
                     result.output, glpi_base_url=glpi_base_url
-                ), True
-            return f"**Erro GLPI:** {result.error}", False
+                )
+                success = True
+            else:
+                report_md = f"**Erro GLPI:** {result.error}"
 
         elif intent == "glpi_pending_old":
             from core.tools.glpi import get_client
@@ -166,8 +190,10 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             client = get_client()
             result = await client.get_tickets_pending_old(min_age_days=7, limit=20)
             if result.success:
-                return format_pending_old_report(result.output, glpi_base_url=glpi_base_url), True
-            return f"**Erro GLPI:** {result.error}", False
+                report_md = format_pending_old_report(result.output, glpi_base_url=glpi_base_url)
+                success = True
+            else:
+                report_md = f"**Erro GLPI:** {result.error}"
 
         elif intent == "glpi_tickets":
             from core.tools.glpi import get_client
@@ -175,8 +201,10 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             client = get_client()
             result = await client.get_tickets(limit=15)
             if result.success:
-                return format_glpi_report(result.output, glpi_base_url=glpi_base_url), True
-            return f"**Erro GLPI:** {result.error}", False
+                report_md = format_glpi_report(result.output, glpi_base_url=glpi_base_url)
+                success = True
+            else:
+                report_md = f"**Erro GLPI:** {result.error}"
 
         elif intent == "zabbix_alerts":
             from core.tools.zabbix import get_client
@@ -185,8 +213,10 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             result = await client.get_problems(limit=15, severity=3)
             if result.success:
                 data = {"problems": result.output, "count": len(result.output), "min_severity": 3}
-                return format_zabbix_report(data, zabbix_base_url=zabbix_base_url), True
-            return f"**Erro Zabbix:** {result.error}", False
+                report_md = format_zabbix_report(data, zabbix_base_url=zabbix_base_url)
+                success = True
+            else:
+                report_md = f"**Erro Zabbix:** {result.error}"
 
         elif intent == "linear_issues":
             from core.tools.linear import get_client
@@ -194,8 +224,10 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             client = get_client()
             result = await client.get_issues(limit=15)
             if result.success:
-                return format_linear_report(result.output), True
-            return f"**Erro Linear:** {result.error}", False
+                report_md = format_linear_report(result.output)
+                success = True
+            else:
+                report_md = f"**Erro Linear:** {result.error}"
 
         elif intent in ("dashboard", "dashboard_analysis"):
             glpi_data = None
@@ -229,18 +261,26 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             except Exception as e:
                 zabbix_data = {"error": str(e)}
 
-            return format_dashboard_report(
+            report_md = format_dashboard_report(
                 glpi_data=glpi_data,
                 zabbix_data=zabbix_data,
                 glpi_base_url=glpi_base_url,
                 zabbix_base_url=zabbix_base_url,
-            ), True
-
-        return None, False
+            )
+            success = True
 
     except Exception as e:
         logger.exception("Report generation failed for intent %s: %s", intent, e)
-        return f"**Erro ao gerar relatório:** {e}", False
+        report_md = f"**Erro ao gerar relatório:** {e}"
+        success = False
+
+    # --- Cache successful results ---
+    if success and report_md:
+        ttl = CACHE_TTL.get(intent, 120)
+        set_cached(cache_key, {"report": report_md, "success": success}, ttl)
+        logger.info("📦 [CACHE SET] intent=%s ttl=%ds", intent, ttl)
+
+    return report_md, success
 
 
 def _fetch_project_context(query: str, project_id: str) -> str | None:

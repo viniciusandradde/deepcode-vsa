@@ -4,6 +4,7 @@ Reference: .claude/skills/glpi-integration/SKILL.md
 """
 
 import httpx
+from ..cache import get_cached, set_cached
 from ..config import GLPISettings
 from .tool_result import ToolResult
 
@@ -114,12 +115,19 @@ class GLPIClient:
         order: str = "DESC"
     ) -> ToolResult:
         """Get tickets from GLPI.
-        
+
         Args:
             status: Filter by status IDs (1=new, 2=processing, etc.)
             limit: Max results
             order: Sort order (ASC/DESC)
         """
+        # --- Redis cache (TTL 120s) ---
+        status_key = ",".join(str(s) for s in status) if status else "all"
+        cache_key = f"glpi:tickets:{status_key}:{limit}"
+        cached = get_cached(cache_key)
+        if cached is not None:
+            return ToolResult.ok(cached, operation="get_tickets")
+
         if not self.session_token:
             init_result = await self.init_session()
             if not init_result.success:
@@ -144,10 +152,9 @@ class GLPIClient:
             response.raise_for_status()
             tickets = response.json()
 
-            return ToolResult.ok(
-                {"tickets": tickets, "count": len(tickets)},
-                operation="get_tickets"
-            )
+            output = {"tickets": tickets, "count": len(tickets)}
+            set_cached(cache_key, output, ttl_seconds=120)
+            return ToolResult.ok(output, operation="get_tickets")
         except httpx.HTTPStatusError as e:
             return ToolResult.fail(
                 f"Get tickets failed: {e.response.status_code}",
@@ -158,6 +165,12 @@ class GLPIClient:
 
     async def get_ticket(self, ticket_id: int) -> ToolResult:
         """Get single ticket details."""
+        # --- Redis cache (TTL 120s) ---
+        cache_key = f"glpi:ticket:{ticket_id}"
+        cached = get_cached(cache_key)
+        if cached is not None:
+            return ToolResult.ok(cached, operation="get_ticket")
+
         if not self.session_token:
             init_result = await self.init_session()
             if not init_result.success:
@@ -173,10 +186,9 @@ class GLPIClient:
             response.raise_for_status()
             ticket = response.json()
 
-            return ToolResult.ok(
-                {"ticket": ticket},
-                operation="get_ticket"
-            )
+            output = {"ticket": ticket}
+            set_cached(cache_key, output, ttl_seconds=120)
+            return ToolResult.ok(output, operation="get_ticket")
         except httpx.HTTPStatusError as e:
             return ToolResult.fail(
                 f"Get ticket failed: {e.response.status_code}",
