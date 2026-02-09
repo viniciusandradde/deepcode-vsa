@@ -39,6 +39,11 @@ Thumbs.db
 *.log
 logs/
 
+# Generated test/temp files
+test_report.xlsx
+trace_output.json
+tmp_*.md
+
 # MCP Servers (contains credentials)
 .claude/mcp.json
 .claude/settings.local.json

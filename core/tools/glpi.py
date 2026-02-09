@@ -66,7 +66,7 @@ async def glpi_get_tickets(
     if status and isinstance(status, str):
         try:
             status = [int(s.strip()) for s in status.split(",")]
-        except:
+        except (ValueError, AttributeError):
             pass
 
     result = await client.get_tickets(status, limit)
@@ -117,30 +117,19 @@ async def glpi_get_ticket_details(ticket_id: int) -> dict:
 @tool
 async def glpi_generate_excel_report_previous_month() -> dict:
     """Gera relatório Excel 'Atendimentos por Centro de Custo' do MÊS ANTERIOR.
-    
+
     Layout estrito conforme modelo 'INFORMÁTICA 01-2026.xlsx'.
     Busca dados via API GLPI (Locais) e agrupa por classificação.
-    Retorna URL para download.
+    Retorna link para download (NÃO retorna o arquivo em si).
     """
-    try:
-        from core.reports.excel import generate_cost_center_report_excel
-        import base64
-        
-        # Determine strict previous month range
-        # Logic is inside generate_cost_center_report_excel
-        
-        excel_bytes, filename = await generate_cost_center_report_excel()
-        
-        # For now, return base64 data directly so frontend can download
-        # In a real app, we might upload to S3/Blob storage and return URL
-        b64_data = base64.b64encode(excel_bytes).decode('utf-8')
-        
-        return {
-            "success": True,
-            "filename": filename,
-            "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "data_base64": b64_data,
-            "message": f"Relatório '{filename}' gerado com sucesso."
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    from core.reports.excel import get_previous_month_range
+
+    start_date, end_date = get_previous_month_range()
+    download_url = "/api/v1/reports/glpi/cost-center/excel"
+
+    return {
+        "success": True,
+        "download_url": download_url,
+        "period": f"{start_date} a {end_date}",
+        "message": f"Relatório pronto para download: [Baixar Excel]({download_url})",
+    }

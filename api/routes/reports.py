@@ -178,7 +178,4 @@ async def download_glpi_cost_center_excel() -> StreamingResponse:
         )
     except Exception as e:
         logger.exception("Excel report generation failed: %s", e)
-        # Se falhar, retorna erro JSON (FastAPI lida com return dict vs StreamingResponse via Exception ou Union,
-        # mas aqui vamos deixar estourar 500 ou retornar JSON se client aceitar)
-        from fastapi import HTTPException
         raise HTTPException(status_code=500, detail=f"Erro ao gerar Excel: {str(e)}")

@@ -1,12 +1,11 @@
+"""GLPI Excel report generation: Atendimentos por Centro de Custo."""
 
 import io
 import logging
 from datetime import datetime, date, timedelta
-from typing import Dict, Any, List
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, Alignment, PatternFill
 
 logger = logging.getLogger(__name__)
 
@@ -90,40 +89,9 @@ async def generate_cost_center_report_excel() -> tuple[bytes, str]:
     # Sort by name to match Excel generally
     locations.sort(key=lambda x: x["name"])
 
-    # 2. Fetch Tickets for the date range
-    # We need to filter manually because GLPI API search is complex.
-    # Fetching all tickets might be heavy, but simpler for 'previous month' than constructing complex criteria.
-    # Optimized: use 'date' search criteria if possible, or fetch recently modified/created
-    
-    # Using 'search' criteria for date range on 'date' (creation date)
-    # 15 = Creation date
-    params = {
-        "range": "0-1000", # Hope to fit all tickets from 1 month in 1000? Maybe need pagination.
-        "criteria[0][field]": 15, # Date creation
-        "criteria[0][searchtype]": "morethan",
-        "criteria[0][value]": f"{start_date} 00:00:00",
-        "criteria[1][link]": "AND",
-        "criteria[1][field]": 15,
-        "criteria[1][searchtype]": "lessthan",
-        "criteria[1][value]": f"{end_date} 23:59:59",
-        "criteria[2][link]": "AND",
-        "criteria[2][field]": 83, # Locations ID
-        "criteria[2][searchtype]": "morethan", # Just ensure it has a location? 
-        "criteria[2][value]": "0",  
-    }
-    
-    # We need to use the native client GET on /Ticket to support complex criteria not exposed in simpler helpers
-    # Or iterate via list_tickets helper. Let's use the low-level client via helper if available, or direct call.
-    # The get_tickets helper is too simple. Let's make a direct request using the client instance we have.
-    
-    # Since get_client() returns our wrapper, let's access the internalhttpx client or add a robust search method.
-    # For now, let's fetch 'all recent' and filter in Python to be safe and strictly correct without fighting API syntax quirks.
-    # Assuming < 2000 tickets/month.
-    
-    # Using 'get_tickets' with a high limit, but we can't filter by date there easily yet.
-    # Let's assume we can fetch last 1000 tickets and filter by date.
-    
-    raw_tickets_result = await client.get_tickets(limit=1000, order="DESC") # Newest first
+    # 2. Fetch Tickets — fetch recent and filter by date locally
+    # TODO: Replace with GLPI search criteria for server-side date filtering
+    raw_tickets_result = await client.get_tickets(limit=1000, order="DESC")
     if not raw_tickets_result.success:
         raise Exception(f"Failed to fetch tickets: {raw_tickets_result.error}")
         
@@ -139,15 +107,10 @@ async def generate_cost_center_report_excel() -> tuple[bytes, str]:
         if not date_str:
             continue
         try:
-            # "2026-02-09 10:00:00"
             t_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").date()
             if start_dt <= t_date <= end_dt:
                 relevant_tickets.append(t)
-            elif t_date < start_dt:
-                # Optimized: if sorted DESC, we can stop once we hit dates older than start_date
-                # BUT let's be safe and check all in case of weird sorting
-                pass
-        except:
+        except (ValueError, TypeError):
             pass
 
     # 3. Aggregate
@@ -243,15 +206,14 @@ async def generate_cost_center_report_excel() -> tuple[bytes, str]:
     # Auto-adjust column widths
     for col in ws.columns:
         max_length = 0
-        column = col[0].column_letter # Get the column name
+        column_letter = col[0].column_letter
         for cell in col:
             try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            except:
+            except (TypeError, AttributeError):
                 pass
-        adjusted_width = (max_length + 2)
-        ws.column_dimensions[column].width = adjusted_width
+        ws.column_dimensions[column_letter].width = max_length + 2
 
     # Save to buffer
     buf = io.BytesIO()

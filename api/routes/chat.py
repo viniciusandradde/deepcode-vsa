@@ -106,14 +106,7 @@ INTENT_PATTERNS = {
         r"(issues?|tarefas?|linear|backlog)(\s+(do\s+)?linear)?\.?$",
         re.I,
     ),
-    # Análise composta: (DESATIVADO para permitir LLM)
-    # "dashboard_analysis": re.compile(
-    #    r"(an[aá]lis[ea]r?|relat[oó]rio|resumo|overview|revis[aã]o|fa[cç]a\s+an[aá]lise)"
-    #    r"\s+(completa?\s+)?(d[aoe]s?\s+)?"
-    #    r"(eventos?|semana|operac|incidentes?|atividades?|chamados?|alertas?)",
-    #    re.I,
-    #),
-    # Relatório Excel Centro de Custo (Bypass LLM como solicitado)
+    # Relatório Excel Centro de Custo
     "glpi_excel_report": re.compile(
         r"^(gerar\s+)?relat[oó]rio\s+(excel\s+)?(de\s+)?(atendimentos\s+)?(por\s+)?centro\s+(de\s+)?custo",
         re.I
@@ -139,7 +132,6 @@ CACHE_TTL = {
     "zabbix_alerts": 60,         # 1 min — changes faster
     "linear_issues": 180,        # 3 min
     "dashboard": 90,             # 1.5 min — combines sources
-    "dashboard_analysis": 90,
 }
 
 # Mapping from intent to artifact metadata for SSE artifact events
@@ -150,12 +142,11 @@ INTENT_ARTIFACT_META: dict[str, dict[str, str]] = {
     "zabbix_alerts": {"title": "Relatório Zabbix - Alertas", "artifact_type": "zabbix_report"},
     "linear_issues": {"title": "Relatório Linear - Issues", "artifact_type": "linear_report"},
     "dashboard": {"title": "Dashboard - Visão Geral", "artifact_type": "dashboard"},
-    "dashboard_analysis": {"title": "Análise Operacional", "artifact_type": "dashboard"},
     "glpi_excel_report": {"title": "Relatório Excel", "artifact_type": "glpi_report"},
 }
 
 
-async def _generate_report_by_intent(intent: str, api_key: str | None = None) -> tuple[str, bool]:
+async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
     """Gera relatório via código (sem LLM) baseado no intent detectado.
 
     Returns:
@@ -246,33 +237,18 @@ async def _generate_report_by_intent(intent: str, api_key: str | None = None) ->
                 report_md = f"**Erro Linear:** {result.error}"
 
         elif intent == "glpi_excel_report":
-            # Gera link para download direto via endpoint dedicado
-            # Endpoint adicionado em reports.router: /api/v1/reports/glpi/cost-center/excel
-            
-            # Não precisamos gerar o arquivo aqui, apenas retornar o link.
-            # O endpoint fará a geração sob demanda (streaming).
-            
-            download_url = "/api/v1/reports/glpi/cost-center/excel"
             from core.reports.excel import get_previous_month_range
-            start_date, end_date = get_previous_month_range()
-            
-            # Append api_key if provided
-            url_with_auth = download_url
-            if api_key and api_key != "dev-mode":
-                url_with_auth = f"{download_url}?api_key={api_key}"
 
-            report_md = f"""
-### 📊 Relatório Disponível
+            download_url = "/api/v1/reports/glpi/cost-center/excel"
+            start_date, end_date = get_previous_month_range()
+
+            report_md = f"""### Relatório Disponível
 
 O relatório **Atendimentos por Centro de Custo ({start_date} a {end_date})** pode ser baixado abaixo.
 
-[📥 Baixar Arquivo Excel]({url_with_auth})
+[Baixar Arquivo Excel]({download_url})
 """
             success = True
-            filename = "relatorio.xlsx" # Dummy for API compat if needed, though not used here
-            # Para evitar erro de unbound local variable se 'filename' for usado depois?
-            # O código original usava 'filename' no f-string.
-            # Aqui já construímos o report_md.
 
         elif intent in ("dashboard", "dashboard_analysis"):
             glpi_data = None
@@ -398,15 +374,12 @@ def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
             prompt = prompt + VSA_EXAMPLES_PROMPT
         return prompt + suffix
 
+    return suffix
+
 
 @router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Chat endpoint - synchronous."""
-    # Note: verify_api_key is checked in router dependencies.
-    # We can get it from env if needed for report links, 
-    # as the header isn't easily accessible here without Depends(verify_api_key).
-    from api.middleware.auth import get_api_key
-    api_key = get_api_key()
     try:
         # Generate thread_id if not provided
         thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
@@ -416,7 +389,7 @@ async def chat(request: ChatRequest):
         intent = _resolve_intent(request.message)
         if intent:
             logger.info("📊 [RULE-ROUTER] Intent detectado: %s (bypass LLM)", intent)
-            report_md, success = await _generate_report_by_intent(intent, api_key=api_key)
+            report_md, success = await _generate_report_by_intent(intent)
             if success and report_md:
                 return ChatResponse(
                     response=report_md,
@@ -472,7 +445,7 @@ async def chat(request: ChatRequest):
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
 
-        system_prompt = get_system_prompt(request.enable_vsa) or ""
+        system_prompt = get_system_prompt(request.enable_vsa)
         if request.project_id:
             system_prompt += (
                 f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
@@ -534,8 +507,6 @@ async def stream_chat(request: ChatRequest):
     thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
 
     # === RULE-BASED ROUTER: Zero LLM tokens for known report intents ===
-    from api.middleware.auth import get_api_key
-    api_key = get_api_key()
     intent = _resolve_intent(request.message)
     if intent:
         logger.info("📊 [RULE-ROUTER/STREAM] Intent detectado: %s (bypass LLM)", intent)
@@ -551,7 +522,7 @@ async def stream_chat(request: ChatRequest):
                 # Enviar evento start
                 yield f"data: {json.dumps({'type': 'start', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
 
-                report_md, success = await _generate_report_by_intent(intent, api_key=api_key)
+                report_md, success = await _generate_report_by_intent(intent)
 
                 if success and report_md:
                     # --- Artifact SSE events ---
@@ -645,7 +616,7 @@ async def stream_chat(request: ChatRequest):
         has_tools = bool(tools)
         model_name = _resolve_model_for_request(request, has_tools)
 
-        system_prompt = get_system_prompt(request.enable_vsa) or ""
+        system_prompt = get_system_prompt(request.enable_vsa)
         if request.project_id:
             system_prompt += (
                 f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
