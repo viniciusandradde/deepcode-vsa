@@ -2,10 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Instalar dependencias do sistema
-RUN apt-get update && apt-get install -y \
+# Instalar dependencias do sistema (inclui libs para WeasyPrint PDF export)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     postgresql-client \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libcairo2 \
+    libglib2.0-0 \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar arquivos de dependencias
