@@ -152,13 +152,22 @@ async def list_threads() -> Dict[str, Any]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar threads: {e}")
 
-    threads = [
-        {
-            "id": row[0],
-            "last_ts": row[1],
-        }
-        for row in rows
-    ]
+    threads = []
+    for row in rows:
+        # Pydantic or Psycopg3 Row objects might differ in access pattern
+        # KeyError: 0 means we can't access by index, so it's a dict
+        try:
+            tid = row[0]
+            ts = row[1]
+        except KeyError:
+            tid = row["thread_id"]
+            ts = row["last_ts"]
+            
+        threads.append({
+            "id": tid,
+            "last_ts": ts,
+        })
+    
     return {"threads": threads}
 
 
