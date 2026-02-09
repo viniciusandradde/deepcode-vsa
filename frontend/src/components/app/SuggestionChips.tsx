@@ -68,6 +68,14 @@ export const SUGGESTIONS: Suggestion[] = [
     icon: <Clock className="h-5 w-5" />,
     variant: "warning",
   },
+  {
+    id: "excel-cost-center",
+    command: "Gerar relatório Excel de atendimentos por centro de custo do mês anterior",
+    label: "Relatório C. Custo",
+    description: "Mês Anterior (Excel)",
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    variant: "default",
+  },
 ];
 
 interface SuggestionChipsProps {

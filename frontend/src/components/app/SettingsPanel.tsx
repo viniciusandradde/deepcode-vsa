@@ -52,6 +52,15 @@ export function SettingsPanel() {
                         Projetos
                     </Button>
                 </Link>
+                <Link href="/automation/scheduler">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-vsa-orange/50 text-slate-900 hover:bg-vsa-orange/10"
+                    >
+                        Agendamento
+                    </Button>
+                </Link>
             </div>
 
             {isOpen && (

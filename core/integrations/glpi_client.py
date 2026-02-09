@@ -360,6 +360,49 @@ class GLPIClient:
             operation="get_tickets_pending_old"
         )
 
+    async def get_locations(self, limit: int = 100) -> ToolResult:
+        """Get locations (Centros de Custo) from GLPI."""
+        # --- Redis cache (TTL 1 hour - static data) ---
+        cache_key = f"glpi:locations:{limit}"
+        cached = get_cached(cache_key)
+        if cached is not None:
+            return ToolResult.ok(cached, operation="get_locations")
+
+        if not self.session_token:
+            init_result = await self.init_session()
+            if not init_result.success:
+                return init_result
+
+        client = await self._get_client()
+
+        params = {
+            "range": f"0-{limit-1}",
+            "order": "ASC",
+        }
+
+        try:
+            response = await client.get(
+                f"{self.base_url}/Location",
+                headers=self.headers,
+                params=params
+            )
+            response.raise_for_status()
+            locations = response.json()
+
+            # Create a simplified map: id -> name
+            location_map = {loc["id"]: loc["name"] for loc in locations}
+            
+            output = {"locations": locations, "map": location_map}
+            set_cached(cache_key, output, ttl_seconds=3600)
+            return ToolResult.ok(output, operation="get_locations")
+        except httpx.HTTPStatusError as e:
+            return ToolResult.fail(
+                f"Get locations failed: {e.response.status_code}",
+                operation="get_locations"
+            )
+        except Exception as e:
+            return ToolResult.fail(str(e), operation="get_locations")
+
     async def close(self):
         """Close HTTP client."""
         if self._client:

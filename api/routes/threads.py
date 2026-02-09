@@ -46,6 +46,9 @@ def _message_to_dict(msg: Any) -> Optional[Dict[str, Any]]:
             # System messages não são exibidas como usuário/assistente no chat;
             # podemos ignorar ou mapear como "assistant". Aqui, ignoramos.
             return None
+        elif "tool" in msg_type or "function" in msg_type:
+            # Hide tool outputs from chat UI
+            return None
 
         return {
             "id": getattr(msg, "id", None),
@@ -60,6 +63,8 @@ def _message_to_dict(msg: Any) -> Optional[Dict[str, Any]]:
             role = "user"
         elif role in ("ai", "assistant"):
             role = "assistant"
+        elif role in ("system", "tool", "function", "tool_message"):
+            return None
 
         content = msg.get("content")
         if not isinstance(content, str):

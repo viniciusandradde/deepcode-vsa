@@ -3,7 +3,8 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
+from fastapi.responses import StreamingResponse
 
 from core.config import get_settings
 from core.reports import (
@@ -147,3 +148,37 @@ async def get_dashboard_report(
         "data": {"glpi": glpi_data, "zabbix": zabbix_data},
         "errors": errors if errors else None,
     }
+
+
+@router.get("/glpi/cost-center/excel")
+async def download_glpi_cost_center_excel() -> StreamingResponse:
+    """
+    Gera e baixa o relatório GLPI (Atendimentos por Centro de Custo - Mês Anterior).
+    Retorna o arquivo Excel diretamente via StreamingResponse.
+    """
+    try:
+        from core.reports.excel import generate_cost_center_report_excel
+        import io
+
+        # Gera o Excel (retorna bytes e filename)
+        excel_bytes, filename = await generate_cost_center_report_excel()
+        
+        # Cria stream a partir dos bytes
+        stream = io.BytesIO(excel_bytes)
+        
+        # Headers para download
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+        
+        return StreamingResponse(
+            stream,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers=headers
+        )
+    except Exception as e:
+        logger.exception("Excel report generation failed: %s", e)
+        # Se falhar, retorna erro JSON (FastAPI lida com return dict vs StreamingResponse via Exception ou Union,
+        # mas aqui vamos deixar estourar 500 ou retornar JSON se client aceitar)
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar Excel: {str(e)}")
