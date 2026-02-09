@@ -95,6 +95,33 @@ export const storage = {
     },
   },
 
+  artifacts: {
+    getBySession<T = unknown>(sessionId: string): T[] {
+      try {
+        const data = localStorage.getItem(`${STORAGE_PREFIX}artifacts_${sessionId}`);
+        return data ? JSON.parse(data) : [];
+      } catch {
+        return [];
+      }
+    },
+
+    saveForSession(sessionId: string, artifacts: unknown[]): void {
+      try {
+        localStorage.setItem(`${STORAGE_PREFIX}artifacts_${sessionId}`, JSON.stringify(artifacts));
+      } catch (error) {
+        console.error("Error saving artifacts:", error);
+      }
+    },
+
+    clearSession(sessionId: string): void {
+      try {
+        localStorage.removeItem(`${STORAGE_PREFIX}artifacts_${sessionId}`);
+      } catch (error) {
+        console.error("Error clearing artifacts:", error);
+      }
+    },
+  },
+
   settings: {
     get<T>(key: string, defaultValue: T): T {
       try {

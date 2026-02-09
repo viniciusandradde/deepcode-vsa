@@ -13,6 +13,7 @@ from api.routes import (
     automation,
     chat,
     config,
+    export,
     planning,
     projects,
     queue,
@@ -113,6 +114,7 @@ app.include_router(config.router, prefix="/api/v1/config", tags=["config"], depe
 app.include_router(automation.router, prefix="/api/v1/automation", tags=["automation"], dependencies=_api_deps)
 app.include_router(queue.router, prefix="/api/v1/queue", tags=["queue"], dependencies=_api_deps)
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"], dependencies=_api_deps)
+app.include_router(export.router, prefix="/api/v1/export", tags=["export"], dependencies=_api_deps)
 
 
 @app.get("/")

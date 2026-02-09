@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { ConfigProvider, useConfig } from "./config-context";
 import { SessionProvider, useSession } from "./session-context";
 import { ChatProvider, useChat } from "./chat-context";
+import { ArtifactProvider, useArtifacts } from "./artifact-context";
 
 // Re-export types for backward compatibility
 export type { Role, GenesisMessage, GenesisSession, ModelOption } from "./types";
@@ -12,9 +13,11 @@ export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider>
       <SessionProvider>
-        <ChatProvider>
-          {children}
-        </ChatProvider>
+        <ArtifactProvider>
+          <ChatProvider>
+            {children}
+          </ChatProvider>
+        </ArtifactProvider>
       </SessionProvider>
     </ConfigProvider>
   );
@@ -24,12 +27,14 @@ export function useGenesisUI() {
   const config = useConfig();
   const session = useSession();
   const chat = useChat();
+  const artifacts = useArtifacts();
 
   // Coordinate deleteSession across both session and chat contexts
   const deleteSession = useCallback(async (id: string) => {
     await session.deleteSession(id);
     chat.clearSessionMessages(id);
-  }, [session.deleteSession, chat.clearSessionMessages]);
+    artifacts.clearSessionArtifacts(id);
+  }, [session.deleteSession, chat.clearSessionMessages, artifacts.clearSessionArtifacts]);
 
   return {
     // Config
@@ -66,5 +71,12 @@ export function useGenesisUI() {
     resendMessage: chat.resendMessage,
     cancelMessage: chat.cancelMessage,
     abortControllerRef: chat.abortControllerRef,
+    // Artifacts
+    artifactsBySession: artifacts.artifactsBySession,
+    selectedArtifactId: artifacts.selectedArtifactId,
+    panelOpen: artifacts.panelOpen,
+    selectArtifact: artifacts.selectArtifact,
+    closePanel: artifacts.closePanel,
+    getSessionArtifacts: artifacts.getSessionArtifacts,
   };
 }

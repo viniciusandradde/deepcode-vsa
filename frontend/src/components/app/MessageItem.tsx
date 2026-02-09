@@ -9,7 +9,9 @@ import { MessageActions } from "./MessageActions";
 import { ITILBadge, parseITILFromResponse } from "./ITILBadge";
 import { ActionPlan, parseActionPlanFromResponse } from "./ActionPlan";
 import { ThinkingIndicator } from "./ThinkingIndicator";
+import { ArtifactCard } from "./ArtifactCard";
 import { GenesisMessage } from "@/state/useGenesisUI";
+import type { Artifact } from "@/state/artifact-types";
 
 /**
  * Normaliza espaçamento em relatórios markdown: preserva \\n/\\t e colapsa
@@ -35,6 +37,10 @@ interface MessageItemProps {
   onEditSaveAndResend: () => Promise<void>;
   onConfirmLinearProject?: () => void;
   isSending: boolean;
+  /** Artifacts linked to this message (resolved from artifactIds). */
+  artifacts?: Artifact[];
+  /** Callback to open an artifact in the side panel. */
+  onOpenArtifact?: (id: string) => void;
 }
 
 /**
@@ -53,7 +59,9 @@ export const MessageItem = memo(function MessageItem({
   onEditCancel,
   onEditSaveAndResend,
   onConfirmLinearProject,
-  isSending
+  isSending,
+  artifacts,
+  onOpenArtifact,
 }: MessageItemProps) {
   const isAssistant = message.role === "assistant";
   const isThinking = message.content === "Pensando...";
@@ -251,6 +259,14 @@ export const MessageItem = memo(function MessageItem({
                 >
                   Confirmar criação do projeto no Linear
                 </Button>
+              </div>
+            )}
+            {/* Artifact cards */}
+            {artifacts && artifacts.length > 0 && onOpenArtifact && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {artifacts.map((art) => (
+                  <ArtifactCard key={art.id} artifact={art} onOpen={onOpenArtifact} />
+                ))}
               </div>
             )}
           </div>

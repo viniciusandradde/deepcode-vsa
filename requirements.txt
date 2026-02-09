@@ -27,6 +27,11 @@ uvicorn[standard]>=0.30.0
 pypdf>=4.0.0
 python-multipart>=0.0.9
 
+# Export (PDF, DOCX)
+weasyprint>=62.0
+markdown>=3.7
+python-docx>=1.1.0
+
 # Automation & Scheduling
 apscheduler==3.10.4
 sqlalchemy>=2.0.23

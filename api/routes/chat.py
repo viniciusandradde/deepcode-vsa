@@ -138,6 +138,17 @@ CACHE_TTL = {
     "dashboard_analysis": 90,
 }
 
+# Mapping from intent to artifact metadata for SSE artifact events
+INTENT_ARTIFACT_META: dict[str, dict[str, str]] = {
+    "glpi_tickets": {"title": "Relatório GLPI - Tickets", "artifact_type": "glpi_report"},
+    "glpi_new_unassigned": {"title": "GLPI - Novos sem Atribuição", "artifact_type": "glpi_report"},
+    "glpi_pending_old": {"title": "GLPI - Pendentes Antigos", "artifact_type": "glpi_report"},
+    "zabbix_alerts": {"title": "Relatório Zabbix - Alertas", "artifact_type": "zabbix_report"},
+    "linear_issues": {"title": "Relatório Linear - Issues", "artifact_type": "linear_report"},
+    "dashboard": {"title": "Dashboard - Visão Geral", "artifact_type": "dashboard"},
+    "dashboard_analysis": {"title": "Análise Operacional", "artifact_type": "dashboard"},
+}
+
 
 async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
     """Gera relatório via código (sem LLM) baseado no intent detectado.
@@ -489,7 +500,12 @@ async def stream_chat(request: ChatRequest):
         logger.info("📊 [RULE-ROUTER/STREAM] Intent detectado: %s (bypass LLM)", intent)
 
         async def generate_report_stream():
-            """Stream do relatório gerado por código (simula streaming)."""
+            """Stream do relatório gerado por código (simula streaming).
+
+            Emits artifact_start / artifact_content / artifact_end SSE events
+            so the frontend can render the report in a side panel, followed by
+            a compact content event for the chat bubble.
+            """
             try:
                 # Enviar evento start
                 yield f"data: {json.dumps({'type': 'start', 'thread_id': thread_id}, ensure_ascii=False)}\n\n"
@@ -497,18 +513,28 @@ async def stream_chat(request: ChatRequest):
                 report_md, success = await _generate_report_by_intent(intent)
 
                 if success and report_md:
-                    # Envia conteúdo em chunks para simular streaming
-                    # Divide em partes menores para UX melhor
-                    chunk_size = 200
+                    # --- Artifact SSE events ---
+                    artifact_id = f"art-{uuid.uuid4().hex[:12]}"
+                    meta = INTENT_ARTIFACT_META.get(intent, {
+                        "title": "Relatório",
+                        "artifact_type": "generic_report",
+                    })
+
+                    # artifact_start
+                    yield f"data: {json.dumps({'type': 'artifact_start', 'thread_id': thread_id, 'artifact': {'artifact_id': artifact_id, 'title': meta['title'], 'artifact_type': meta['artifact_type'], 'intent': intent, 'source': 'rule-based'}}, ensure_ascii=False)}\n\n"
+
+                    # artifact_content in chunks
+                    chunk_size = 400
                     for i in range(0, len(report_md), chunk_size):
                         chunk = report_md[i : i + chunk_size]
-                        data = {
-                            "type": "content",
-                            "content": chunk,
-                            "thread_id": thread_id,
-                            "model": "rule-based",
-                        }
-                        yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+                        yield f"data: {json.dumps({'type': 'artifact_content', 'thread_id': thread_id, 'artifact_id': artifact_id, 'content': chunk}, ensure_ascii=False)}\n\n"
+
+                    # artifact_end
+                    yield f"data: {json.dumps({'type': 'artifact_end', 'thread_id': thread_id, 'artifact_id': artifact_id}, ensure_ascii=False)}\n\n"
+
+                    # Chat bubble summary (compact message that references the artifact)
+                    summary = f"Relatório gerado com sucesso."
+                    yield f"data: {json.dumps({'type': 'content', 'content': summary, 'thread_id': thread_id, 'model': 'rule-based', 'artifact_id': artifact_id}, ensure_ascii=False)}\n\n"
                 else:
                     # Erro: envia como conteúdo normal
                     data = {

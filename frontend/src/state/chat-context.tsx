@@ -6,7 +6,10 @@ import { logger } from "@/lib/logger";
 import { translateApiError, formatErrorMessage } from "./error-utils";
 import { useConfig } from "./config-context";
 import { useSession } from "./session-context";
+import { useArtifacts } from "./artifact-context";
+import { useArtifactDetection } from "@/hooks/useArtifactDetection";
 import type { GenesisMessage } from "./types";
+import type { ArtifactStartData } from "./artifact-types";
 
 interface ChatState {
   isLoading: boolean;
@@ -27,6 +30,8 @@ const ChatContext = createContext<ChatState | null>(null);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const config = useConfig();
   const session = useSession();
+  const artifactCtx = useArtifacts();
+  const { detectArtifacts } = useArtifactDetection();
 
   const [isSending, setIsSending] = useState<boolean>(false);
   const [messagesBySession, setMessagesBySession] = useState<Record<string, GenesisMessage[]>>({});
@@ -40,6 +45,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   sessionRef.current = session;
   const messagesBySessionRef = useRef(messagesBySession);
   messagesBySessionRef.current = messagesBySession;
+  const artifactCtxRef = useRef(artifactCtx);
+  artifactCtxRef.current = artifactCtx;
+  const detectArtifactsRef = useRef(detectArtifacts);
+  detectArtifactsRef.current = detectArtifacts;
 
   // Derive isLoading from session load state
   const isLoading = !session.sessionsLoaded;
@@ -223,6 +232,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           let accumulatedContent = "";
           const assistantMessageId = `assistant-${Date.now()}`;
           let thinkingReplaced = false;
+          const collectedArtifactIds: string[] = [];
 
           const replaceThinkingWithAssistant = (assistantContent: string) => {
             setMessagesBySession((prev) => {
@@ -240,6 +250,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 timestamp: Date.now(),
                 modelId: selectedModelId,
                 usedTavily: useTavily,
+                ...(collectedArtifactIds.length > 0 ? { artifactIds: [...collectedArtifactIds] } : {}),
               };
               const updated = [...cleaned, assistantMessage];
               storage.messages.save(threadId, updated);
@@ -302,6 +313,23 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                       if (data.type === "start") {
                         continue;
                       }
+
+                      // --- Artifact SSE events ---
+                      if (data.type === "artifact_start" && data.artifact) {
+                        const artData = data.artifact as ArtifactStartData;
+                        artifactCtxRef.current.startArtifact(threadId, assistantMessageId, artData);
+                        collectedArtifactIds.push(artData.artifact_id);
+                        continue;
+                      }
+                      if (data.type === "artifact_content" && data.artifact_id && data.content) {
+                        artifactCtxRef.current.appendArtifactContent(data.artifact_id, data.content);
+                        continue;
+                      }
+                      if (data.type === "artifact_end" && data.artifact_id) {
+                        artifactCtxRef.current.endArtifact(data.artifact_id);
+                        continue;
+                      }
+
                       if (data.type === "content" && data.content !== undefined && data.content !== null) {
                         let rawContent = data.content;
                         if (typeof rawContent !== "string") {
@@ -314,6 +342,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                           }
                         }
                         const processedContent = rawContent.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+
+                        // Track artifact_id from content events
+                        if (data.artifact_id && !collectedArtifactIds.includes(data.artifact_id)) {
+                          collectedArtifactIds.push(data.artifact_id);
+                        }
 
                         if (data.final === true) {
                           logger.perf("[STREAM] Received final complete content, replacing accumulated content");
@@ -383,6 +416,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                         // Final save
                         if (accumulatedContent) {
                           logger.perf("[STREAM] Saving final content. Length:", accumulatedContent.length);
+
+                          // LLM artifact detection (only if no rule-based artifacts already)
+                          if (collectedArtifactIds.length === 0) {
+                            const { artifacts: detected, cleanedContent } =
+                              detectArtifactsRef.current(accumulatedContent, threadId, assistantMessageId);
+                            if (detected.length > 0) {
+                              logger.perf("[STREAM] Detected", detected.length, "LLM artifacts");
+                              for (const art of detected) {
+                                artifactCtxRef.current.addArtifact(art);
+                                collectedArtifactIds.push(art.id);
+                              }
+                              accumulatedContent = cleanedContent;
+                            }
+                          }
+
                           if (!thinkingReplaced) {
                             thinkingReplaced = true;
                             replaceThinkingWithAssistant(accumulatedContent);
@@ -481,10 +529,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                   setMessagesBySession((prev) => {
                     const existing = prev[threadId] ?? [];
                     const assistantMsg = existing.find((msg) => msg.id === assistantMessageId);
+                    const artIds = collectedArtifactIds.length > 0 ? [...collectedArtifactIds] : undefined;
                     if (!assistantMsg || assistantMsg.content !== accumulatedContent) {
                       const updated = existing.map((msg) =>
                         msg.id === assistantMessageId && msg.role === "assistant"
-                          ? { ...msg, content: accumulatedContent }
+                          ? { ...msg, content: accumulatedContent, ...(artIds ? { artifactIds: artIds } : {}) }
                           : msg
                       );
                       if (!assistantMsg) {
@@ -495,6 +544,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                           timestamp: Date.now(),
                           modelId: selectedModelId,
                           usedTavily: useTavily,
+                          ...(artIds ? { artifactIds: artIds } : {}),
                         });
                       }
                       storage.messages.save(threadId, updated);

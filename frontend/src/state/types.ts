@@ -10,6 +10,7 @@ export interface GenesisMessage {
   modelId?: string;
   usedTavily?: boolean;
   editedAt?: number;
+  artifactIds?: string[];
 }
 
 export interface GenesisSession {

@@ -7,6 +7,8 @@ import { Logo } from "./Logo";
 import { MessageInput } from "./MessageInput";
 import { MessageItem } from "./MessageItem";
 import { SuggestionChips } from "./SuggestionChips";
+import { ArtifactPanel } from "./ArtifactPanel";
+import type { Artifact } from "@/state/artifact-types";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
@@ -33,8 +35,30 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
     enableZabbix,
     enableLinear,
     enablePlanning,
+    // Artifacts
+    artifactsBySession,
+    selectedArtifactId,
+    panelOpen,
+    selectArtifact,
+    closePanel,
+    getSessionArtifacts,
   } = useGenesisUI();
   const messages = useMemo(() => messagesBySession[currentSessionId] ?? [], [messagesBySession, currentSessionId]);
+  const sessionArtifacts = useMemo(() => getSessionArtifacts(currentSessionId), [getSessionArtifacts, currentSessionId, artifactsBySession]);
+
+  // Build a map from artifact id -> Artifact for quick lookup
+  const artifactMap = useMemo(() => {
+    const map = new Map<string, Artifact>();
+    for (const art of sessionArtifacts) map.set(art.id, art);
+    return map;
+  }, [sessionArtifacts]);
+
+  // Resolve the selected artifact object
+  const selectedArtifact = useMemo(
+    () => (selectedArtifactId ? artifactMap.get(selectedArtifactId) ?? null : null),
+    [selectedArtifactId, artifactMap],
+  );
+
   const [editingContent, setEditingContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -119,7 +143,9 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
   }, [currentSessionId]);
 
   return (
-    <div className="flex h-screen flex-1 flex-col min-w-0">
+    <div className="flex h-screen flex-1 min-w-0">
+      {/* Main chat column */}
+      <div className="flex flex-1 flex-col min-w-0">
       <header className="flex h-20 shrink-0 items-center justify-between border-b-2 border-slate-400 px-6 md:px-10 text-slate-900 bg-white shadow-sm">
         <div className="flex items-center gap-4">
           {onToggleSidebar && (
@@ -164,6 +190,21 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               VSA Inativo
             </span>
           )}
+          {sessionArtifacts.length > 0 && (
+            <button
+              onClick={() => {
+                const last = sessionArtifacts[sessionArtifacts.length - 1];
+                if (last) selectArtifact(last.id);
+              }}
+              className="rounded-md border-2 border-slate-400 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm hover:border-vsa-orange/50 transition-colors"
+              title="Ver artefatos"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>{sessionArtifacts.length}</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -193,46 +234,55 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               />
             </div>
           ) : (
-            messages.map((message) => (
-              <MessageItem
-                key={message.id}
-                message={message}
-                isEditing={editingMessageId === message.id}
-                editingContent={editingContent}
-                enableVSA={enableVSA}
-                onEdit={() => {
-                  setEditingMessageId(message.id);
-                  setEditingContent(message.content);
-                }}
-                onResend={() => resendMessage(message.id)}
-                onEditChange={setEditingContent}
-                onEditSave={() => {
-                  if (editingContent.trim()) {
-                    editMessage(message.id, editingContent.trim());
+            messages.map((message) => {
+              // Resolve artifacts linked to this message
+              const msgArtifacts = message.artifactIds
+                ?.map((aid) => artifactMap.get(aid))
+                .filter((a): a is Artifact => !!a);
+
+              return (
+                <MessageItem
+                  key={message.id}
+                  message={message}
+                  isEditing={editingMessageId === message.id}
+                  editingContent={editingContent}
+                  enableVSA={enableVSA}
+                  onEdit={() => {
+                    setEditingMessageId(message.id);
+                    setEditingContent(message.content);
+                  }}
+                  onResend={() => resendMessage(message.id)}
+                  onEditChange={setEditingContent}
+                  onEditSave={() => {
+                    if (editingContent.trim()) {
+                      editMessage(message.id, editingContent.trim());
+                      setEditingMessageId(null);
+                      setEditingContent("");
+                    }
+                  }}
+                  onEditCancel={() => {
                     setEditingMessageId(null);
                     setEditingContent("");
+                  }}
+                  onEditSaveAndResend={async () => {
+                    if (editingContent.trim()) {
+                      editMessage(message.id, editingContent.trim());
+                      setEditingMessageId(null);
+                      setEditingContent("");
+                      await resendMessage(message.id);
+                    }
+                  }}
+                  onConfirmLinearProject={
+                    enableLinear
+                      ? () => handleMessageSubmit("Confirmar criação do projeto no Linear.", true)
+                      : undefined
                   }
-                }}
-                onEditCancel={() => {
-                  setEditingMessageId(null);
-                  setEditingContent("");
-                }}
-                onEditSaveAndResend={async () => {
-                  if (editingContent.trim()) {
-                    editMessage(message.id, editingContent.trim());
-                    setEditingMessageId(null);
-                    setEditingContent("");
-                    await resendMessage(message.id);
-                  }
-                }}
-                onConfirmLinearProject={
-                  enableLinear
-                    ? () => handleMessageSubmit("Confirmar criação do projeto no Linear.", true)
-                    : undefined
-                }
-                isSending={isSending}
-              />
-            ))
+                  isSending={isSending}
+                  artifacts={msgArtifacts}
+                  onOpenArtifact={selectArtifact}
+                />
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -244,6 +294,16 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
         isSending={isSending}
         onCancel={cancelMessage}
         currentSessionId={currentSessionId}
+      />
+      </div>
+
+      {/* Artifact side panel */}
+      <ArtifactPanel
+        artifact={selectedArtifact}
+        open={panelOpen}
+        onClose={closePanel}
+        sessionArtifacts={sessionArtifacts}
+        onSelectArtifact={selectArtifact}
       />
     </div>
   );
