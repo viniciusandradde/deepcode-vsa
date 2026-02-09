@@ -1,32 +1,66 @@
 /**
- * VSA Tecnologia - Design System (frontend)
- * Tokens de design - identidade visual VSA
- * Aliases no final de :root para compatibilidade (Logo, etc.)
+ * VSA Tecnologia - Design System "Obsidian v2.0"
+ * Dark-first design tokens
  */
 
 :root {
-  /* CORES PRIMÁRIAS */
+  /* OBSIDIAN SCALE */
+  --obsidian-950: #050505;
+  --obsidian-900: #0a0a0a;
+  --obsidian-800: #121212;
+  --obsidian-700: #1a1a1a;
+  --obsidian-600: #262626;
+
+  /* BRAND */
+  --brand-primary: #F97316;
+  --brand-primary-dark: #EA580C;
+  --brand-primary-light: #FB923C;
+  --brand-secondary: #3B82F6;
+  --brand-secondary-dark: #2563EB;
+  --brand-secondary-light: #60A5FA;
+
+  /* CORES PRIMÁRIAS (updated to Tailwind palette) */
   --vsa-orange-50: #FFF7ED;
   --vsa-orange-100: #FFEDD5;
   --vsa-orange-200: #FED7AA;
   --vsa-orange-300: #FDBA74;
   --vsa-orange-400: #FB923C;
-  --vsa-orange-500: #F7941D;
-  --vsa-orange-600: #E8611A;
+  --vsa-orange-500: #F97316;
+  --vsa-orange-600: #EA580C;
   --vsa-orange-700: #C2410C;
   --vsa-orange-800: #9A3412;
   --vsa-orange-900: #7C2D12;
 
-  --vsa-blue-50: #EFF9FF;
-  --vsa-blue-100: #DEF1FF;
-  --vsa-blue-200: #B6E5FF;
-  --vsa-blue-300: #75D4FF;
-  --vsa-blue-400: #2CBFFF;
-  --vsa-blue-500: #00AEEF;
-  --vsa-blue-600: #0077B5;
-  --vsa-blue-700: #0369A1;
-  --vsa-blue-800: #075985;
-  --vsa-blue-900: #0C4A6E;
+  --vsa-blue-50: #EFF6FF;
+  --vsa-blue-100: #DBEAFE;
+  --vsa-blue-200: #BFDBFE;
+  --vsa-blue-300: #93C5FD;
+  --vsa-blue-400: #60A5FA;
+  --vsa-blue-500: #3B82F6;
+  --vsa-blue-600: #2563EB;
+  --vsa-blue-700: #1D4ED8;
+  --vsa-blue-800: #1E40AF;
+  --vsa-blue-900: #1E3A8A;
+
+  /* TEXT (dark mode) */
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+
+  /* BORDERS (dark mode) */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.10);
+
+  /* GLASS */
+  --glass-bg: rgba(20, 20, 20, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-blur: 16px;
+
+  /* GLOW */
+  --glow-orange: 0 0 20px rgba(249, 115, 22, 0.15);
+  --glow-orange-lg: 0 0 40px rgba(249, 115, 22, 0.25);
+  --glow-blue: 0 0 20px rgba(59, 130, 246, 0.15);
+  --glow-blue-lg: 0 0 40px rgba(59, 130, 246, 0.25);
 
   /* NEUTRAS */
   --vsa-gray-50: #FAFAFA;
@@ -55,16 +89,16 @@
   --vsa-info-dark: var(--vsa-blue-600);
 
   /* GRADIENTES */
-  --vsa-gradient-brand: linear-gradient(135deg, var(--vsa-orange-500) 0%, var(--vsa-orange-600) 40%, var(--vsa-blue-500) 100%);
-  --vsa-gradient-soft: linear-gradient(135deg, var(--vsa-orange-50) 0%, var(--vsa-blue-50) 100%);
-  --vsa-gradient-hover: linear-gradient(135deg, var(--vsa-orange-600) 0%, var(--vsa-orange-700) 40%, var(--vsa-blue-600) 100%);
-  --vsa-gradient-border: linear-gradient(135deg, var(--vsa-orange-400), var(--vsa-blue-400));
-  --vsa-gradient-orange: linear-gradient(180deg, var(--vsa-orange-500) 0%, var(--vsa-orange-600) 100%);
-  --vsa-gradient-blue: linear-gradient(180deg, var(--vsa-blue-500) 0%, var(--vsa-blue-600) 100%);
+  --vsa-gradient-brand: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 40%, var(--brand-secondary) 100%);
+  --vsa-gradient-soft: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+  --vsa-gradient-hover: linear-gradient(135deg, var(--brand-primary-dark) 0%, #C2410C 40%, var(--brand-secondary-dark) 100%);
+  --vsa-gradient-border: linear-gradient(135deg, var(--brand-primary-light), var(--brand-secondary-light));
+  --vsa-gradient-orange: linear-gradient(180deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%);
+  --vsa-gradient-blue: linear-gradient(180deg, var(--brand-secondary) 0%, var(--brand-secondary-dark) 100%);
 
   /* TIPOGRAFIA */
-  --vsa-font-display: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --vsa-font-body: 'Inter', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  --vsa-font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --vsa-font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --vsa-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --vsa-text-xs: 0.75rem;
   --vsa-text-sm: 0.875rem;
@@ -107,19 +141,19 @@
   --vsa-space-24: 6rem;
 
   /* SOMBRAS */
-  --vsa-shadow-xs: 0 1px 2px rgba(24, 24, 27, 0.05);
-  --vsa-shadow-sm: 0 1px 3px rgba(24, 24, 27, 0.08), 0 1px 2px rgba(24, 24, 27, 0.04);
-  --vsa-shadow-md: 0 4px 6px rgba(24, 24, 27, 0.07), 0 2px 4px rgba(24, 24, 27, 0.05);
-  --vsa-shadow-lg: 0 10px 15px rgba(24, 24, 27, 0.08), 0 4px 6px rgba(24, 24, 27, 0.04);
-  --vsa-shadow-xl: 0 20px 25px rgba(24, 24, 27, 0.10), 0 8px 10px rgba(24, 24, 27, 0.04);
-  --vsa-shadow-2xl: 0 25px 50px rgba(24, 24, 27, 0.18);
-  --vsa-shadow-orange: 0 4px 14px rgba(247, 148, 29, 0.25);
-  --vsa-shadow-orange-lg: 0 8px 24px rgba(247, 148, 29, 0.35);
-  --vsa-shadow-blue: 0 4px 14px rgba(0, 174, 239, 0.25);
-  --vsa-shadow-blue-lg: 0 8px 24px rgba(0, 174, 239, 0.35);
-  --vsa-shadow-brand: 0 4px 14px rgba(247, 148, 29, 0.20), 0 4px 14px rgba(0, 174, 239, 0.15);
-  --vsa-shadow-inner: inset 0 2px 4px rgba(24, 24, 27, 0.05);
-  --vsa-shadow-inner-lg: inset 0 4px 8px rgba(24, 24, 27, 0.08);
+  --vsa-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --vsa-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --vsa-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --vsa-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+  --vsa-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 8px 10px rgba(0, 0, 0, 0.3);
+  --vsa-shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.6);
+  --vsa-shadow-orange: 0 4px 14px rgba(249, 115, 22, 0.25);
+  --vsa-shadow-orange-lg: 0 8px 24px rgba(249, 115, 22, 0.35);
+  --vsa-shadow-blue: 0 4px 14px rgba(59, 130, 246, 0.25);
+  --vsa-shadow-blue-lg: 0 8px 24px rgba(59, 130, 246, 0.35);
+  --vsa-shadow-brand: 0 4px 14px rgba(249, 115, 22, 0.20), 0 4px 14px rgba(59, 130, 246, 0.15);
+  --vsa-shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  --vsa-shadow-inner-lg: inset 0 4px 8px rgba(0, 0, 0, 0.4);
 
   /* BORDAS */
   --vsa-radius-none: 0;
@@ -154,7 +188,7 @@
   --vsa-z-popover: 1060;
   --vsa-z-tooltip: 1070;
 
-  /* Aliases para compatibilidade (Logo, componentes que usam var(--vsa-orange-gradient) etc.) */
+  /* Aliases para compatibilidade */
   --vsa-orange: var(--vsa-orange-500);
   --vsa-orange-dark: var(--vsa-orange-600);
   --vsa-orange-light: var(--vsa-orange-400);
@@ -168,49 +202,30 @@
   --vsa-gradient: var(--vsa-gradient-brand);
 }
 
-[data-theme="dark"],
-.dark {
-  --vsa-gray-50: #18181B;
-  --vsa-gray-100: #27272A;
-  --vsa-gray-200: #3F3F46;
-  --vsa-gray-300: #52525B;
-  --vsa-gray-400: #71717A;
-  --vsa-gray-500: #A1A1AA;
-  --vsa-gray-600: #D4D4D8;
-  --vsa-gray-700: #E4E4E7;
-  --vsa-gray-800: #F4F4F5;
-  --vsa-gray-900: #FAFAFA;
-  --vsa-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --vsa-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-  --vsa-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
-  --vsa-gradient-soft: linear-gradient(135deg, rgba(247, 148, 29, 0.1) 0%, rgba(0, 174, 239, 0.1) 100%);
-}
-
 *:focus-visible {
-  outline: 2px solid var(--vsa-blue-500);
+  outline: 2px solid var(--brand-secondary);
   outline-offset: 2px;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--vsa-gray-100);
-  border-radius: var(--vsa-radius-full);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--vsa-orange-400), var(--vsa-blue-400));
+  background: rgba(255, 255, 255, 0.1);
   border-radius: var(--vsa-radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--vsa-orange-500), var(--vsa-blue-500));
+  background: rgba(255, 255, 255, 0.2);
 }
 
 ::selection {
-  background: var(--vsa-orange-200);
-  color: var(--vsa-gray-900);
+  background: rgba(249, 115, 22, 0.3);
+  color: var(--text-primary);
 }

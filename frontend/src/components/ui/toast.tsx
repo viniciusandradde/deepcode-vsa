@@ -22,15 +22,15 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
   }, [duration, onClose]);
 
   const typeStyles = {
-    success: "bg-emerald-50 border-emerald-200 text-slate-900",
-    error: "bg-red-50 border-red-200 text-slate-900",
-    info: "bg-slate-50 border-slate-300 text-slate-900",
+    success: "bg-emerald-900/40 border-emerald-500/30 text-emerald-200",
+    error: "bg-red-900/40 border-red-500/30 text-red-200",
+    info: "bg-obsidian-800 border-white/10 text-neutral-200",
   };
 
   return (
     <div
       className={clsx(
-        "fixed bottom-4 right-4 z-50 rounded-lg border-2 px-4 py-3 shadow-lg transition-all",
+        "fixed bottom-4 right-4 z-50 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-md transition-all",
         typeStyles[type],
       )}
     >

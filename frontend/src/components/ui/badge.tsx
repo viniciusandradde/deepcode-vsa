@@ -9,14 +9,13 @@ export function Badge({ variant = "default", className, ...props }: BadgeProps) 
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium shadow-sm",
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
         variant === "default"
-          ? "bg-slate-100 text-slate-700"
-          : "border-2 border-slate-400 text-slate-700",
+          ? "bg-white/5 text-neutral-300 border border-white/10"
+          : "border border-white/10 text-neutral-300",
         className,
       )}
       {...props}
     />
   );
 }
-

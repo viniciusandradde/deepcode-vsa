@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Source_Sans_3, Poppins, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({ subsets: ["latin"], variable: "--font-sans" });
-const poppins = Poppins({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-display" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
@@ -26,7 +25,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#F7941D",
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -36,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${sourceSans.variable} ${poppins.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
         {children}
       </body>
     </html>

@@ -1,6 +1,6 @@
 /**
- * VSA Tecnologia - Component Styles (frontend)
- * Importar após vsa-design-tokens.css
+ * VSA Tecnologia - Component Styles (Obsidian v2.0)
+ * Dark-first component styles
  */
 
 .vsa-btn {
@@ -28,75 +28,58 @@
 .vsa-btn-primary {
   background: var(--vsa-gradient-brand);
   color: white;
-  box-shadow: var(--vsa-shadow-sm);
 }
 
 .vsa-btn-primary:hover:not(:disabled) {
   background: var(--vsa-gradient-hover);
-  box-shadow: var(--vsa-shadow-brand);
+  box-shadow: var(--glow-orange);
   transform: translateY(-1px);
 }
 
 .vsa-btn-primary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: var(--vsa-shadow-xs);
 }
 
 .vsa-btn-orange {
   background: var(--vsa-gradient-orange);
   color: white;
-  box-shadow: var(--vsa-shadow-sm);
 }
 
 .vsa-btn-orange:hover:not(:disabled) {
-  box-shadow: var(--vsa-shadow-orange);
+  box-shadow: var(--glow-orange);
   transform: translateY(-1px);
 }
 
 .vsa-btn-blue {
   background: var(--vsa-gradient-blue);
   color: white;
-  box-shadow: var(--vsa-shadow-sm);
 }
 
 .vsa-btn-blue:hover:not(:disabled) {
-  box-shadow: var(--vsa-shadow-blue);
+  box-shadow: var(--glow-blue);
   transform: translateY(-1px);
 }
 
 .vsa-btn-outline {
-  position: relative;
-  background: white;
-  color: var(--vsa-gray-700);
-  box-shadow: var(--vsa-shadow-xs);
-}
-
-.vsa-btn-outline::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 2px;
-  background: var(--vsa-gradient-border);
-  border-radius: inherit;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
 }
 
 .vsa-btn-outline:hover:not(:disabled) {
-  background: var(--vsa-gray-50);
-  box-shadow: var(--vsa-shadow-sm);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .vsa-btn-ghost {
   background: transparent;
-  color: var(--vsa-gray-600);
+  color: var(--text-secondary);
 }
 
 .vsa-btn-ghost:hover:not(:disabled) {
-  background: var(--vsa-gray-100);
-  color: var(--vsa-gray-900);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
 }
 
 .vsa-btn-sm {
@@ -110,24 +93,23 @@
 }
 
 .vsa-card {
-  background: white;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border-radius: var(--vsa-radius-xl);
   padding: var(--vsa-space-6);
-  box-shadow: var(--vsa-shadow-sm);
-  border: 1px solid var(--vsa-gray-300);
+  border: 1px solid var(--border-subtle);
   transition: all var(--vsa-transition-base);
 }
 
 .vsa-card:hover {
-  box-shadow: var(--vsa-shadow-md);
-  border-color: var(--vsa-gray-400);
+  border-color: var(--border-default);
 }
 
 .vsa-card-gradient {
-  background: white;
+  background: var(--obsidian-800);
   border-radius: var(--vsa-radius-xl);
   padding: var(--vsa-space-6);
-  box-shadow: var(--vsa-shadow-sm);
   position: relative;
 }
 
@@ -142,20 +124,18 @@
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.3;
   transition: opacity var(--vsa-transition-base);
 }
 
 .vsa-card-gradient:hover::before {
-  opacity: 1;
+  opacity: 0.6;
 }
 
 .vsa-card-active {
-  border: 2px solid transparent;
-  background:
-    linear-gradient(white, white) padding-box,
-    var(--vsa-gradient-border) border-box;
-  box-shadow: var(--vsa-shadow-brand);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.05);
+  box-shadow: var(--glow-orange);
 }
 
 .vsa-input {
@@ -164,31 +144,31 @@
   font-family: var(--vsa-font-body);
   font-size: var(--vsa-text-base);
   line-height: var(--vsa-leading-normal);
-  color: var(--vsa-gray-900);
-  background: white;
-  border: 1px solid var(--vsa-gray-400);
+  color: var(--text-primary);
+  background: var(--obsidian-800);
+  border: 1px solid var(--border-default);
   border-radius: var(--vsa-radius-lg);
   transition: all var(--vsa-transition-fast);
-  box-shadow: var(--vsa-shadow-xs);
 }
 
 .vsa-input::placeholder {
-  color: var(--vsa-gray-400);
+  color: var(--text-muted);
 }
 
 .vsa-input:hover {
-  border-color: var(--vsa-gray-500);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .vsa-input:focus {
   outline: none;
-  border-color: var(--vsa-blue-500);
-  box-shadow: 0 0 0 3px rgba(0, 174, 239, 0.15);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
 .vsa-input:disabled {
-  background: var(--vsa-gray-100);
+  background: var(--obsidian-700);
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .vsa-input-error {
@@ -219,28 +199,28 @@
 }
 
 .vsa-badge-orange {
-  background: var(--vsa-orange-100);
-  color: var(--vsa-orange-700);
+  background: rgba(249, 115, 22, 0.15);
+  color: #FB923C;
 }
 
 .vsa-badge-blue {
-  background: var(--vsa-blue-100);
-  color: var(--vsa-blue-700);
+  background: rgba(59, 130, 246, 0.15);
+  color: #60A5FA;
 }
 
 .vsa-badge-success {
-  background: var(--vsa-success-light);
-  color: var(--vsa-success-dark);
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
 }
 
 .vsa-badge-error {
-  background: var(--vsa-error-light);
-  color: var(--vsa-error-dark);
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
 }
 
 .vsa-badge-gray {
-  background: var(--vsa-gray-100);
-  color: var(--vsa-gray-700);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
 }
 
 .vsa-badge-gradient {
@@ -249,8 +229,8 @@
 }
 
 .vsa-sidebar {
-  background: white;
-  border-right: 1px solid var(--vsa-gray-300);
+  background: var(--obsidian-900);
+  border-right: 1px solid var(--border-subtle);
   padding: var(--vsa-space-4);
 }
 
@@ -260,20 +240,20 @@
   gap: var(--vsa-space-3);
   padding: var(--vsa-space-3) var(--vsa-space-4);
   font-size: var(--vsa-text-sm);
-  color: var(--vsa-gray-600);
+  color: var(--text-secondary);
   border-radius: var(--vsa-radius-lg);
   transition: all var(--vsa-transition-fast);
   cursor: pointer;
 }
 
 .vsa-sidebar-item:hover {
-  background: var(--vsa-gray-100);
-  color: var(--vsa-gray-900);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
 }
 
 .vsa-sidebar-item-active {
-  background: var(--vsa-gradient-soft);
-  color: var(--vsa-orange-600);
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--brand-primary);
   font-weight: var(--vsa-font-medium);
 }
 
@@ -296,12 +276,12 @@
 }
 
 .vsa-status-offline .vsa-status-dot {
-  background: var(--vsa-gray-400);
+  background: var(--text-muted);
 }
 
 .vsa-status-warning .vsa-status-dot {
-  background: var(--vsa-orange-500);
-  box-shadow: 0 0 0 2px rgba(247, 148, 29, 0.2);
+  background: var(--brand-primary);
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
 }
 
 .vsa-status-error .vsa-status-dot {
@@ -319,17 +299,17 @@
 .vsa-spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid var(--vsa-gray-300);
-  border-top-color: var(--vsa-orange-500);
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: vsa-spin 0.8s linear infinite;
 }
 
 .vsa-spinner-brand {
   border-top-color: transparent;
-  border-right-color: var(--vsa-blue-500);
+  border-right-color: var(--brand-secondary);
   border-bottom-color: transparent;
-  border-left-color: var(--vsa-orange-500);
+  border-left-color: var(--brand-primary);
 }
 
 @keyframes vsa-spin {
@@ -349,11 +329,12 @@
   left: 50%;
   transform: translateX(-50%);
   padding: var(--vsa-space-2) var(--vsa-space-3);
-  background: var(--vsa-gray-900);
-  color: white;
+  background: var(--obsidian-700);
+  color: var(--text-primary);
   font-size: var(--vsa-text-xs);
   white-space: nowrap;
   border-radius: var(--vsa-radius-md);
+  border: 1px solid var(--border-default);
   opacity: 0;
   visibility: hidden;
   transition: all var(--vsa-transition-fast);
@@ -368,8 +349,9 @@
 .vsa-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(24, 24, 27, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: var(--vsa-z-modal-backdrop);
 }
 
@@ -378,7 +360,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
+  background: var(--obsidian-800);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--vsa-radius-2xl);
   padding: var(--vsa-space-8);
   box-shadow: var(--vsa-shadow-2xl);
@@ -393,8 +376,9 @@
   align-items: center;
   gap: var(--vsa-space-3);
   padding: var(--vsa-space-4) var(--vsa-space-5);
-  background: white;
-  border: 1px solid var(--vsa-gray-300);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border-subtle);
   border-radius: var(--vsa-radius-xl);
   cursor: pointer;
   transition: all var(--vsa-transition-base);
@@ -402,8 +386,8 @@
 }
 
 .vsa-quick-action:hover {
-  border-color: var(--vsa-orange-300);
-  box-shadow: var(--vsa-shadow-orange);
+  border-color: rgba(249, 115, 22, 0.3);
+  box-shadow: var(--glow-orange);
   transform: translateY(-2px);
 }
 
@@ -413,9 +397,9 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--vsa-gradient-soft);
+  background: rgba(249, 115, 22, 0.1);
   border-radius: var(--vsa-radius-lg);
-  color: var(--vsa-orange-600);
+  color: var(--brand-primary);
 }
 
 .vsa-quick-action-content {
@@ -425,44 +409,44 @@
 .vsa-quick-action-title {
   font-weight: var(--vsa-font-semibold);
   font-size: var(--vsa-text-sm);
-  color: var(--vsa-gray-900);
+  color: var(--text-primary);
 }
 
 .vsa-quick-action-subtitle {
   font-size: var(--vsa-text-xs);
-  color: var(--vsa-gray-500);
+  color: var(--text-muted);
   margin-top: var(--vsa-space-1);
 }
 
 .vsa-session {
   padding: var(--vsa-space-4);
-  border: 1px solid var(--vsa-gray-300);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--vsa-radius-xl);
-  background: white;
+  background: var(--obsidian-800);
   cursor: pointer;
   transition: all var(--vsa-transition-base);
 }
 
 .vsa-session:hover {
-  border-color: var(--vsa-gray-400);
-  box-shadow: var(--vsa-shadow-sm);
+  border-color: var(--border-default);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .vsa-session-active {
-  background: var(--vsa-gradient-soft);
-  border-color: var(--vsa-orange-300);
-  box-shadow: var(--vsa-shadow-orange);
+  background: rgba(249, 115, 22, 0.05);
+  border-color: rgba(249, 115, 22, 0.3);
+  box-shadow: var(--glow-orange);
 }
 
 .vsa-session-title {
   font-weight: var(--vsa-font-semibold);
   font-size: var(--vsa-text-sm);
-  color: var(--vsa-gray-900);
+  color: var(--text-primary);
 }
 
 .vsa-session-subtitle {
   font-size: var(--vsa-text-xs);
-  color: var(--vsa-gray-500);
+  color: var(--text-muted);
   margin-top: var(--vsa-space-1);
 }
 
@@ -473,7 +457,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 var(--vsa-space-2);
-  background: var(--vsa-orange-500);
+  background: var(--brand-primary);
   color: white;
   font-size: var(--vsa-text-xs);
   font-weight: var(--vsa-font-semibold);

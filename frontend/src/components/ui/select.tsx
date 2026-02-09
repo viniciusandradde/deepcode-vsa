@@ -64,27 +64,27 @@ export function Select({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={clsx(
-          "flex w-full items-center justify-between rounded-lg border-2 px-3 py-2.5 text-left transition-all shadow-sm",
-          "border-slate-300 bg-white text-slate-900",
-          "hover:border-vsa-orange hover:bg-vsa-orange/5",
-          "focus:outline-none focus:ring-2 focus:ring-vsa-orange/40 focus:ring-offset-2 focus:ring-offset-white",
+          "flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-all",
+          "border-white/10 bg-obsidian-800 text-white",
+          "hover:border-brand-primary/40 hover:bg-white/5",
+          "focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:ring-offset-2 focus:ring-offset-obsidian-900",
           disabled && "cursor-not-allowed opacity-50",
-          isOpen && "border-vsa-orange bg-vsa-orange/10 shadow-vsa-orange",
+          isOpen && "border-brand-primary bg-brand-primary/10 shadow-glow-orange",
         )}
       >
         <div className="flex flex-col">
-          <span className="text-sm font-semibold uppercase text-slate-800" style={{ fontFamily: "var(--font-sans)" }}>
+          <span className="text-sm font-semibold uppercase text-white" style={{ fontFamily: "var(--font-sans)" }}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption && selectedOption.description && (
-            <span className="text-[11px] text-slate-500 mt-0.5">
+            <span className="text-[11px] text-neutral-500 mt-0.5">
               {selectedOption.description}
             </span>
           )}
         </div>
         <svg
           className={clsx(
-            "h-4 w-4 text-slate-500 transition-transform",
+            "h-4 w-4 text-neutral-500 transition-transform",
             isOpen && "rotate-180",
           )}
           fill="none"
@@ -101,7 +101,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border-2 border-slate-300 bg-white shadow-xl ring-1 ring-black/10">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-obsidian-800 shadow-xl">
           <div className="max-h-60 overflow-auto p-1">
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -114,17 +114,17 @@ export function Select({
                     setIsOpen(false);
                   }}
                   className={clsx(
-                    "flex w-full flex-col rounded-md px-3 py-2.5 text-left transition-all border-2",
+                    "flex w-full flex-col rounded-md px-3 py-2.5 text-left transition-all border",
                     isSelected
-                      ? "bg-vsa-orange/10 text-vsa-orange-700 border-vsa-orange/40"
-                      : "text-slate-700 border-transparent hover:bg-vsa-orange/5 hover:border-vsa-orange/20",
+                      ? "bg-brand-primary/10 text-white border-brand-primary/40"
+                      : "text-neutral-300 border-transparent hover:bg-white/5 hover:border-white/10",
                   )}
                 >
                   <span className="text-sm font-semibold uppercase" style={{ fontFamily: "var(--font-sans)" }}>
                     {option.label}
                   </span>
                   {option.description && (
-                    <span className="mt-0.5 text-[11px] text-slate-500">
+                    <span className="mt-0.5 text-[11px] text-neutral-500">
                       {option.description}
                     </span>
                   )}

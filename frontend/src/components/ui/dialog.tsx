@@ -20,17 +20,17 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
       onClick={onClose}
     >
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/70 backdrop-blur-md"
         aria-hidden="true"
       />
       <div
-        className="relative z-50 w-full max-w-md rounded-xl border-2 border-slate-300 bg-white p-6 shadow-2xl"
+        className="relative z-50 w-full max-w-md glass-panel rounded-xl border border-white/[0.06] p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide text-slate-900">
+        <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide text-white">
           {title}
         </h2>
-        <div className="mb-6 text-sm text-slate-700">{children}</div>
+        <div className="mb-6 text-sm text-neutral-300">{children}</div>
         {footer && <div className="flex justify-end gap-3">{footer}</div>}
       </div>
     </div>

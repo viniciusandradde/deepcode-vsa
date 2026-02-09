@@ -5,7 +5,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={clsx(
-        "rounded-xl border-2 border-slate-300 bg-white shadow-sm",
+        "glass-panel rounded-xl border border-white/[0.06]",
         className,
       )}
       {...props}
@@ -27,7 +27,6 @@ export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivEleme
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={clsx("text-lg font-semibold", className)} {...props} />
+    <h3 className={clsx("text-lg font-semibold text-white", className)} {...props} />
   );
 }
-

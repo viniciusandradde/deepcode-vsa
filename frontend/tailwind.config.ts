@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 /**
  * VSA Tecnologia - Tailwind CSS Configuration
- * Alinhado ao design system (vsa-design-tokens, tailwind.config.js raiz)
+ * Design System "Obsidian v2.0" - Dark-first
  */
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx}"],
@@ -10,25 +10,41 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", "Inter", "Source Sans Pro", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "Poppins", "Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "Consolas", "monospace"],
-        body: ["Inter", "Source Sans Pro", "system-ui", "sans-serif"],
+        body: ["Inter", "system-ui", "sans-serif"],
       },
       colors: {
+        obsidian: {
+          950: "#050505",
+          900: "#0a0a0a",
+          800: "#121212",
+          700: "#1a1a1a",
+          600: "#262626",
+          500: "#404040",
+        },
+        brand: {
+          primary: "#F97316",
+          "primary-dark": "#EA580C",
+          "primary-light": "#FB923C",
+          secondary: "#3B82F6",
+          "secondary-dark": "#2563EB",
+          "secondary-light": "#60A5FA",
+        },
         // Aliases usados no código (vsa-orange, vsa-orange-dark, etc.)
         vsa: {
           orange: {
-            DEFAULT: "#F7941D",
-            dark: "#E8611A",
+            DEFAULT: "#F97316",
+            dark: "#EA580C",
             light: "#FB923C",
             lighter: "#FED7AA",
           },
           blue: {
-            DEFAULT: "#00AEEF",
-            dark: "#0077B5",
-            light: "#2CBFFF",
-            lighter: "#B6E5FF",
+            DEFAULT: "#3B82F6",
+            dark: "#2563EB",
+            light: "#60A5FA",
+            lighter: "#BFDBFE",
           },
         },
         // Escala completa VSA (design system)
@@ -38,23 +54,23 @@ const config: Config = {
           200: "#FED7AA",
           300: "#FDBA74",
           400: "#FB923C",
-          500: "#F7941D",
-          600: "#E8611A",
+          500: "#F97316",
+          600: "#EA580C",
           700: "#C2410C",
           800: "#9A3412",
           900: "#7C2D12",
         },
         "vsa-blue": {
-          50: "#EFF9FF",
-          100: "#DEF1FF",
-          200: "#B6E5FF",
-          300: "#75D4FF",
-          400: "#2CBFFF",
-          500: "#00AEEF",
-          600: "#0077B5",
-          700: "#0369A1",
-          800: "#075985",
-          900: "#0C4A6E",
+          50: "#EFF6FF",
+          100: "#DBEAFE",
+          200: "#BFDBFE",
+          300: "#93C5FD",
+          400: "#60A5FA",
+          500: "#3B82F6",
+          600: "#2563EB",
+          700: "#1D4ED8",
+          800: "#1E40AF",
+          900: "#1E3A8A",
         },
         "vsa-success": {
           light: "#D1FAE5",
@@ -68,31 +84,35 @@ const config: Config = {
         },
       },
       backgroundImage: {
-        "vsa-brand": "linear-gradient(135deg, #F7941D 0%, #E8611A 40%, #00AEEF 100%)",
-        "vsa-brand-hover": "linear-gradient(135deg, #E8611A 0%, #C2410C 40%, #0077B5 100%)",
-        "vsa-soft": "linear-gradient(135deg, #FFF7ED 0%, #EFF9FF 100%)",
-        "vsa-orange-gradient": "linear-gradient(135deg, #F7941D 0%, #E8611A 50%, #FDBA74 100%)",
-        "vsa-blue-gradient": "linear-gradient(135deg, #00AEEF 0%, #0077B5 50%, #2CBFFF 100%)",
-        "vsa-gradient": "linear-gradient(135deg, #F7941D 0%, #E8611A 25%, #00AEEF 75%, #0077B5 100%)",
-        "vsa-orange": "linear-gradient(180deg, #F7941D 0%, #E8611A 100%)",
-        "vsa-blue": "linear-gradient(180deg, #00AEEF 0%, #0077B5 100%)",
+        "vsa-brand": "linear-gradient(135deg, #F97316 0%, #EA580C 40%, #3B82F6 100%)",
+        "vsa-brand-hover": "linear-gradient(135deg, #EA580C 0%, #C2410C 40%, #2563EB 100%)",
+        "vsa-soft": "linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)",
+        "vsa-orange-gradient": "linear-gradient(135deg, #F97316 0%, #EA580C 50%, #FDBA74 100%)",
+        "vsa-blue-gradient": "linear-gradient(135deg, #3B82F6 0%, #2563EB 50%, #60A5FA 100%)",
+        "vsa-gradient": "linear-gradient(135deg, #F97316 0%, #EA580C 25%, #3B82F6 75%, #2563EB 100%)",
+        "vsa-orange": "linear-gradient(180deg, #F97316 0%, #EA580C 100%)",
+        "vsa-blue": "linear-gradient(180deg, #3B82F6 0%, #2563EB 100%)",
         "vsa-radial":
-          "radial-gradient(circle at top right, rgba(247, 148, 29, 0.1), transparent 50%), radial-gradient(circle at bottom left, rgba(0, 174, 239, 0.1), transparent 50%)",
+          "radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 50%), radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.06), transparent 50%)",
       },
       boxShadow: {
-        "vsa-xs": "0 1px 2px rgba(24, 24, 27, 0.05)",
-        "vsa-sm": "0 1px 3px rgba(24, 24, 27, 0.08), 0 1px 2px rgba(24, 24, 27, 0.04)",
-        "vsa-md": "0 4px 6px rgba(24, 24, 27, 0.07), 0 2px 4px rgba(24, 24, 27, 0.05)",
-        "vsa-lg": "0 10px 15px rgba(24, 24, 27, 0.08), 0 4px 6px rgba(24, 24, 27, 0.04)",
-        "vsa-xl": "0 20px 25px rgba(24, 24, 27, 0.10), 0 8px 10px rgba(24, 24, 27, 0.04)",
-        "vsa-2xl": "0 25px 50px rgba(24, 24, 27, 0.18)",
-        "vsa-orange": "0 4px 14px rgba(247, 148, 29, 0.25)",
-        "vsa-orange-lg": "0 8px 24px rgba(247, 148, 29, 0.35)",
-        "vsa-blue": "0 4px 14px rgba(0, 174, 239, 0.25)",
-        "vsa-blue-lg": "0 8px 24px rgba(0, 174, 239, 0.35)",
-        "vsa-brand": "0 4px 14px rgba(247, 148, 29, 0.20), 0 4px 14px rgba(0, 174, 239, 0.15)",
-        "vsa-inner": "inset 0 2px 4px rgba(24, 24, 27, 0.05)",
-        "vsa-inner-lg": "inset 0 4px 8px rgba(24, 24, 27, 0.08)",
+        "vsa-xs": "0 1px 2px rgba(0, 0, 0, 0.3)",
+        "vsa-sm": "0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2)",
+        "vsa-md": "0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)",
+        "vsa-lg": "0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3)",
+        "vsa-xl": "0 20px 25px rgba(0, 0, 0, 0.5), 0 8px 10px rgba(0, 0, 0, 0.3)",
+        "vsa-2xl": "0 25px 50px rgba(0, 0, 0, 0.6)",
+        "vsa-orange": "0 4px 14px rgba(249, 115, 22, 0.25)",
+        "vsa-orange-lg": "0 8px 24px rgba(249, 115, 22, 0.35)",
+        "vsa-blue": "0 4px 14px rgba(59, 130, 246, 0.25)",
+        "vsa-blue-lg": "0 8px 24px rgba(59, 130, 246, 0.35)",
+        "vsa-brand": "0 4px 14px rgba(249, 115, 22, 0.20), 0 4px 14px rgba(59, 130, 246, 0.15)",
+        "vsa-inner": "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
+        "vsa-inner-lg": "inset 0 4px 8px rgba(0, 0, 0, 0.4)",
+        "glow-orange": "0 0 20px rgba(249, 115, 22, 0.15)",
+        "glow-orange-lg": "0 0 40px rgba(249, 115, 22, 0.25)",
+        "glow-blue": "0 0 20px rgba(59, 130, 246, 0.15)",
+        "glow-blue-lg": "0 0 40px rgba(59, 130, 246, 0.25)",
       },
       borderRadius: {
         "vsa-sm": "0.25rem",
@@ -119,6 +139,8 @@ const config: Config = {
         "vsa-scale": "vsaScale 0.2s ease-out",
         "vsa-pulse-orange": "vsaPulseOrange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "vsa-gradient": "vsaGradient 3s ease infinite",
+        float: "float 8s ease-in-out infinite",
+        "pulse-slow": "pulse-slow 4s ease-in-out infinite",
       },
       keyframes: {
         vsaFadeIn: {
@@ -138,12 +160,20 @@ const config: Config = {
           "100%": { opacity: "1", transform: "scale(1)" },
         },
         vsaPulseOrange: {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(247, 148, 29, 0.4)" },
-          "50%": { boxShadow: "0 0 0 8px rgba(247, 148, 29, 0)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(249, 115, 22, 0.4)" },
+          "50%": { boxShadow: "0 0 0 8px rgba(249, 115, 22, 0)" },
         },
         vsaGradient: {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
+        "pulse-slow": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.8" },
         },
       },
       zIndex: {
@@ -162,7 +192,7 @@ const config: Config = {
     function (api: any) {
       api.addUtilities({
         ".text-vsa-gradient": {
-          background: "linear-gradient(135deg, #F7941D 0%, #00AEEF 100%)",
+          background: "linear-gradient(135deg, #F97316 0%, #3B82F6 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",
@@ -171,13 +201,13 @@ const config: Config = {
       api.addComponents({
         ".border-vsa-gradient": {
           position: "relative",
-          background: "white",
+          background: "#0a0a0a",
           "&::before": {
             content: '""',
             position: "absolute",
             inset: "0",
-            padding: "2px",
-            background: "linear-gradient(135deg, #F7941D, #00AEEF)",
+            padding: "1px",
+            background: "linear-gradient(135deg, #F97316, #3B82F6)",
             borderRadius: "inherit",
             WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
             WebkitMaskComposite: "xor",
