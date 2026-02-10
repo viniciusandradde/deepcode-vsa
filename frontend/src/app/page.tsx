@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { GenesisUIProvider } from "@/state/useGenesisUI";
 import { ChatPane } from "@/components/app/ChatPane";
 import { Sidebar } from "@/components/app/Sidebar";
+import { CommandPalette } from "@/components/app/CommandPalette";
 import { ErrorBoundary } from "@/components/app/ErrorBoundary";
 
 // Lazy load PWA banners (client-only) para evitar hydration mismatch
@@ -26,6 +27,7 @@ export default function Home() {
     }
     return false;
   });
+  const [cmdkOpen, setCmdkOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,16 +35,29 @@ export default function Home() {
     }
   }, [sidebarCollapsed]);
 
+  // Cmd+K / Ctrl+K global shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdkOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <ErrorBoundary>
       <GenesisUIProvider>
         <div className="flex h-screen">
           <Sidebar collapsed={sidebarCollapsed} />
-          <ChatPane 
+          <ChatPane
             sidebarCollapsed={sidebarCollapsed}
             onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
+        <CommandPalette open={cmdkOpen} onOpenChange={setCmdkOpen} />
         {/* PWA Banners com lazy loading (client-only, sem SSR) */}
         <OfflineBanner />
         <InstallPromptBanner />

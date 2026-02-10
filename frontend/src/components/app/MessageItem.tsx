@@ -19,7 +19,6 @@ import type { Artifact } from "@/state/artifact-types";
  */
 function normalizeReportSpacing(content: string): string {
   let out = content.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
-  // Colapsa "  \n" (markdown <br>) para espaço, evitando "Detalhes:\nProjeto\nde\n..." por linha
   out = out.replace(/  \n/g, " ");
   return out;
 }
@@ -83,14 +82,14 @@ export const MessageItem = memo(function MessageItem({
   return (
     <article
       className={clsx(
-        "group relative rounded-2xl border-2 px-5 py-4 text-sm leading-relaxed shadow-sm transition-all animate-in fade-in slide-in-from-bottom-2 duration-300",
+        "group relative rounded-2xl border px-5 py-4 text-sm leading-relaxed transition-all animate-in fade-in slide-in-from-bottom-2 duration-300",
         isAssistant ? "w-full max-w-5xl" : "max-w-2xl ml-auto",
         isError
-          ? "border-red-300 bg-red-50 text-slate-900"
+          ? "border-red-500/30 bg-red-900/20 text-red-300"
           : isAssistant
-            ? "border-slate-400 bg-white text-slate-900"
-            : "border-vsa-orange/40 bg-vsa-orange/10 text-slate-900",
-        isEditing && "ring-2 ring-vsa-orange/40",
+            ? "glass-panel border-white/[0.06] text-neutral-200"
+            : "border-brand-primary/20 bg-brand-primary/10 text-white",
+        isEditing && "ring-2 ring-brand-primary/30",
       )}
     >
       {isUserMessage && !isEditing && (
@@ -100,21 +99,21 @@ export const MessageItem = memo(function MessageItem({
           onResend={onResend}
         />
       )}
-      <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-slate-500">
+      <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-neutral-500">
         <span>
           {message.role === "assistant" ? "Agente" : "Você"}
           {message.editedAt && (
-            <span className="ml-2 text-[9px] italic text-slate-400">(editado)</span>
+            <span className="ml-2 text-[9px] italic text-neutral-600">(editado)</span>
           )}
         </span>
-        <span className="text-slate-400">{new Date(message.timestamp).toLocaleTimeString()}</span>
+        <span className="text-neutral-600">{new Date(message.timestamp).toLocaleTimeString()}</span>
       </div>
       {isEditing ? (
         <div className="space-y-2">
             <textarea
               value={editingContent}
               onChange={(e) => onEditChange(e.target.value)}
-            className="w-full resize-none rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
+            className="w-full resize-none rounded-lg border border-white/10 bg-obsidian-800 px-3 py-2 text-sm text-white focus:border-brand-primary focus:outline-none"
               rows={3}
             autoFocus
             onKeyDown={(e) => {
@@ -133,7 +132,6 @@ export const MessageItem = memo(function MessageItem({
               variant="outline"
               size="sm"
               onClick={onEditCancel}
-              className="border-slate-400 text-slate-700"
             >
               Cancelar
             </Button>
@@ -142,7 +140,7 @@ export const MessageItem = memo(function MessageItem({
               size="sm"
               onClick={onEditSave}
               disabled={!editingContent.trim()}
-              className="bg-vsa-orange/15 text-slate-900 hover:bg-vsa-orange/25"
+              className="bg-brand-primary/15 text-white hover:bg-brand-primary/25"
             >
               Salvar
             </Button>
@@ -151,7 +149,7 @@ export const MessageItem = memo(function MessageItem({
               size="sm"
               onClick={onEditSaveAndResend}
               disabled={!editingContent.trim() || isSending}
-              className="bg-emerald-100 text-slate-900 hover:bg-emerald-200"
+              className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
             >
               Salvar e Reenviar
             </Button>
@@ -185,13 +183,13 @@ export const MessageItem = memo(function MessageItem({
               rehypePlugins={[]}
               components={{
                 p: ({ children }) => (
-                  <p className="mb-4 last:mb-0 whitespace-normal text-slate-800 leading-relaxed">{children}</p>
+                  <p className="mb-4 last:mb-0 whitespace-normal text-neutral-200 leading-relaxed">{children}</p>
                 ),
                 br: () => <br />,
                 a: ({ ...props }) => (
                   <a
                     {...props}
-                    className="font-semibold text-slate-900 underline decoration-vsa-orange/40 underline-offset-4 hover:text-slate-900"
+                    className="font-semibold text-brand-primary underline decoration-brand-primary/40 underline-offset-4 hover:text-brand-primary/80"
                     target="_blank"
                     rel="noreferrer"
                   />
@@ -201,7 +199,7 @@ export const MessageItem = memo(function MessageItem({
                   return isInline ? (
                     <code
                       className={clsx(
-                        "rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-800",
+                        "rounded bg-white/5 px-1.5 py-0.5 text-[13px] text-neutral-200",
                         className,
                       )}
                       {...props}
@@ -210,39 +208,39 @@ export const MessageItem = memo(function MessageItem({
                     </code>
                   ) : (
                     <pre
-                      className="overflow-x-auto rounded-lg border-2 border-slate-400 bg-slate-50 p-4 text-[13px] text-slate-800 shadow-sm"
+                      className="overflow-x-auto rounded-lg border border-white/10 bg-obsidian-800 p-4 text-[13px] text-neutral-200"
                     >
                       <code className={className} {...props}>{children}</code>
                     </pre>
                   );
                 },
                 li: ({ ...props }) => <li className="pl-1" {...props} />,
-                h1: ({ ...props }) => <h1 className="mb-4 text-2xl font-bold" {...props} />,
-                h2: ({ ...props }) => <h2 className="mb-3 mt-4 text-xl font-semibold" {...props} />,
-                h3: ({ ...props }) => <h3 className="mb-2 mt-3 text-lg font-semibold" {...props} />,
+                h1: ({ ...props }) => <h1 className="mb-4 text-2xl font-bold text-white" {...props} />,
+                h2: ({ ...props }) => <h2 className="mb-3 mt-4 text-xl font-semibold text-white" {...props} />,
+                h3: ({ ...props }) => <h3 className="mb-2 mt-3 text-lg font-semibold text-white" {...props} />,
                 ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc space-y-1" {...props} />,
                 ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal space-y-1" {...props} />,
-                blockquote: ({ ...props }) => <blockquote className="mb-4 border-l-4 border-vsa-orange/40 pl-4 italic text-slate-700" {...props} />,
+                blockquote: ({ ...props }) => <blockquote className="mb-4 border-l-4 border-brand-primary/30 pl-4 italic text-neutral-400" {...props} />,
                 img: ({ src, alt, ...props }) => {
                   if (!src) return null;
                   return <img src={src} alt={alt || ""} className="max-w-full rounded-lg my-4" {...props} />;
                 },
                 table: ({ ...props }) => (
-                  <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border-2 border-slate-400 shadow-sm">
-                    <table className="min-w-full table-auto divide-y divide-slate-200 text-sm" {...props} />
+                  <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border border-white/10">
+                    <table className="min-w-full table-auto divide-y divide-white/10 text-sm" {...props} />
                   </div>
                 ),
-                thead: ({ ...props }) => <thead className="bg-slate-50" {...props} />,
-                tbody: ({ ...props }) => <tbody className="divide-y divide-slate-200 bg-white" {...props} />,
-                tr: ({ ...props }) => <tr className="hover:bg-slate-50 transition-colors" {...props} />,
+                thead: ({ ...props }) => <thead className="bg-white/5" {...props} />,
+                tbody: ({ ...props }) => <tbody className="divide-y divide-white/[0.06]" {...props} />,
+                tr: ({ ...props }) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
                 th: ({ ...props }) => (
                   <th
-                    className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                    className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-400"
                     {...props}
                   />
                 ),
                 td: ({ ...props }) => (
-                  <td className="min-w-0 max-w-[40rem] break-words px-4 py-3 text-sm text-slate-700 align-top" {...props} />
+                  <td className="min-w-0 max-w-[40rem] break-words px-4 py-3 text-sm text-neutral-300 align-top" {...props} />
                 ),
               }}
             >
@@ -255,7 +253,7 @@ export const MessageItem = memo(function MessageItem({
                   size="sm"
                   onClick={onConfirmLinearProject}
                   disabled={isSending}
-                  className="bg-emerald-100 text-slate-900 hover:bg-emerald-200"
+                  className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
                 >
                   Confirmar criação do projeto no Linear
                 </Button>
@@ -272,11 +270,11 @@ export const MessageItem = memo(function MessageItem({
           </div>
         )
         ) : (
-        <p className="whitespace-pre-wrap text-[15px] text-slate-900" style={{ fontFamily: "var(--font-sans)" }}>
+        <p className="whitespace-pre-wrap text-[15px] text-white">
           {message.content}
         </p>
       )}
-      <div className="mt-3 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.35em] text-slate-500">
+      <div className="mt-3 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.35em] text-neutral-600">
         {message.modelId ? <span>Modelo: {message.modelId}</span> : null}
         {message.usedTavily ? <span>Busca Web Ativada</span> : null}
       </div>

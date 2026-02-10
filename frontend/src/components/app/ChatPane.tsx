@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Virtuoso } from "react-virtuoso";
 import { useGenesisUI } from "@/state/useGenesisUI";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Logo } from "./Logo";
 import { MessageInput } from "./MessageInput";
 import { MessageItem } from "./MessageItem";
 import { SuggestionChips } from "./SuggestionChips";
 import { ArtifactPanel } from "./ArtifactPanel";
 import type { Artifact } from "@/state/artifact-types";
+import { SkeletonMessage } from "@/components/ui/skeleton";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
@@ -60,13 +61,8 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
   );
 
   const [editingContent, setEditingContent] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const mainRef = useRef<HTMLElement>(null);
-  const [userHasScrolled, setUserHasScrolled] = useState(false);
-  const lastMessageCountRef = useRef(0);
 
   const handleMessageSubmit = useCallback(async (message: string, streaming: boolean) => {
-    setUserHasScrolled(false);
     await sendMessage(message, streaming);
   }, [sendMessage]);
 
@@ -101,57 +97,16 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editingMessageId, messages, setEditingMessageId]);
 
-  useEffect(() => {
-    const mainElement = mainRef.current;
-    if (!mainElement) return;
-
-    function handleUserScroll(event: Event) {
-      const target = event.target as HTMLElement;
-      if (!target) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = target;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-
-      if (!isNearBottom) {
-        setUserHasScrolled(true);
-      }
-    }
-
-    mainElement.addEventListener('scroll', handleUserScroll, { passive: true });
-    mainElement.addEventListener('wheel', handleUserScroll, { passive: true });
-    mainElement.addEventListener('touchmove', handleUserScroll, { passive: true });
-
-    return () => {
-      mainElement.removeEventListener('scroll', handleUserScroll);
-      mainElement.removeEventListener('wheel', handleUserScroll);
-      mainElement.removeEventListener('touchmove', handleUserScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    const hasNewMessages = messages.length > lastMessageCountRef.current;
-    lastMessageCountRef.current = messages.length;
-
-    if (!userHasScrolled || hasNewMessages) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, userHasScrolled]);
-
-  useEffect(() => {
-    setUserHasScrolled(false);
-    lastMessageCountRef.current = 0;
-  }, [currentSessionId]);
-
   return (
     <div className="flex h-screen flex-1 min-w-0">
       {/* Main chat column */}
       <div className="flex flex-1 flex-col min-w-0">
-      <header className="flex h-20 shrink-0 items-center justify-between border-b-2 border-slate-400 px-6 md:px-10 text-slate-900 bg-white shadow-sm">
+      <header className="flex h-20 shrink-0 items-center justify-between border-b border-white/[0.06] px-6 md:px-10 text-white bg-obsidian-900/80 backdrop-blur-md">
         <div className="flex items-center gap-4">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className="p-2 rounded-lg border-2 border-slate-400 bg-white text-slate-600 shadow-sm hover:border-vsa-orange hover:bg-vsa-orange/5 hover:text-slate-900 transition-colors"
+              className="p-2 rounded-lg border border-white/10 bg-white/5 text-neutral-400 hover:border-brand-primary/40 hover:bg-brand-primary/10 hover:text-white transition-colors"
               aria-label={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
               title={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
             >
@@ -172,21 +127,21 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
             </button>
           )}
           <Logo size="md" showText={true} />
-          <div className="h-12 w-px bg-vsa-orange/40" />
+          <div className="h-12 w-px bg-brand-primary/30" />
         </div>
         <div className="flex items-center gap-4 text-[11px] uppercase tracking-wide">
           {enableVSA ? (
-            <span className="rounded-md border-2 border-slate-400 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse" />
+            <span className="glass-panel rounded-md px-3 py-1 text-neutral-300 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-brand-primary animate-pulse" />
               VSA Ativo
-              {enableGLPI && <span className="text-slate-900">GLPI</span>}
-              {enableZabbix && <span className="text-slate-900">Zabbix</span>}
-              {enableLinear && <span className="text-slate-900">Linear</span>}
-              {enablePlanning && <span className="text-slate-900">Planejamento</span>}
+              {enableGLPI && <span className="text-neutral-400">GLPI</span>}
+              {enableZabbix && <span className="text-neutral-400">Zabbix</span>}
+              {enableLinear && <span className="text-neutral-400">Linear</span>}
+              {enablePlanning && <span className="text-neutral-400">Planejamento</span>}
             </span>
           ) : (
-            <span className="rounded-md border-2 border-slate-400 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-slate-400" />
+            <span className="glass-panel rounded-md px-3 py-1 text-neutral-500 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-neutral-600" />
               VSA Inativo
             </span>
           )}
@@ -196,7 +151,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                 const last = sessionArtifacts[sessionArtifacts.length - 1];
                 if (last) selectArtifact(last.id);
               }}
-              className="rounded-md border-2 border-slate-400 px-3 py-1 text-slate-900 bg-white flex items-center gap-2 shadow-sm hover:border-vsa-orange/50 transition-colors"
+              className="glass-panel rounded-md px-3 py-1 text-neutral-300 flex items-center gap-2 hover:border-brand-primary/40 transition-colors"
               title="Ver artefatos"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -208,84 +163,88 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
         </div>
       </header>
 
-      <main
-        ref={mainRef}
-        className="vsa-main-background relative flex flex-1 flex-col gap-5 overflow-y-auto px-6 md:px-10 py-6 md:py-8 min-h-0"
-      >
-        <div className="relative flex-1 space-y-4">
-          {isLoading ? (
-            <Card className="border-2 border-slate-400 bg-white text-center text-slate-600">
-              <CardHeader>Carregando sessões</CardHeader>
-              <CardContent>Aguarde enquanto conectamos ao servidor.</CardContent>
-            </Card>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-8 py-8">
-              <div className="text-center px-4">
-                <h2 className="text-2xl md:text-3xl font-semibold text-slate-900 drop-shadow-sm">
-                  Como posso ajudar?
-                </h2>
-                <p className="mt-2 text-slate-700 font-medium">
-                  Escolha uma opção ou digite sua pergunta
-                </p>
-              </div>
-              <SuggestionChips
-                onSelect={(cmd) => handleMessageSubmit(cmd, true)}
-                disabled={isSending || isLoading}
-              />
+      <main className="vsa-main-background relative flex flex-1 flex-col min-h-0">
+        {isLoading ? (
+          <div className="space-y-4 px-6 md:px-10 py-6 md:py-8">
+            <SkeletonMessage align="right" />
+            <SkeletonMessage align="left" />
+            <SkeletonMessage align="right" />
+            <SkeletonMessage align="left" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 md:px-10 py-8">
+            <div className="text-center px-4">
+              <h2 className="text-2xl md:text-3xl font-semibold text-white">
+                Como posso ajudar?
+              </h2>
+              <p className="mt-2 text-neutral-400 font-medium">
+                Escolha uma opção ou digite sua pergunta
+              </p>
             </div>
-          ) : (
-            messages.map((message) => {
-              // Resolve artifacts linked to this message
+            <SuggestionChips
+              onSelect={(cmd) => handleMessageSubmit(cmd, true)}
+              disabled={isSending || isLoading}
+            />
+          </div>
+        ) : (
+          <Virtuoso
+            key={currentSessionId}
+            style={{ flex: 1 }}
+            data={messages}
+            followOutput="smooth"
+            initialTopMostItemIndex={messages.length - 1}
+            computeItemKey={(_, msg) => msg.id}
+            itemContent={(_, message) => {
               const msgArtifacts = message.artifactIds
                 ?.map((aid) => artifactMap.get(aid))
                 .filter((a): a is Artifact => !!a);
 
               return (
-                <MessageItem
-                  key={message.id}
-                  message={message}
-                  isEditing={editingMessageId === message.id}
-                  editingContent={editingContent}
-                  enableVSA={enableVSA}
-                  onEdit={() => {
-                    setEditingMessageId(message.id);
-                    setEditingContent(message.content);
-                  }}
-                  onResend={() => resendMessage(message.id)}
-                  onEditChange={setEditingContent}
-                  onEditSave={() => {
-                    if (editingContent.trim()) {
-                      editMessage(message.id, editingContent.trim());
+                <div className="px-6 md:px-10 py-2">
+                  <MessageItem
+                    message={message}
+                    isEditing={editingMessageId === message.id}
+                    editingContent={editingContent}
+                    enableVSA={enableVSA}
+                    onEdit={() => {
+                      setEditingMessageId(message.id);
+                      setEditingContent(message.content);
+                    }}
+                    onResend={() => resendMessage(message.id)}
+                    onEditChange={setEditingContent}
+                    onEditSave={() => {
+                      if (editingContent.trim()) {
+                        editMessage(message.id, editingContent.trim());
+                        setEditingMessageId(null);
+                        setEditingContent("");
+                      }
+                    }}
+                    onEditCancel={() => {
                       setEditingMessageId(null);
                       setEditingContent("");
+                    }}
+                    onEditSaveAndResend={async () => {
+                      if (editingContent.trim()) {
+                        editMessage(message.id, editingContent.trim());
+                        setEditingMessageId(null);
+                        setEditingContent("");
+                        await resendMessage(message.id);
+                      }
+                    }}
+                    onConfirmLinearProject={
+                      enableLinear
+                        ? () => handleMessageSubmit("Confirmar criação do projeto no Linear.", true)
+                        : undefined
                     }
-                  }}
-                  onEditCancel={() => {
-                    setEditingMessageId(null);
-                    setEditingContent("");
-                  }}
-                  onEditSaveAndResend={async () => {
-                    if (editingContent.trim()) {
-                      editMessage(message.id, editingContent.trim());
-                      setEditingMessageId(null);
-                      setEditingContent("");
-                      await resendMessage(message.id);
-                    }
-                  }}
-                  onConfirmLinearProject={
-                    enableLinear
-                      ? () => handleMessageSubmit("Confirmar criação do projeto no Linear.", true)
-                      : undefined
-                  }
-                  isSending={isSending}
-                  artifacts={msgArtifacts}
-                  onOpenArtifact={selectArtifact}
-                />
+                    isSending={isSending}
+                    artifacts={msgArtifacts}
+                    onOpenArtifact={selectArtifact}
+                  />
+                </div>
               );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            }}
+          />
+        )}
       </main>
 
       <MessageInput

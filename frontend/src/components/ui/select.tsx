@@ -73,7 +73,7 @@ export function Select({
         )}
       >
         <div className="flex flex-col">
-          <span className="text-sm font-semibold uppercase text-white" style={{ fontFamily: "var(--font-sans)" }}>
+          <span className="text-sm font-semibold uppercase text-white">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption && selectedOption.description && (
@@ -101,7 +101,7 @@ export function Select({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-obsidian-800 shadow-xl">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/10 bg-obsidian-800 shadow-vsa-xl">
           <div className="max-h-60 overflow-auto p-1">
             {options.map((option) => {
               const isSelected = option.value === value;
@@ -120,7 +120,7 @@ export function Select({
                       : "text-neutral-300 border-transparent hover:bg-white/5 hover:border-white/10",
                   )}
                 >
-                  <span className="text-sm font-semibold uppercase" style={{ fontFamily: "var(--font-sans)" }}>
+                  <span className="text-sm font-semibold uppercase">
                     {option.label}
                   </span>
                   {option.description && (

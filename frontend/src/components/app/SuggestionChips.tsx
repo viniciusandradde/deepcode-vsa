@@ -92,28 +92,21 @@ export function SuggestionChips({ onSelect, disabled }: SuggestionChipsProps) {
           onClick={() => onSelect(suggestion.command)}
           disabled={disabled}
           className={clsx(
-            "group flex flex-col items-start gap-1 rounded-xl p-4 text-left transition-all shadow-sm",
-            "border-2 border-slate-300 bg-white hover:border-vsa-orange hover:bg-vsa-orange/5 hover:shadow-vsa-orange",
+            "group flex flex-col items-start gap-1 rounded-xl p-4 text-left transition-all",
+            "glass-panel border border-white/[0.06] hover:border-brand-primary/40 hover:shadow-glow-orange",
             "disabled:cursor-not-allowed disabled:opacity-50",
             suggestion.variant === "warning"
-              ? "border-amber-400/40 hover:border-amber-500/60 hover:bg-amber-50/50"
+              ? "border-amber-500/20 hover:border-amber-500/40"
               : ""
           )}
         >
-          <div
-            className={clsx(
-              "flex items-center gap-2",
-              suggestion.variant === "warning"
-                ? "text-slate-900"
-                : "text-slate-900"
-            )}
-          >
-            <span className="text-vsa-orange group-hover:text-vsa-orange-600 transition-colors">
+          <div className="flex items-center gap-2 text-white">
+            <span className="text-brand-primary group-hover:text-brand-primary/80 transition-colors">
               {suggestion.icon}
             </span>
-            <span className="font-medium text-slate-900">{suggestion.label}</span>
+            <span className="font-medium">{suggestion.label}</span>
           </div>
-          <span className="text-xs text-slate-500 group-hover:text-slate-600">
+          <span className="text-xs text-neutral-500 group-hover:text-neutral-400">
             {suggestion.description}
           </span>
         </button>

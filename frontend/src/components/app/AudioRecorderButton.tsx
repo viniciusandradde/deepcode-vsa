@@ -87,7 +87,7 @@ export function AudioRecorderButton({
       type="button"
       onClick={handleToggle}
       className={clsx(
-        "relative flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white",
+        "relative flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white",
         isRecording
           ? "border-vsa-orange-600 bg-vsa-orange/20 text-vsa-orange-700 shadow-vsa-orange focus:ring-vsa-orange animate-pulse"
           : "border-slate-400 bg-white text-slate-600 hover:border-vsa-orange hover:bg-vsa-orange/5 hover:text-vsa-orange-600 focus:ring-vsa-orange/40",

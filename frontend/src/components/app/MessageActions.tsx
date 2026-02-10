@@ -26,7 +26,7 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
   return (
     <div
       className={clsx(
-        "absolute right-2 top-2 flex gap-1 rounded-md border-2 border-slate-300 bg-white/95 p-1 shadow-md transition-opacity",
+        "absolute right-2 top-2 flex gap-1 rounded-md border border-white/10 bg-obsidian-800/95 p-1 shadow-vsa-md transition-opacity",
         isHovered ? "opacity-100" : "opacity-0",
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -34,7 +34,7 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
     >
         <button
           onClick={onEdit}
-          className="rounded p-1.5 text-slate-500 transition-colors hover:bg-vsa-orange/10 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-vsa-orange/40"
+          className="rounded p-1.5 text-neutral-500 transition-colors hover:bg-brand-primary/10 hover:text-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
           aria-label="Editar mensagem"
           title="Editar mensagem (E)"
         >
@@ -56,7 +56,7 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
       {onResend && (
         <button
           onClick={onResend}
-          className="rounded p-1.5 text-slate-500 transition-colors hover:bg-emerald-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+          className="rounded p-1.5 text-neutral-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30"
           aria-label="Reenviar mensagem"
           title="Reenviar mensagem"
         >
@@ -78,7 +78,7 @@ export function MessageActions({ message, onEdit, onResend, onCopy }: MessageAct
       )}
         <button
           onClick={handleCopy}
-          className="rounded p-1.5 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          className="rounded p-1.5 text-neutral-500 transition-colors hover:bg-white/10 hover:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-white/20"
           aria-label="Copiar mensagem"
           title="Copiar mensagem"
         >

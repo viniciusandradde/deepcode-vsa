@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { listSchedules, deleteSchedule, pauseSchedule, resumeSchedule, runSchedule } from '@/lib/api/scheduler';
 import type { Schedule } from '@/types/automation';
+import { useToast } from '@/components/ui/toast';
+import { Dialog } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 /**
  * Converte expressão CRON para texto legível
@@ -97,6 +100,13 @@ export function ScheduleList() {
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [actionLoading, setActionLoading] = useState<Record<string, string | null>>({});
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+    const { addToast } = useToast();
+
+    const setActionState = (id: string, action: string | null) => {
+        setActionLoading((prev) => ({ ...prev, [id]: action }));
+    };
 
     const fetchSchedules = async () => {
         try {
@@ -114,50 +124,67 @@ export function ScheduleList() {
         fetchSchedules();
     }, []);
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja remover este agendamento?')) return;
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        const { id, name } = deleteTarget;
+        setDeleteTarget(null);
+        setActionState(id, 'delete');
         try {
             await deleteSchedule(id);
             setSchedules(prev => prev.filter(s => s.id !== id));
+            addToast(`"${name}" removido`, 'success');
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Erro ao remover');
+            addToast(err instanceof Error ? err.message : 'Erro ao remover', 'error');
+        } finally {
+            setActionState(id, null);
         }
     };
 
     const handlePause = async (id: string) => {
+        setActionState(id, 'pause');
         try {
             await pauseSchedule(id);
-            fetchSchedules();
+            await fetchSchedules();
+            addToast('Agendamento pausado', 'success');
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Erro ao pausar');
+            addToast(err instanceof Error ? err.message : 'Erro ao pausar', 'error');
+        } finally {
+            setActionState(id, null);
         }
     };
 
     const handleResume = async (id: string) => {
+        setActionState(id, 'resume');
         try {
             await resumeSchedule(id);
-            fetchSchedules();
+            await fetchSchedules();
+            addToast('Agendamento retomado', 'success');
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Erro ao retomar');
+            addToast(err instanceof Error ? err.message : 'Erro ao retomar', 'error');
+        } finally {
+            setActionState(id, null);
         }
     };
 
     const handleRun = async (id: string, name: string) => {
+        setActionState(id, 'run');
         try {
-            const result = await runSchedule(id);
-            alert(`🚀 Tarefa "${name}" disparada!\nTask ID: ${result.task_id}`);
+            await runSchedule(id);
+            addToast(`Tarefa "${name}" disparada com sucesso`, 'success');
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Erro ao executar');
+            addToast(err instanceof Error ? err.message : 'Erro ao executar', 'error');
+        } finally {
+            setActionState(id, null);
         }
     };
 
     if (loading) {
         return (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
+            <div className="rounded-lg border border-white/[0.06] bg-obsidian-800 p-6">
                 <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-zinc-800 rounded w-1/4"></div>
-                    <div className="h-10 bg-zinc-800 rounded"></div>
-                    <div className="h-10 bg-zinc-800 rounded"></div>
+                    <div className="h-4 bg-obsidian-800 rounded w-1/4"></div>
+                    <div className="h-10 bg-obsidian-800 rounded"></div>
+                    <div className="h-10 bg-obsidian-800 rounded"></div>
                 </div>
             </div>
         );
@@ -165,8 +192,8 @@ export function ScheduleList() {
 
     if (error) {
         return (
-            <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-red-400">
-                <p className="font-medium">❌ Erro ao carregar agendamentos</p>
+            <div className="rounded-lg border border-red-500/30 bg-red-900/20 p-4 text-red-300">
+                <p className="font-medium">Erro ao carregar agendamentos</p>
                 <p className="text-sm opacity-70 mt-1">{error}</p>
                 <button onClick={fetchSchedules} className="mt-2 text-sm underline">Tentar novamente</button>
             </div>
@@ -175,94 +202,118 @@ export function ScheduleList() {
 
     if (schedules.length === 0) {
         return (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 text-center">
-                <p className="text-zinc-500 text-lg">📅 Nenhum agendamento ativo</p>
-                <p className="text-zinc-600 text-sm mt-2">Crie um novo agendamento para começar</p>
+            <div className="rounded-lg border border-white/[0.06] bg-obsidian-800 p-8 text-center">
+                <p className="text-neutral-500 text-lg">Nenhum agendamento ativo</p>
+                <p className="text-neutral-600 text-sm mt-2">Crie um novo agendamento para começar</p>
             </div>
         );
     }
 
     return (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-            <table className="w-full text-sm">
-                <thead className="bg-zinc-800/50">
-                    <tr className="text-zinc-400 text-left">
-                        <th className="px-4 py-3 font-medium">Nome</th>
-                        <th className="px-4 py-3 font-medium">Frequência</th>
-                        <th className="px-4 py-3 font-medium">Canal</th>
-                        <th className="px-4 py-3 font-medium">Próxima Execução</th>
-                        <th className="px-4 py-3 font-medium text-right">Ações</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800">
-                    {schedules.map((schedule) => (
-                        <tr key={schedule.id} className="hover:bg-zinc-800/30 transition-colors">
-                            <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                    <span className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-emerald-500' : 'bg-zinc-500'}`}></span>
-                                    <span className="text-zinc-200 font-medium">{schedule.name}</span>
-                                </div>
-                            </td>
-                            <td className="px-4 py-3">
-                                <span className="text-zinc-300 text-sm">
-                                    🕐 {cronToHuman(schedule.cron)}
-                                </span>
-                            </td>
-                            <td className="px-4 py-3">
-                                <span className="px-2 py-1 rounded text-xs bg-zinc-800 text-zinc-300 capitalize">
-                                    {schedule.config.channel === 'telegram' && '💬 '}
-                                    {schedule.config.channel === 'teams' && '🟦 '}
-                                    {schedule.config.channel === 'whatsapp' && '💚 '}
-                                    {schedule.config.channel}
-                                </span>
-                            </td>
-                            <td className="px-4 py-3 text-zinc-400 text-xs">
-                                {schedule.next_run
-                                    ? new Date(schedule.next_run).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
-                                    : '-'
-                                }
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    <button
-                                        onClick={() => handleRun(schedule.id, schedule.name)}
-                                        className="px-2 py-1 text-xs rounded bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 transition-colors"
-                                    >
-                                        🚀 Testar
-                                    </button>
-                                    <Link
-                                        href={`/automation/scheduler/${encodeURIComponent(schedule.id)}/edit`}
-                                        className="px-2 py-1 text-xs rounded bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 transition-colors"
-                                    >
-                                        ✏️ Editar
-                                    </Link>
-                                    {schedule.enabled ? (
-                                        <button
-                                            onClick={() => handlePause(schedule.id)}
-                                            className="px-2 py-1 text-xs rounded bg-amber-900/30 text-amber-400 hover:bg-amber-900/50 transition-colors"
-                                        >
-                                            ⏸️ Pausar
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleResume(schedule.id)}
-                                            className="px-2 py-1 text-xs rounded bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50 transition-colors"
-                                        >
-                                            ▶️ Retomar
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => handleDelete(schedule.id)}
-                                        className="px-2 py-1 text-xs rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors"
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            </td>
+        <>
+            <div className="rounded-lg border border-white/[0.06] bg-obsidian-800 overflow-hidden">
+                <table className="w-full text-sm">
+                    <thead className="bg-white/5">
+                        <tr className="text-neutral-400 text-left">
+                            <th className="px-4 py-3 font-medium">Nome</th>
+                            <th className="px-4 py-3 font-medium">Frequência</th>
+                            <th className="px-4 py-3 font-medium">Canal</th>
+                            <th className="px-4 py-3 font-medium">Próxima Execução</th>
+                            <th className="px-4 py-3 font-medium text-right">Ações</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.06]">
+                        {schedules.map((schedule) => {
+                            const busy = actionLoading[schedule.id];
+                            return (
+                                <tr key={schedule.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-emerald-500' : 'bg-neutral-500'}`}></span>
+                                            <span className="text-white font-medium">{schedule.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="text-neutral-300 text-sm">
+                                            {cronToHuman(schedule.cron)}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className="px-2 py-1 rounded text-xs bg-obsidian-800 text-neutral-300 capitalize">
+                                            {schedule.config.channel}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-neutral-400 text-xs">
+                                        {schedule.next_run
+                                            ? new Date(schedule.next_run).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+                                            : '-'
+                                        }
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleRun(schedule.id, schedule.name)}
+                                                disabled={!!busy}
+                                                className="px-2 py-1 text-xs rounded bg-cyan-900/30 text-cyan-400 hover:bg-cyan-900/50 transition-colors disabled:opacity-50"
+                                            >
+                                                {busy === 'run' ? 'Disparando...' : 'Testar'}
+                                            </button>
+                                            <Link
+                                                href={`/automation/scheduler/${encodeURIComponent(schedule.id)}/edit`}
+                                                className="px-2 py-1 text-xs rounded bg-blue-900/30 text-blue-400 hover:bg-blue-900/50 transition-colors"
+                                            >
+                                                Editar
+                                            </Link>
+                                            {schedule.enabled ? (
+                                                <button
+                                                    onClick={() => handlePause(schedule.id)}
+                                                    disabled={!!busy}
+                                                    className="px-2 py-1 text-xs rounded bg-amber-900/30 text-amber-400 hover:bg-amber-900/50 transition-colors disabled:opacity-50"
+                                                >
+                                                    {busy === 'pause' ? 'Pausando...' : 'Pausar'}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleResume(schedule.id)}
+                                                    disabled={!!busy}
+                                                    className="px-2 py-1 text-xs rounded bg-emerald-900/30 text-emerald-400 hover:bg-emerald-900/50 transition-colors disabled:opacity-50"
+                                                >
+                                                    {busy === 'resume' ? 'Retomando...' : 'Retomar'}
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => setDeleteTarget({ id: schedule.id, name: schedule.name })}
+                                                disabled={!!busy}
+                                                className="px-2 py-1 text-xs rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors disabled:opacity-50"
+                                            >
+                                                {busy === 'delete' ? '...' : 'Remover'}
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            <Dialog
+                open={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                title="Confirmar exclusão"
+                footer={
+                    <>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)} className="border-white/10 text-neutral-300">
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">
+                            Remover
+                        </Button>
+                    </>
+                }
+            >
+                Tem certeza que deseja remover o agendamento <strong>&quot;{deleteTarget?.name}&quot;</strong>?
+            </Dialog>
+        </>
     );
 }

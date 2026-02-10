@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { SettingsPanel } from "./SettingsPanel";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { SkeletonSessionCard } from "@/components/ui/skeleton";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -41,14 +42,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     setDeleteDialogOpen(true);
   };
 
-  // Keyboard shortcuts:
-  // - Delete: deletar sessão atual
-  // - Ctrl/Cmd+N: nova sessão
-  // - Ctrl/Cmd+]: próxima sessão
-  // - Ctrl/Cmd+[: sessão anterior
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      // Only if not typing in an input
       const target = event.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
         return;
@@ -62,18 +57,15 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         return;
       }
 
-      // Nova sessão
       if (isMeta && event.key.toLowerCase() === "n") {
         event.preventDefault();
         createSession().catch(console.error);
         return;
       }
 
-      // Navegação entre sessões
       if (!sessions.length) return;
       const currentIndex = sessions.findIndex((s) => s.id === currentSessionId);
 
-      // Próxima sessão
       if (isMeta && event.key === "]") {
         event.preventDefault();
         const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % sessions.length : 0;
@@ -84,7 +76,6 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         return;
       }
 
-      // Sessão anterior
       if (isMeta && event.key === "[") {
         event.preventDefault();
         const prevIndex =
@@ -115,16 +106,15 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
   return (
     <>
       <aside className={clsx(
-        "flex h-screen flex-col border-r-2 border-slate-300 bg-white text-slate-900 shadow-sm transition-all duration-300",
+        "flex h-screen flex-col border-r border-white/[0.06] bg-obsidian-900 text-white transition-all duration-300",
         collapsed ? "w-20 p-4" : "w-80 p-7 gap-8"
       )}>
         {!collapsed ? (
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.4em] text-slate-500">AI Agent</div>
+              <div className="text-[11px] uppercase tracking-[0.4em] text-neutral-500">AI Agent</div>
               <div
-                className="text-2xl font-black uppercase text-slate-900"
-                style={{ fontFamily: "var(--font-sans)" }}
+                className="text-2xl font-black uppercase text-white"
               >
                 VSA Nexus AI
               </div>
@@ -132,7 +122,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
           </div>
         ) : (
           <div className="flex items-center justify-center mb-4">
-            <div className="text-2xl font-black uppercase text-slate-900">
+            <div className="text-2xl font-black uppercase text-white">
               V
             </div>
           </div>
@@ -141,13 +131,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         {!collapsed ? (
           <>
             <section className="space-y-3">
-              <header className="text-xs uppercase tracking-[0.35em] text-slate-500">Seleção de Modelo</header>
+              <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Seleção de Modelo</header>
               {isLoading ? (
-                <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 text-sm text-slate-500 shadow-sm">
+                <div className="rounded-lg border border-white/[0.06] bg-white/5 p-3 text-sm text-neutral-500">
                   Carregando modelos...
                 </div>
               ) : models.length === 0 ? (
-                <div className="rounded-lg border-2 border-slate-300 bg-slate-50 p-3 text-sm text-slate-500 shadow-sm">
+                <div className="rounded-lg border border-white/[0.06] bg-white/5 p-3 text-sm text-neutral-500">
                   Nenhum modelo disponível
                 </div>
               ) : (
@@ -166,7 +156,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             </section>
 
             <section className="space-y-3">
-              <header className="text-xs uppercase tracking-[0.35em] text-slate-500">Ferramentas</header>
+              <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Ferramentas</header>
               <Switch
                 checked={useTavily}
                 label={useTavily ? "Busca Web habilitada" : "Busca Web desabilitada"}
@@ -183,8 +173,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                 className={clsx(
                   "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
                   selectedModelId
-                    ? "border-vsa-orange/50 bg-vsa-orange/10 text-slate-900"
-                    : "border-2 border-slate-300 bg-white text-slate-500"
+                    ? "border-brand-primary/40 bg-brand-primary/10 text-white"
+                    : "border-white/[0.06] bg-white/5 text-neutral-500"
                 )}
                 title={models.find(m => m.id === selectedModelId)?.label || "Modelo"}
               >
@@ -197,8 +187,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                 className={clsx(
                   "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
                   useTavily
-                    ? "border-vsa-orange/50 bg-vsa-orange/10 text-slate-900"
-                    : "border-2 border-slate-300 bg-white text-slate-500"
+                    ? "border-brand-primary/40 bg-brand-primary/10 text-white"
+                    : "border-white/[0.06] bg-white/5 text-neutral-500"
                 )}
                 title={useTavily ? "Busca Web habilitada" : "Busca Web desabilitada"}
               >
@@ -211,14 +201,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
 
         <section className="flex-1 space-y-3 overflow-hidden">
           {!collapsed && (
-            <header className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-slate-500">
+            <header className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neutral-500">
               Sessões Ativas
               <Button
                 onClick={() => createSession().catch(console.error)}
                 size="sm"
                 variant="primary"
                 disabled={isLoading}
-                className="shadow-vsa-orange/50"
               >
                 Nova Sessão
               </Button>
@@ -228,7 +217,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             <button
               onClick={() => createSession().catch(console.error)}
               disabled={isLoading}
-              className="w-12 h-12 rounded-lg border-2 border-vsa-orange/40 bg-vsa-orange text-white hover:bg-vsa-orange-600 hover:border-vsa-orange-600 hover:shadow-vsa-orange flex items-center justify-center transition-colors disabled:opacity-50"
+              className="w-12 h-12 rounded-lg border border-brand-primary/40 bg-brand-primary text-white hover:bg-brand-primary/80 hover:shadow-glow-orange flex items-center justify-center transition-colors disabled:opacity-50"
               title="Nova Sessão"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -241,11 +230,13 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             collapsed ? "" : "-mr-3 pr-3"
           )}>
             {isLoading ? (
-              <div className="space-y-2 rounded-md border-2 border-slate-300 bg-slate-50 p-3 text-xs text-slate-500 shadow-sm">
-                Carregando sessões…
+              <div className="space-y-2">
+                <SkeletonSessionCard />
+                <SkeletonSessionCard />
+                <SkeletonSessionCard />
               </div>
             ) : sessions.length === 0 ? (
-              <div className="space-y-2 rounded-md border-2 border-slate-300 bg-slate-50 p-3 text-xs text-slate-500 shadow-sm">
+              <div className="space-y-2 rounded-md border border-white/[0.06] bg-white/5 p-3 text-xs text-neutral-500">
                 Nenhuma sessão. Clique em "Nova Sessão" para começar.
               </div>
             ) : (
@@ -272,15 +263,15 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                         className={clsx(
                           "w-12 h-12 rounded-lg border flex items-center justify-center transition-all relative",
                           active
-                            ? "border-vsa-orange/60 bg-vsa-orange/10 text-slate-900 shadow-[0_0_12px_rgba(255,140,66,0.18)]"
-                            : "border-2 border-slate-300 bg-white text-slate-700 hover:border-vsa-orange/40 hover:bg-slate-50",
+                            ? "border-brand-primary/40 bg-brand-primary/10 text-white shadow-glow-orange"
+                            : "border-white/[0.06] bg-obsidian-800 text-neutral-300 hover:border-brand-primary/30 hover:bg-white/5",
                         )}
                         title={`${session.title} (${messageCount} mensagens)`}
                         aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
                       >
                         <span className="text-xs font-bold">{session.title.charAt(0).toUpperCase()}</span>
                         {messageCount > 0 && (
-                          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-vsa-orange/20 text-[8px] flex items-center justify-center text-slate-900 border-2 border-vsa-orange/40">
+                          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-brand-primary/20 text-[8px] flex items-center justify-center text-white border border-brand-primary/40">
                             {messageCount > 9 ? "9+" : messageCount}
                           </span>
                         )}
@@ -291,8 +282,8 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                         className={clsx(
                           "group relative flex items-center gap-2 rounded-xl border px-3 py-2 transition-all animate-in fade-in slide-in-from-left-2 duration-200",
                           active
-                            ? "border-vsa-orange/60 bg-vsa-orange/10 text-slate-900 shadow-[0_0_12px_rgba(255,140,66,0.18)]"
-                            : "border-2 border-slate-300 bg-white text-slate-700 hover:border-vsa-orange/40 hover:bg-slate-50",
+                            ? "border-brand-primary/40 bg-brand-primary/10 text-white shadow-glow-orange"
+                            : "border-white/[0.06] bg-obsidian-800 text-neutral-300 hover:border-brand-primary/30 hover:bg-white/5",
                         )}
                       >
                         <button
@@ -322,12 +313,11 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                                     setEditingSessionId(null);
                                   }
                                 }}
-                                className="w-full rounded bg-white px-1 py-0.5 text-sm font-semibold text-slate-900 outline-none border-2 border-slate-300 shadow-sm"
+                                className="w-full rounded bg-obsidian-800 px-1 py-0.5 text-sm font-semibold text-white outline-none border border-white/10 focus:border-brand-primary"
                               />
                             ) : (
                               <span
-                                className="text-sm font-semibold uppercase tracking-wide text-slate-900"
-                                style={{ fontFamily: "var(--font-sans)" }}
+                                className="text-sm font-semibold uppercase tracking-wide text-white"
                                 onDoubleClick={() => {
                                   setEditingSessionId(session.id);
                                   setEditingTitle(session.title);
@@ -337,26 +327,26 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                               </span>
                             )}
                             {messageCount > 0 && (
-                              <span className="ml-2 rounded-full bg-vsa-orange/10 px-2 py-0.5 text-[10px] text-slate-900">
+                              <span className="ml-2 rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] text-neutral-300">
                                 {messageCount}
                               </span>
                             )}
                           </div>
                           {lastMessage && (
-                            <span className="text-[11px] text-slate-500 line-clamp-1">
+                            <span className="text-[11px] text-neutral-500 line-clamp-1">
                               {lastMessage.role === "user" ? "Você: " : "Agente: "}
                               {lastMessagePreview}
                             </span>
                           )}
                           {!lastMessage && (
-                            <span className="text-[11px] text-slate-500 italic">{lastMessagePreview}</span>
+                            <span className="text-[11px] text-neutral-500 italic">{lastMessagePreview}</span>
                           )}
                         </button>
                         <button
                           onClick={(e) => handleDeleteClick(e, session.id)}
                           className={clsx(
                             "opacity-0 transition-opacity group-hover:opacity-100",
-                            "rounded p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-slate-900",
+                            "rounded p-1.5 text-neutral-500 hover:bg-red-500/10 hover:text-red-400",
                             "focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-400/50",
                           )}
                           aria-label={`Deletar sessão ${session.title}`}
@@ -397,4 +387,3 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     </>
   );
 }
-

@@ -22,7 +22,7 @@ export function InstallPromptBanner() {
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4">
-      <div className="bg-vsa-orange-gradient text-slate-900 rounded-lg border-2 border-vsa-orange/30 shadow-lg p-4 flex items-center gap-3">
+      <div className="bg-vsa-orange-gradient text-slate-900 rounded-lg border-2 border-vsa-orange/30 shadow-vsa-orange p-4 flex items-center gap-3">
         <Download className="w-6 h-6 flex-shrink-0" />
         <div className="flex-1">
           <p className="font-semibold text-sm">Instalar VSA Nexus AI</p>

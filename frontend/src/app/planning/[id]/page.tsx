@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThinkingIndicator } from "@/components/app/ThinkingIndicator";
+import { useToast } from "@/components/ui/toast";
+import { Dialog } from "@/components/ui/dialog";
+import { PageNavBar } from "@/components/app/PageNavBar";
 // Using relative URLs - Next.js rewrites proxy to backend
 
 interface Document {
@@ -82,9 +85,11 @@ export default function ProjectDetailPage() {
   const [chatError, setChatError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState("Copiar (Word/Docs)");
   const [selectedChatIndex, setSelectedChatIndex] = useState<number | null>(null);
+  const [deleteDocTarget, setDeleteDocTarget] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatAbortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const { addToast } = useToast();
 
   const uniqueRagModels = Array.from(
     new Map(ragModels.map((model) => [model.id, model])).values()
@@ -192,25 +197,28 @@ export default function ProjectDetailPage() {
           throw new Error(err.detail || "Erro no upload");
         }
       }
+      addToast("Upload concluído", "success");
       fetchProject();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro no upload");
+      addToast(e instanceof Error ? e.message : "Erro no upload", "error");
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDeleteDocument = async (docId: string) => {
-    if (!confirm("Excluir este documento?")) return;
-
+  const handleDeleteDocument = async () => {
+    if (!deleteDocTarget) return;
+    const { id: docId } = deleteDocTarget;
+    setDeleteDocTarget(null);
     try {
       const res = await fetch(`/api/v1/planning/projects/${projectId}/documents/${docId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Erro ao excluir");
+      addToast("Documento excluído", "success");
       fetchProject();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao excluir");
+      addToast(e instanceof Error ? e.message : "Erro ao excluir", "error");
     }
   };
 
@@ -231,8 +239,9 @@ export default function ProjectDetailPage() {
       const updated: Project = await res.json();
       setProject(updated);
       setEmbeddingModel(updated.embedding_model || embeddingModel);
+      addToast("Modelo atualizado", "success");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao atualizar modelo");
+      addToast(e instanceof Error ? e.message : "Erro ao atualizar modelo", "error");
     } finally {
       setSavingEmbedding(false);
     }
@@ -247,8 +256,9 @@ export default function ProjectDetailPage() {
       if (!res.ok) throw new Error("Erro ao limpar chat");
       setChatMessages([]);
       setChatError(null);
+      addToast("Chat limpo", "info");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao limpar chat");
+      addToast(e instanceof Error ? e.message : "Erro ao limpar chat", "error");
     }
   };
 
@@ -565,17 +575,17 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F6F8] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-vsa-orange"></div>
+      <div className="min-h-screen bg-obsidian-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-brand-primary"></div>
       </div>
     );
   }
 
   if (error || !project) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0a1628] via-[#0f1f35] to-[#0a1628] flex items-center justify-center">
+      <div className="min-h-screen bg-obsidian-950 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-900 mb-4">{error || "Projeto não encontrado"}</p>
+          <p className="text-neutral-300 mb-4">{error || "Projeto não encontrado"}</p>
           <Link href="/planning">
             <Button>Voltar</Button>
           </Link>
@@ -585,20 +595,17 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8] text-slate-900">
-      {/* Header */}
-      <div className="border-b-2 border-slate-400 bg-white px-6 py-4 shadow-sm">
+    <div className="min-h-screen bg-obsidian-950 text-white">
+      <PageNavBar breadcrumbs={[
+        { label: "Projetos", href: "/planning" },
+        { label: project.title },
+      ]} />
+      {/* Sub-header with project controls */}
+      <div className="border-b border-white/[0.06] px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-3">
-              <Link href="/planning" className="text-slate-500 hover:text-slate-900">
-                ← Projetos
-              </Link>
-              <span className="text-slate-400">/</span>
-              <h1 className="text-xl font-semibold">{project.title}</h1>
-            </div>
             {project.description && (
-              <p className="text-sm text-slate-600 mt-1">{project.description}</p>
+              <p className="text-sm text-neutral-400">{project.description}</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -606,7 +613,7 @@ export default function ProjectDetailPage() {
               <select
                 value={embeddingModel}
                 onChange={(e) => setEmbeddingModel(e.target.value)}
-                className="px-2 py-1 bg-white border-2 border-slate-300 rounded-md text-xs text-slate-900"
+                className="px-2 py-1 bg-obsidian-800 border border-white/10 rounded-md text-xs text-white"
               >
                 {uniqueRagModels.map((model) => (
                   <option key={model.id} value={model.id}>
@@ -619,7 +626,7 @@ export default function ProjectDetailPage() {
                 size="sm"
                 onClick={handleSaveEmbeddingModel}
                 disabled={savingEmbedding || embeddingModel === project.embedding_model}
-                className="border-slate-300 text-slate-700"
+                className="border-white/10 text-neutral-300"
               >
                 {savingEmbedding ? "Salvando..." : "Salvar"}
               </Button>
@@ -629,16 +636,11 @@ export default function ProjectDetailPage() {
                 href={project.linear_project_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-slate-900 hover:text-slate-900"
+                className="text-sm text-brand-primary hover:text-brand-primary/80"
               >
-                Ver no Linear ↗
+                Ver no Linear
               </a>
             )}
-            <Link href="/">
-              <Button variant="outline" size="sm" className="border-slate-400 text-slate-700">
-                Chat VSA
-              </Button>
-            </Link>
           </div>
         </div>
       </div>
@@ -649,9 +651,9 @@ export default function ProjectDetailPage() {
           <div className="lg:col-span-1 order-1">
             <Card className="lg:-ml-2">
               <CardHeader>
-                <CardTitle className="text-slate-900 flex items-center justify-between">
+                <CardTitle className="text-white flex items-center justify-between">
                   <span>Documentos</span>
-                  <span className="text-sm font-normal text-slate-500">
+                  <span className="text-sm font-normal text-neutral-500">
                     {project.documents.length} arquivo(s)
                   </span>
                 </CardTitle>
@@ -659,18 +661,18 @@ export default function ProjectDetailPage() {
               <CardContent>
                 {/* Upload Area */}
                 <div
-                  className="border-2 border-dashed border-slate-400 rounded-lg p-4 text-center mb-4 hover:border-vsa-orange/50 transition-colors cursor-pointer"
+                  className="border-2 border-dashed border-white/10 rounded-lg p-4 text-center mb-4 hover:border-brand-primary/40 transition-colors cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.add("border-vsa-orange");
+                    e.currentTarget.classList.add("border-brand-primary");
                   }}
                   onDragLeave={(e) => {
-                    e.currentTarget.classList.remove("border-vsa-orange");
+                    e.currentTarget.classList.remove("border-brand-primary");
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    e.currentTarget.classList.remove("border-vsa-orange");
+                    e.currentTarget.classList.remove("border-brand-primary");
                     handleFileUpload(e.dataTransfer.files);
                   }}
                 >
@@ -683,9 +685,9 @@ export default function ProjectDetailPage() {
                     onChange={(e) => handleFileUpload(e.target.files)}
                   />
                   {uploading ? (
-                    <span className="text-slate-500">Enviando...</span>
+                    <span className="text-neutral-500">Enviando...</span>
                   ) : (
-                    <span className="text-slate-500">
+                    <span className="text-neutral-500">
                       Arraste arquivos ou clique para upload<br />
                       <span className="text-xs">(PDF, MD, TXT)</span>
                     </span>
@@ -697,17 +699,17 @@ export default function ProjectDetailPage() {
                   {project.documents.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-2 bg-slate-50 rounded-lg border-2 border-slate-400 shadow-sm"
+                      className="flex items-center justify-between p-2 bg-obsidian-800 rounded-lg border border-white/[0.06]"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-900 truncate">{doc.file_name}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-sm text-white truncate">{doc.file_name}</p>
+                        <p className="text-xs text-neutral-500">
                           {doc.file_type?.toUpperCase()} • {formatFileSize(doc.file_size || 0)}
                         </p>
                       </div>
                       <button
-                        onClick={() => handleDeleteDocument(doc.id)}
-                        className="text-slate-900 hover:text-slate-900 p-1"
+                        onClick={() => setDeleteDocTarget({ id: doc.id, name: doc.file_name })}
+                        className="text-red-400 hover:text-red-300 p-1"
                       >
                         ×
                       </button>
@@ -723,14 +725,14 @@ export default function ProjectDetailPage() {
             <Card className="lg:sticky lg:top-6">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-slate-900">Chat do Projeto</CardTitle>
+                  <CardTitle className="text-white">Chat do Projeto</CardTitle>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleCopyLastResponse}
                       disabled={!getSelectedAssistantMessage()}
-                      className="border-slate-300 text-slate-700"
+                      className="border-white/10 text-neutral-300"
                     >
                       {copyStatus}
                     </Button>
@@ -738,7 +740,7 @@ export default function ProjectDetailPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => setChatCollapsed((prev) => !prev)}
-                      className="border-slate-300 text-slate-700"
+                      className="border-white/10 text-neutral-300"
                     >
                       {chatCollapsed ? "Expandir" : "Recolher"}
                     </Button>
@@ -748,14 +750,14 @@ export default function ProjectDetailPage() {
               {!chatCollapsed && (
                 <CardContent className="flex flex-col gap-3">
                   {project.documents.length === 0 && (
-                    <div className="text-xs text-slate-600 bg-slate-50 border-2 border-slate-300 rounded-lg p-2">
+                    <div className="text-xs text-neutral-400 bg-white/5 border border-white/[0.06] rounded-lg p-2">
                       Sem documentos. Faça upload para melhorar as respostas.
                     </div>
                   )}
 
                   <div className="flex-1 max-h-[240px] md:max-h-[320px] lg:max-h-[560px] overflow-y-auto space-y-2">
                     {chatMessages.length === 0 && (
-                      <p className="text-sm text-slate-600">Nenhuma mensagem ainda.</p>
+                      <p className="text-sm text-neutral-500">Nenhuma mensagem ainda.</p>
                     )}
                     {chatMessages.map((msg, index) => (
                       <div
@@ -764,15 +766,15 @@ export default function ProjectDetailPage() {
                           if (msg.role !== "assistant" || !msg.content.trim()) return;
                           setSelectedChatIndex(index);
                         }}
-                        className={`p-2 rounded-lg text-sm border-2 shadow-sm ${msg.role === "user"
-                          ? "bg-slate-50 border-slate-300 text-slate-900"
-                          : `bg-white border-slate-200 text-slate-900 ${selectedChatIndex === index
-                            ? "ring-2 ring-vsa-orange/40"
+                        className={`p-2 rounded-lg text-sm border ${msg.role === "user"
+                          ? "bg-brand-primary/10 border-brand-primary/20 text-white"
+                          : `glass-panel border-white/[0.06] text-neutral-200 ${selectedChatIndex === index
+                            ? "ring-2 ring-brand-primary/40"
                             : ""
                           }`
                           }`}
                       >
-                        <p className="text-xs text-slate-500 mb-1">
+                        <p className="text-xs text-neutral-500 mb-1">
                           {msg.role === "user" ? "Você" : "VSA"}
                         </p>
                         {msg.role === "assistant" && !msg.content.trim() && isStreaming ? (
@@ -786,7 +788,7 @@ export default function ProjectDetailPage() {
                   </div>
 
                   {chatError && (
-                    <div className="text-xs text-red-700 bg-red-50 border-2 border-red-300 rounded-lg p-2">
+                    <div className="text-xs text-red-300 bg-red-900/20 border border-red-500/30 rounded-lg p-2">
                       {chatError}
                     </div>
                   )}
@@ -802,7 +804,7 @@ export default function ProjectDetailPage() {
                         }
                       }}
                       rows={3}
-                      className="w-full min-h-[72px] md:min-h-[90px] px-3 py-2 bg-white border-2 border-slate-300 rounded-lg text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none resize-none"
+                      className="w-full min-h-[72px] md:min-h-[90px] px-3 py-2 bg-obsidian-800 border border-white/10 rounded-lg text-white placeholder:text-neutral-600 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30 resize-none"
                       placeholder="Pergunte sobre os documentos do projeto"
                     />
                     <div className="flex items-center justify-between gap-2">
@@ -810,7 +812,7 @@ export default function ProjectDetailPage() {
                         variant="outline"
                         size="sm"
                         onClick={handleClearChat}
-                        className="border-slate-300 text-slate-700"
+                        className="border-white/10 text-neutral-300"
                       >
                         Limpar chat
                       </Button>
@@ -820,7 +822,7 @@ export default function ProjectDetailPage() {
                             variant="outline"
                             size="sm"
                             onClick={handleStopChat}
-                            className="border-slate-300 text-slate-700"
+                            className="border-red-500/40 text-red-400"
                           >
                             Parar
                           </Button>
@@ -828,7 +830,7 @@ export default function ProjectDetailPage() {
                         <Button
                           onClick={handleSendChat}
                           disabled={isStreaming || !chatInput.trim()}
-                          className="bg-vsa-orange hover:bg-vsa-orange-dark"
+                          className="bg-brand-primary hover:bg-brand-primary/90 text-white hover:shadow-glow-orange"
                         >
                           {isStreaming ? "Enviando..." : "Enviar"}
                         </Button>
@@ -841,6 +843,24 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={!!deleteDocTarget}
+        onClose={() => setDeleteDocTarget(null)}
+        title="Excluir documento"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteDocTarget(null)} className="border-white/10 text-neutral-300">
+              Cancelar
+            </Button>
+            <Button onClick={handleDeleteDocument} className="bg-red-600 hover:bg-red-700 text-white">
+              Excluir
+            </Button>
+          </>
+        }
+      >
+        Excluir o documento <strong>&quot;{deleteDocTarget?.name}&quot;</strong>?
+      </Dialog>
     </div>
   );
 }

@@ -39,7 +39,6 @@ export function SettingsPanel() {
                     onClick={() => setIsOpen(!isOpen)}
                     variant="outline"
                     size="sm"
-                    className="border-slate-400 text-slate-700 hover:border-vsa-orange/60 hover:text-slate-900"
                 >
                     {isOpen ? "Ocultar" : "Mostrar"} Configurações
                 </Button>
@@ -47,7 +46,7 @@ export function SettingsPanel() {
                     <Button
                         variant="outline"
                         size="sm"
-                        className="w-full border-vsa-orange/50 text-slate-900 hover:bg-vsa-orange/10"
+                        className="w-full border-brand-primary/30 text-neutral-300 hover:bg-brand-primary/10"
                     >
                         Projetos
                     </Button>
@@ -56,7 +55,7 @@ export function SettingsPanel() {
                     <Button
                         variant="outline"
                         size="sm"
-                        className="w-full border-vsa-orange/50 text-slate-900 hover:bg-vsa-orange/10"
+                        className="w-full border-brand-primary/30 text-neutral-300 hover:bg-brand-primary/10"
                     >
                         Agendamento
                     </Button>
@@ -66,7 +65,7 @@ export function SettingsPanel() {
             {isOpen && (
                 <Card className="mb-4">
                     <CardHeader>
-                        <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-slate-700">
+                        <h3 className="text-sm font-semibold uppercase tracking-[0.35em] text-neutral-400">
                             Configurações
                         </h3>
                     </CardHeader>
@@ -75,8 +74,8 @@ export function SettingsPanel() {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h4 className="font-semibold text-sm text-slate-700">Modo VSA (Gestão de TI)</h4>
-                                    <p className="text-xs text-slate-500">
+                                    <h4 className="font-semibold text-sm text-neutral-300">Modo VSA (Gestão de TI)</h4>
+                                    <p className="text-xs text-neutral-500">
                                         Ativa integrações GLPI, Zabbix e Linear
                                     </p>
                                 </div>
@@ -92,11 +91,11 @@ export function SettingsPanel() {
 
                             {/* Integration toggles - only shown when VSA mode is enabled */}
                             {enableVSA && (
-                                <div className="border-l-2 border-vsa-orange/50 pl-4 space-y-3 ml-2">
+                                <div className="border-l-2 border-brand-primary/30 pl-4 space-y-3 ml-2">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-700">🎫 GLPI</span>
-                                            <p className="text-xs text-slate-500">Tickets e chamados</p>
+                                            <span className="text-sm text-neutral-300">GLPI</span>
+                                            <p className="text-xs text-neutral-500">Tickets e chamados</p>
                                         </div>
                                         <Switch
                                             checked={enableGLPI}
@@ -110,8 +109,8 @@ export function SettingsPanel() {
 
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-700">📊 Zabbix</span>
-                                            <p className="text-xs text-slate-500">Alertas e monitoramento</p>
+                                            <span className="text-sm text-neutral-300">Zabbix</span>
+                                            <p className="text-xs text-neutral-500">Alertas e monitoramento</p>
                                         </div>
                                         <Switch
                                             checked={enableZabbix}
@@ -125,8 +124,8 @@ export function SettingsPanel() {
 
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-700">📋 Linear</span>
-                                            <p className="text-xs text-slate-500">Issues e projetos</p>
+                                            <span className="text-sm text-neutral-300">Linear</span>
+                                            <p className="text-xs text-neutral-500">Issues e projetos</p>
                                         </div>
                                         <Switch
                                             checked={enableLinear}
@@ -140,8 +139,8 @@ export function SettingsPanel() {
 
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <span className="text-sm text-slate-700">📁 Planejamento</span>
-                                            <p className="text-xs text-slate-500">Projetos, documentos e análise no chat</p>
+                                            <span className="text-sm text-neutral-300">Planejamento</span>
+                                            <p className="text-xs text-neutral-500">Projetos, documentos e análise no chat</p>
                                         </div>
                                         <Switch
                                             checked={enablePlanning}
@@ -156,30 +155,30 @@ export function SettingsPanel() {
                             )}
                         </div>
 
-                        <div className="border-t-2 border-slate-300 pt-4 space-y-4">
+                        <div className="border-t border-white/[0.06] pt-4 space-y-4">
                             {/* Model Selection Dropdown */}
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
+                                <label className="block text-xs uppercase tracking-[0.35em] text-neutral-500">
                                     Modelo de IA
                                 </label>
                                 <select
                                     value={selectedModelId}
                                     onChange={(e) => setSelectedModelId(e.target.value)}
-                                    className="w-full rounded-lg border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none"
+                                    className="w-full rounded-lg border border-white/10 bg-obsidian-800 px-3 py-2 text-sm text-white focus:border-brand-primary focus:outline-none"
                                 >
                                     {models.map((model) => (
                                         <option key={model.id} value={model.id}>
-                                            {model.label} {model.isDefault && "⭐ (Padrão)"}
+                                            {model.label} {model.isDefault && "(Padrão)"}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-neutral-500">
                                     Custo: ${models.find(m => m.id === selectedModelId)?.inputCost?.toFixed(2) ?? "0.00"}/1M tokens
                                 </p>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
+                                <label className="block text-xs uppercase tracking-[0.35em] text-neutral-500">
                                     Busca Web (Tavily)
                                 </label>
                                 <Switch
@@ -193,7 +192,7 @@ export function SettingsPanel() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-[0.35em] text-slate-500">
+                                <label className="block text-xs uppercase tracking-[0.35em] text-neutral-500">
                                     Streaming de Respostas
                                 </label>
                                 <Switch
@@ -206,11 +205,11 @@ export function SettingsPanel() {
                                 />
                             </div>
 
-                            <div className="pt-2 text-xs text-slate-500">
+                            <div className="pt-2 text-xs text-neutral-500">
                                 <p>Modelo: {selectedModelId}</p>
                                 <p>Busca Web: {useTavily ? "Ativa" : "Inativa"}</p>
                                 {enableVSA && (
-                                    <p className="text-slate-900">
+                                    <p className="text-neutral-400">
                                         VSA: {[
                                             enableGLPI && "GLPI",
                                             enableZabbix && "Zabbix",

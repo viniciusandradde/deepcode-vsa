@@ -111,34 +111,34 @@ export function ArtifactPanel({
     <>
       {/* Mobile overlay backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
         onClick={onClose}
       />
 
       {/* Panel */}
       <aside
         className={clsx(
-          "flex flex-col border-l-2 border-slate-400 bg-white shadow-lg z-50",
+          "flex flex-col border-l border-white/[0.06] bg-obsidian-900 z-50",
           // Desktop: side panel, Mobile: fullscreen overlay
           "fixed inset-y-0 right-0 w-full sm:w-[480px] lg:static lg:w-[50%] lg:max-w-3xl lg:min-w-[400px]",
           "animate-in slide-in-from-right duration-200",
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-slate-400 px-5 py-3 shrink-0">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3 shrink-0">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-base font-semibold text-slate-900">
+            <h2 className="truncate text-base font-semibold text-white">
               {artifact?.title || "Artefato"}
             </h2>
             {artifact && (
-              <span className="text-[10px] uppercase tracking-wider text-slate-500">
+              <span className="text-[10px] uppercase tracking-wider text-neutral-500">
                 {artifact.source === "rule-based" ? "Gerado por código" : "Extraído da IA"}
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="ml-3 rounded-lg border-2 border-slate-400 p-1.5 text-slate-500 hover:border-slate-500 hover:text-slate-700 transition-colors"
+            className="ml-3 rounded-lg border border-white/10 p-1.5 text-neutral-500 hover:border-white/20 hover:text-neutral-300 transition-colors"
             aria-label="Fechar painel"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -148,14 +148,14 @@ export function ArtifactPanel({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-200 px-5 shrink-0">
+        <div className="flex border-b border-white/[0.06] px-5 shrink-0">
           <button
             onClick={() => setTab("content")}
             className={clsx(
               "px-3 py-2 text-xs font-medium uppercase tracking-wider border-b-2 transition-colors",
               tab === "content"
-                ? "border-vsa-orange text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-700",
+                ? "border-brand-primary text-white"
+                : "border-transparent text-neutral-500 hover:text-neutral-300",
             )}
           >
             Conteúdo
@@ -165,8 +165,8 @@ export function ArtifactPanel({
             className={clsx(
               "px-3 py-2 text-xs font-medium uppercase tracking-wider border-b-2 transition-colors",
               tab === "history"
-                ? "border-vsa-orange text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-700",
+                ? "border-brand-primary text-white"
+                : "border-transparent text-neutral-500 hover:text-neutral-300",
             )}
           >
             Histórico ({otherArtifacts.length})
@@ -181,12 +181,12 @@ export function ArtifactPanel({
                 remarkPlugins={[remarkGfm]}
                 components={{
                   p: ({ children }) => (
-                    <p className="mb-4 last:mb-0 whitespace-normal text-slate-800 leading-relaxed">{children}</p>
+                    <p className="mb-4 last:mb-0 whitespace-normal text-neutral-200 leading-relaxed">{children}</p>
                   ),
                   a: ({ ...props }) => (
                     <a
                       {...props}
-                      className="font-semibold text-slate-900 underline decoration-vsa-orange/40 underline-offset-4 hover:text-slate-900"
+                      className="font-semibold text-brand-primary underline decoration-brand-primary/40 underline-offset-4 hover:text-brand-primary/80"
                       target="_blank"
                       rel="noreferrer"
                     />
@@ -194,33 +194,33 @@ export function ArtifactPanel({
                   code: ({ node, className, children, ...props }) => {
                     const isInline = !className?.includes("language-");
                     return isInline ? (
-                      <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-800" {...props}>
+                      <code className="rounded bg-white/5 px-1.5 py-0.5 text-[13px] text-neutral-200" {...props}>
                         {children}
                       </code>
                     ) : (
-                      <pre className="overflow-x-auto rounded-lg border-2 border-slate-400 bg-slate-50 p-4 text-[13px] text-slate-800 shadow-sm">
+                      <pre className="overflow-x-auto rounded-lg border border-white/10 bg-obsidian-800 p-4 text-[13px] text-neutral-200">
                         <code className={className} {...props}>{children}</code>
                       </pre>
                     );
                   },
-                  h1: ({ ...props }) => <h1 className="mb-4 text-2xl font-bold" {...props} />,
-                  h2: ({ ...props }) => <h2 className="mb-3 mt-4 text-xl font-semibold" {...props} />,
-                  h3: ({ ...props }) => <h3 className="mb-2 mt-3 text-lg font-semibold" {...props} />,
+                  h1: ({ ...props }) => <h1 className="mb-4 text-2xl font-bold text-white" {...props} />,
+                  h2: ({ ...props }) => <h2 className="mb-3 mt-4 text-xl font-semibold text-white" {...props} />,
+                  h3: ({ ...props }) => <h3 className="mb-2 mt-3 text-lg font-semibold text-white" {...props} />,
                   ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc space-y-1" {...props} />,
                   ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal space-y-1" {...props} />,
                   table: ({ ...props }) => (
-                    <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border-2 border-slate-400 shadow-sm">
-                      <table className="min-w-full table-auto divide-y divide-slate-200 text-sm" {...props} />
+                    <div className="my-4 w-full min-w-0 overflow-x-auto rounded-lg border border-white/10">
+                      <table className="min-w-full table-auto divide-y divide-white/10 text-sm" {...props} />
                     </div>
                   ),
-                  thead: ({ ...props }) => <thead className="bg-slate-50" {...props} />,
-                  tbody: ({ ...props }) => <tbody className="divide-y divide-slate-200 bg-white" {...props} />,
-                  tr: ({ ...props }) => <tr className="hover:bg-slate-50 transition-colors" {...props} />,
+                  thead: ({ ...props }) => <thead className="bg-white/5" {...props} />,
+                  tbody: ({ ...props }) => <tbody className="divide-y divide-white/[0.06]" {...props} />,
+                  tr: ({ ...props }) => <tr className="hover:bg-white/5 transition-colors" {...props} />,
                   th: ({ ...props }) => (
-                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600" {...props} />
+                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-400" {...props} />
                   ),
                   td: ({ ...props }) => (
-                    <td className="min-w-0 max-w-[40rem] break-words px-4 py-3 text-sm text-slate-700 align-top" {...props} />
+                    <td className="min-w-0 max-w-[40rem] break-words px-4 py-3 text-sm text-neutral-300 align-top" {...props} />
                   ),
                 }}
               >
@@ -230,7 +230,7 @@ export function ArtifactPanel({
           ) : tab === "history" ? (
             <div className="space-y-2">
               {otherArtifacts.length === 0 ? (
-                <p className="text-sm text-slate-500">Nenhum outro artefato nesta sessão.</p>
+                <p className="text-sm text-neutral-500">Nenhum outro artefato nesta sessão.</p>
               ) : (
                 otherArtifacts.map((a) => (
                   <button
@@ -239,10 +239,10 @@ export function ArtifactPanel({
                       onSelectArtifact(a.id);
                       setTab("content");
                     }}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left hover:border-vsa-orange/40 hover:bg-slate-50 transition-colors"
+                    className="w-full rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-left hover:border-brand-primary/30 hover:bg-white/5 transition-colors"
                   >
-                    <p className="text-sm font-medium text-slate-900">{a.title}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm font-medium text-white">{a.title}</p>
+                    <p className="text-xs text-neutral-500">
                       {new Date(a.createdAt).toLocaleTimeString()}
                     </p>
                   </button>
@@ -250,18 +250,17 @@ export function ArtifactPanel({
               )}
             </div>
           ) : (
-            <p className="text-sm text-slate-500">Nenhum artefato selecionado.</p>
+            <p className="text-sm text-neutral-500">Nenhum artefato selecionado.</p>
           )}
         </div>
 
         {/* Footer: Export buttons */}
         {artifact && tab === "content" && (
-          <div className="flex items-center gap-2 border-t border-slate-200 px-5 py-3 shrink-0">
+          <div className="flex items-center gap-2 border-t border-white/[0.06] px-5 py-3 shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="border-slate-400 text-slate-700"
             >
               Copiar
             </Button>
@@ -270,7 +269,6 @@ export function ArtifactPanel({
               size="sm"
               onClick={() => handleExport("md")}
               disabled={exporting !== null}
-              className="border-slate-400 text-slate-700"
             >
               {exporting === "md" ? "..." : "MD"}
             </Button>
@@ -279,7 +277,6 @@ export function ArtifactPanel({
               size="sm"
               onClick={() => handleExport("pdf")}
               disabled={exporting !== null}
-              className="border-slate-400 text-slate-700"
             >
               {exporting === "pdf" ? "..." : "PDF"}
             </Button>
@@ -288,7 +285,6 @@ export function ArtifactPanel({
               size="sm"
               onClick={() => handleExport("docx")}
               disabled={exporting !== null}
-              className="border-slate-400 text-slate-700"
             >
               {exporting === "docx" ? "..." : "DOCX"}
             </Button>

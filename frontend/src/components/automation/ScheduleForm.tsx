@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSchedule, updateSchedule } from '@/lib/api/scheduler';
 import type { ScheduleCreateRequest, ScheduleConfig } from '@/types/automation';
+import { useToast } from '@/components/ui/toast';
 
 const CRON_PRESETS = [
     { label: 'A cada hora', value: '0 * * * *' },
@@ -37,6 +38,7 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { addToast } = useToast();
 
     const [name, setName] = useState(initialData?.name || '');
     const [prompt, setPrompt] = useState(initialData?.prompt || '');
@@ -73,8 +75,10 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
 
             if (editMode && scheduleId) {
                 await updateSchedule(scheduleId, payload);
+                addToast('Agendamento atualizado', 'success');
             } else {
                 await createSchedule(payload);
+                addToast('Agendamento criado', 'success');
             }
 
             if (onSuccess) {
@@ -92,7 +96,7 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-                <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-red-400">
+                <div className="rounded-lg border border-red-500/30 bg-red-900/20 p-4 text-red-300">
                     <p className="font-medium">❌ Erro</p>
                     <p className="text-sm opacity-70 mt-1">{error}</p>
                 </div>
@@ -100,7 +104,7 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
 
             {/* Nome */}
             <div>
-                <label htmlFor="name" className="block text-sm font-medium text-zinc-300 mb-2">
+                <label htmlFor="name" className="block text-sm font-medium text-neutral-300 mb-2">
                     Nome do Agendamento
                 </label>
                 <input
@@ -110,13 +114,13 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ex: Relatório Semanal de Tasks"
                     required
-                    className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                    className="w-full px-4 py-2 rounded-lg bg-obsidian-800 border border-white/10 text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary"
                 />
             </div>
 
             {/* Prompt */}
             <div>
-                <label htmlFor="prompt" className="block text-sm font-medium text-zinc-300 mb-2">
+                <label htmlFor="prompt" className="block text-sm font-medium text-neutral-300 mb-2">
                     Instrução para o Agente
                 </label>
                 <textarea
@@ -126,16 +130,16 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                     placeholder="Descreva a tarefa que o agente deve executar..."
                     required
                     rows={4}
-                    className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 resize-none"
+                    className="w-full px-4 py-2 rounded-lg bg-obsidian-800 border border-white/10 text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary resize-none"
                 />
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                     O agente terá acesso às ferramentas GLPI, Zabbix e Linear para executar esta tarefa.
                 </p>
             </div>
 
             {/* CRON */}
             <div>
-                <label htmlFor="cron" className="block text-sm font-medium text-zinc-300 mb-2">
+                <label htmlFor="cron" className="block text-sm font-medium text-neutral-300 mb-2">
                     Frequência
                 </label>
                 <div className="flex gap-2 mb-2 flex-wrap">
@@ -145,8 +149,8 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                             type="button"
                             onClick={() => setCron(preset.value)}
                             className={`px-3 py-1 text-xs rounded-full transition-colors ${cron === preset.value
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                ? 'bg-brand-primary text-white'
+                                : 'bg-obsidian-800 text-neutral-400 hover:bg-white/10'
                                 }`}
                         >
                             {preset.label}
@@ -162,14 +166,14 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                     required
                     className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 font-mono text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
                 />
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-neutral-500 mt-1">
                     Formato CRON: minuto hora dia mês dia_da_semana
                 </p>
             </div>
 
             {/* Canal de Notificação */}
             <div>
-                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-neutral-300 mb-2">
                     Canal de Notificação
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -179,8 +183,8 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                             type="button"
                             onClick={() => setChannel(opt.value as ScheduleConfig['channel'])}
                             className={`p-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${channel === opt.value
-                                ? 'bg-emerald-600/20 border-2 border-emerald-500 text-emerald-400'
-                                : 'bg-zinc-800 border-2 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                ? 'bg-brand-primary/15 border-2 border-brand-primary text-brand-primary'
+                                : 'bg-obsidian-800 border-2 border-white/10 text-neutral-400 hover:border-white/20'
                                 }`}
                         >
                             <span>{opt.icon}</span>
@@ -192,7 +196,7 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
 
             {/* Target ID */}
             <div>
-                <label htmlFor="targetId" className="block text-sm font-medium text-zinc-300 mb-2">
+                <label htmlFor="targetId" className="block text-sm font-medium text-neutral-300 mb-2">
                     {channel === 'telegram' && 'Chat ID do Telegram'}
                     {channel === 'teams' && 'Webhook URL do Teams'}
                     {channel === 'whatsapp' && 'Número do WhatsApp'}
@@ -208,14 +212,14 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                                 '+5511999999999'
                     }
                     required
-                    className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                    className="w-full px-4 py-2 rounded-lg bg-obsidian-800 border border-white/10 text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary"
                 />
             </div>
 
             {/* Token (opcional para alguns canais) */}
             {channel === 'telegram' && (
                 <div>
-                    <label htmlFor="token" className="block text-sm font-medium text-zinc-300 mb-2">
+                    <label htmlFor="token" className="block text-sm font-medium text-neutral-300 mb-2">
                         Bot Token (opcional - usa default se vazio)
                     </label>
                     <input
@@ -224,7 +228,7 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                         value={token}
                         onChange={(e) => setToken(e.target.value)}
                         placeholder="Deixe vazio para usar o bot padrão"
-                        className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                        className="w-full px-4 py-2 rounded-lg bg-obsidian-800 border border-white/10 text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary"
                     />
                 </div>
             )}
@@ -234,14 +238,14 @@ export function ScheduleForm({ editMode = false, scheduleId, initialData, onSucc
                 <button
                     type="button"
                     onClick={() => router.back()}
-                    className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors"
+                    className="px-4 py-2 rounded-lg bg-obsidian-800 text-neutral-400 hover:bg-white/10 transition-colors"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg bg-brand-primary text-white font-medium hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     {loading ? 'Salvando...' : editMode ? '💾 Salvar Alterações' : '✅ Criar Agendamento'}
                 </button>

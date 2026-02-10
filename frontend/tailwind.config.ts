@@ -13,7 +13,6 @@ const config: Config = {
         sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
         display: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "Consolas", "monospace"],
-        body: ["Inter", "system-ui", "sans-serif"],
       },
       colors: {
         obsidian: {

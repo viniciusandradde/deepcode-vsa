@@ -16,14 +16,14 @@ const TYPE_LABELS: Record<ArtifactType, string> = {
 };
 
 const TYPE_COLORS: Record<ArtifactType, string> = {
-  glpi_report: "bg-blue-100 text-blue-800 border-blue-300",
-  zabbix_report: "bg-red-100 text-red-800 border-red-300",
-  linear_report: "bg-violet-100 text-violet-800 border-violet-300",
-  dashboard: "bg-amber-100 text-amber-800 border-amber-300",
-  itil_classification: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  rca_analysis: "bg-orange-100 text-orange-800 border-orange-300",
-  fivew2h_analysis: "bg-cyan-100 text-cyan-800 border-cyan-300",
-  generic_report: "bg-slate-100 text-slate-800 border-slate-300",
+  glpi_report: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+  zabbix_report: "bg-red-500/15 text-red-300 border-red-500/30",
+  linear_report: "bg-violet-500/15 text-violet-300 border-violet-500/30",
+  dashboard: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  itil_classification: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  rca_analysis: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+  fivew2h_analysis: "bg-cyan-500/15 text-cyan-300 border-cyan-500/30",
+  generic_report: "bg-white/5 text-neutral-300 border-white/10",
 };
 
 interface ArtifactCardProps {
@@ -51,9 +51,9 @@ export const ArtifactCard = memo(function ArtifactCard({
     <button
       onClick={() => onOpen(artifact.id)}
       className={clsx(
-        "group/card w-full max-w-md rounded-xl border-2 px-4 py-3 text-left transition-all",
-        "hover:shadow-md hover:border-vsa-orange/50 cursor-pointer",
-        "border-slate-300 bg-white",
+        "group/card w-full max-w-md rounded-xl border px-4 py-3 text-left transition-all",
+        "hover:border-brand-primary/40 hover:shadow-glow-orange cursor-pointer",
+        "border-white/[0.06] glass-panel",
       )}
     >
       <div className="flex items-center gap-2 mb-1.5">
@@ -68,7 +68,7 @@ export const ArtifactCard = memo(function ArtifactCard({
         </span>
         {/* Arrow icon */}
         <svg
-          className="ml-auto h-4 w-4 text-slate-400 transition-transform group-hover/card:translate-x-0.5"
+          className="ml-auto h-4 w-4 text-neutral-600 transition-transform group-hover/card:translate-x-0.5"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -81,11 +81,11 @@ export const ArtifactCard = memo(function ArtifactCard({
           />
         </svg>
       </div>
-      <p className="text-sm font-medium text-slate-900 leading-snug">
+      <p className="text-sm font-medium text-white leading-snug">
         {artifact.title}
       </p>
       {preview && (
-        <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+        <p className="mt-1 text-xs text-neutral-500 line-clamp-2 leading-relaxed">
           {preview}...
         </p>
       )}

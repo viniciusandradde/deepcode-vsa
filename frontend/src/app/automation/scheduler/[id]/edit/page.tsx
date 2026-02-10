@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getSchedule } from '@/lib/api/scheduler';
 import { ScheduleForm } from '@/components/automation/ScheduleForm';
 import type { Schedule, ScheduleConfig } from '@/types/automation';
+import { PageNavBar } from '@/components/app/PageNavBar';
 
 export default function EditSchedulePage() {
     const params = useParams();
@@ -74,22 +75,22 @@ export default function EditSchedulePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-                <div className="animate-pulse text-zinc-500">Carregando agendamento...</div>
+            <div className="min-h-screen bg-obsidian-950 text-white flex items-center justify-center">
+                <div className="animate-pulse text-neutral-500">Carregando agendamento...</div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
+            <div className="min-h-screen bg-obsidian-950 text-white p-8">
                 <div className="max-w-2xl mx-auto">
-                    <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-red-400">
-                        <p className="font-medium">❌ Erro</p>
+                    <div className="rounded-lg border border-red-500/30 bg-red-900/20 p-4 text-red-300">
+                        <p className="font-medium">Erro</p>
                         <p className="text-sm opacity-70 mt-1">{error}</p>
                         <button
                             onClick={() => router.push('/automation/scheduler')}
-                            className="mt-4 px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                            className="mt-4 px-4 py-2 rounded-lg bg-obsidian-800 text-neutral-300 hover:bg-white/10"
                         >
                             Voltar
                         </button>
@@ -100,22 +101,20 @@ export default function EditSchedulePage() {
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100">
+        <div className="min-h-screen bg-obsidian-950 text-white">
+            <PageNavBar breadcrumbs={[
+                { label: "Scheduler", href: "/automation/scheduler" },
+                { label: "Editar Agendamento" },
+            ]} />
             <div className="max-w-2xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <button
-                        onClick={() => router.back()}
-                        className="text-zinc-500 hover:text-zinc-300 text-sm mb-4 flex items-center gap-1"
-                    >
-                        ← Voltar
-                    </button>
-                    <h1 className="text-2xl font-bold text-zinc-100">✏️ Editar Agendamento</h1>
-                    <p className="text-zinc-500 mt-1 text-sm">{initialData?.name || scheduleId}</p>
+                    <h1 className="text-2xl font-bold text-white">Editar Agendamento</h1>
+                    <p className="text-neutral-500 mt-1 text-sm">{initialData?.name || scheduleId}</p>
                 </div>
 
                 {/* Form */}
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
+                <div className="rounded-lg border border-white/[0.06] bg-obsidian-800 p-6">
                     <ScheduleForm
                         editMode
                         scheduleId={scheduleId}

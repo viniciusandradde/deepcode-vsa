@@ -2,11 +2,6 @@
 
 import React from "react";
 
-/**
- * Action Plan Component (Task 2.6)
- * Displays structured action plans for ITIL-based workflows
- */
-
 export interface ActionPlanStep {
     step: number;
     title: string;
@@ -24,10 +19,10 @@ export interface ActionPlanProps {
 }
 
 const statusConfig = {
-    pending: { icon: "⏳", color: "text-slate-900", bgColor: "bg-slate-100" },
-    in_progress: { icon: "🔄", color: "text-slate-900", bgColor: "bg-blue-50" },
-    completed: { icon: "✅", color: "text-slate-900", bgColor: "bg-green-50" },
-    failed: { icon: "❌", color: "text-slate-900", bgColor: "bg-red-50" },
+    pending: { icon: "⏳", color: "text-neutral-300", bgColor: "bg-white/5" },
+    in_progress: { icon: "🔄", color: "text-blue-300", bgColor: "bg-blue-500/10" },
+    completed: { icon: "✅", color: "text-emerald-300", bgColor: "bg-emerald-500/10" },
+    failed: { icon: "❌", color: "text-red-300", bgColor: "bg-red-500/10" },
 };
 
 export function ActionPlan({
@@ -42,26 +37,26 @@ export function ActionPlan({
 
     if (compact) {
         return (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-50 border-2 border-blue-300 shadow-sm">
-                <span className="text-slate-900 text-xs font-semibold">
-                    🎯 Plano de Ação ({steps.length} etapas)
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-500/10 border border-blue-500/20">
+                <span className="text-blue-300 text-xs font-semibold">
+                    Plano de Ação ({steps.length} etapas)
                 </span>
             </div>
         );
     }
 
     return (
-        <div className="my-3 p-4 rounded-lg bg-white border-2 border-slate-300 shadow-sm">
+        <div className="my-3 p-4 rounded-lg bg-obsidian-800 border border-white/[0.06]">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-slate-300">
+            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/[0.06]">
                 <span className="text-xl">🎯</span>
                 <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-slate-800">Plano de Ação</h3>
+                    <h3 className="text-sm font-semibold text-white">Plano de Ação</h3>
                     {methodology && (
-                        <p className="text-xs text-slate-500">Metodologia: {methodology}</p>
+                        <p className="text-xs text-neutral-500">Metodologia: {methodology}</p>
                     )}
                 </div>
-                <span className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                <span className="text-xs text-neutral-400 bg-white/5 px-2 py-1 rounded">
                     {steps.length} etapas
                 </span>
             </div>
@@ -75,11 +70,11 @@ export function ActionPlan({
                     return (
                         <div
                             key={index}
-                            className={`flex gap-3 p-3 rounded-md transition-colors ${config.bgColor} border-2 border-slate-300 shadow-sm`}
+                            className={`flex gap-3 p-3 rounded-md transition-colors ${config.bgColor} border border-white/[0.06]`}
                         >
                             {/* Step Number + Status Icon */}
                             <div className="flex-shrink-0 flex flex-col items-center gap-1">
-                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-white border-2 border-slate-300 text-xs font-bold text-slate-600">
+                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-xs font-bold text-neutral-400">
                                     {step.step}
                                 </div>
                                 <span className="text-sm">{config.icon}</span>
@@ -90,7 +85,7 @@ export function ActionPlan({
                                 <h4 className={`text-sm font-semibold ${config.color}`}>
                                     {step.title}
                                 </h4>
-                                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                                <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
                                     {step.description}
                                 </p>
                             </div>
@@ -99,17 +94,17 @@ export function ActionPlan({
                 })}
             </div>
 
-            {/* Confirmation Buttons (Task 2.8 - Future) */}
+            {/* Confirmation Buttons */}
             {requiresConfirmation && (onConfirm || onCancel) && (
-                <div className="mt-4 pt-3 border-t-2 border-slate-300 flex items-center justify-between">
-                    <p className="text-xs text-slate-600">
-                        ⚠️ Confirmação necessária para executar este plano
+                <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                    <p className="text-xs text-neutral-500">
+                        Confirmação necessária para executar este plano
                     </p>
                     <div className="flex gap-2">
                         {onCancel && (
                             <button
                                 onClick={onCancel}
-                                className="px-3 py-1.5 text-xs rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                className="px-3 py-1.5 text-xs rounded-md bg-white/5 hover:bg-white/10 text-neutral-400 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -117,9 +112,9 @@ export function ActionPlan({
                         {onConfirm && (
                             <button
                                 onClick={onConfirm}
-                                className="px-3 py-1.5 text-xs rounded-md bg-vsa-orange/20 hover:bg-vsa-orange/30 text-slate-900 font-semibold transition-colors border-2 border-vsa-orange/30"
+                                className="px-3 py-1.5 text-xs rounded-md bg-brand-primary/15 hover:bg-brand-primary/25 text-brand-primary font-semibold transition-colors border border-brand-primary/30"
                             >
-                                ✓ Confirmar Execução
+                                Confirmar Execução
                             </button>
                         )}
                     </div>
@@ -129,12 +124,7 @@ export function ActionPlan({
     );
 }
 
-/**
- * Parse Action Plan from response text (Task 2.6)
- * Looks for the "🎯 PLANO DE AÇÃO" section
- */
 export function parseActionPlanFromResponse(text: string): ActionPlanProps | null {
-    // Look for "### 🎯 PLANO DE AÇÃO" section
     const planSectionMatch = text.match(
         /###\s*🎯\s*PLANO DE AÇÃO[\s\S]*?(?=###|$)/i
     );
@@ -142,12 +132,9 @@ export function parseActionPlanFromResponse(text: string): ActionPlanProps | nul
 
     const planSection = planSectionMatch[0];
 
-    // Extract methodology
     const methodologyMatch = planSection.match(/\*\*Metodologia:\*\*\s*([^\n]+)/i);
     const methodology = methodologyMatch ? methodologyMatch[1].trim() : undefined;
 
-    // Extract steps (numbered list pattern)
-    // Matches: 1. **Title**: Description
     const stepRegex = /(\d+)\.\s*\*\*([^*:]+)\*\*:\s*([^\n]+)/g;
     const steps: ActionPlanStep[] = [];
     let match;
@@ -161,8 +148,6 @@ export function parseActionPlanFromResponse(text: string): ActionPlanProps | nul
         });
     }
 
-    // Alternative pattern without bold:
-    // 1. Title: Description
     if (steps.length === 0) {
         const simpleStepRegex = /(\d+)\.\s*([^:]+):\s*([^\n]+)/g;
         while ((match = simpleStepRegex.exec(planSection)) !== null) {
@@ -180,13 +165,10 @@ export function parseActionPlanFromResponse(text: string): ActionPlanProps | nul
     return {
         methodology,
         steps,
-        requiresConfirmation: false, // Future: detect WRITE operations
+        requiresConfirmation: false,
     };
 }
 
-/**
- * Detect if text contains an action plan section
- */
 export function hasActionPlan(text: string): boolean {
     return /###\s*🎯\s*PLANO DE AÇÃO/i.test(text);
 }

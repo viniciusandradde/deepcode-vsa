@@ -28,37 +28,37 @@ const phaseConfig: Record<ThinkingPhase, PhaseConfig> = {
   connecting: {
     label: "Conectando",
     icon: "○",
-    color: "text-slate-900",
+    color: "text-neutral-300",
   },
   classifying: {
     label: "Classificando (ITIL)",
     icon: "◐",
-    color: "text-slate-900",
+    color: "text-brand-primary",
   },
   planning: {
     label: "Planejando ações",
     icon: "◐",
-    color: "text-slate-900",
+    color: "text-brand-primary",
   },
   executing: {
     label: "Executando",
     icon: "◐",
-    color: "text-slate-900",
+    color: "text-brand-primary",
   },
   analyzing: {
     label: "Analisando resultados",
     icon: "◐",
-    color: "text-slate-900",
+    color: "text-brand-primary",
   },
   integrating: {
     label: "Integrando resposta",
     icon: "◐",
-    color: "text-slate-900",
+    color: "text-brand-primary",
   },
   responding: {
     label: "Gerando resposta",
     icon: "●",
-    color: "text-slate-900",
+    color: "text-brand-primary",
   },
 };
 
@@ -77,7 +77,7 @@ interface ThinkingIndicatorProps {
   currentTool?: string;
   autoProgress?: boolean;
   compact?: boolean;
-  vsaMode?: boolean; // VSA mode shows ITIL phases, simple mode shows just "Pensando..."
+  vsaMode?: boolean;
 }
 
 export function ThinkingIndicator({
@@ -85,16 +85,15 @@ export function ThinkingIndicator({
   currentTool,
   autoProgress = true,
   compact = false,
-  vsaMode = true, // Default to VSA mode for backward compatibility
+  vsaMode = true,
 }: ThinkingIndicatorProps) {
   const [internalPhase, setInternalPhase] = useState<ThinkingPhase>("connecting");
   const [dots, setDots] = useState("");
 
-  // Auto-progress through phases if no external phase is provided
   useEffect(() => {
     if (!autoProgress || externalPhase) return;
 
-    const intervals = [800, 1500, 2000, 1500, 1500, 1200, 0]; // Duration for each phase
+    const intervals = [800, 1500, 2000, 1500, 1500, 1200, 0];
     let currentIndex = 0;
 
     const advancePhase = () => {
@@ -118,7 +117,6 @@ export function ThinkingIndicator({
     };
   }, [autoProgress, externalPhase]);
 
-  // Animate dots
   useEffect(() => {
     const interval = setInterval(() => {
       setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
@@ -130,25 +128,25 @@ export function ThinkingIndicator({
   const config = phaseConfig[currentPhase];
   const currentPhaseIndex = phaseOrder.indexOf(currentPhase);
 
-  // Simple mode (non-VSA): Just show "Pensando..." like Claude
+  // Simple mode (non-VSA): Just show "Pensando..."
   if (!vsaMode) {
     return (
       <div className="flex items-center gap-2 text-sm">
         <div className="flex gap-1">
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "0ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "150ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "300ms" }}
           />
         </div>
-        <span className="text-slate-600 animate-pulse">
+        <span className="text-neutral-400 animate-pulse">
           Pensando{dots}
         </span>
       </div>
@@ -160,15 +158,15 @@ export function ThinkingIndicator({
       <div className="flex items-center gap-2 text-sm">
         <div className="flex gap-1">
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "0ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "150ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "300ms" }}
           />
         </div>
@@ -186,15 +184,15 @@ export function ThinkingIndicator({
       <div className="flex items-center gap-3">
         <div className="flex gap-1">
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "0ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "150ms" }}
           />
           <div
-            className="h-2 w-2 rounded-full bg-vsa-orange animate-pulse"
+            className="h-2 w-2 rounded-full bg-brand-primary animate-pulse"
             style={{ animationDelay: "300ms" }}
           />
         </div>
@@ -215,9 +213,9 @@ export function ThinkingIndicator({
               key={p}
               className={clsx(
                 "h-1 flex-1 rounded-full transition-all duration-300",
-                isCompleted && "bg-vsa-orange",
-                isCurrent && "bg-vsa-orange/50 animate-pulse",
-                !isCompleted && !isCurrent && "bg-slate-200"
+                isCompleted && "bg-brand-primary",
+                isCurrent && "bg-brand-primary/50 animate-pulse",
+                !isCompleted && !isCurrent && "bg-white/10"
               )}
             />
           );
@@ -226,20 +224,20 @@ export function ThinkingIndicator({
 
       {/* Tool indicator */}
       {currentTool && (
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="inline-block w-3 h-3 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <span className="inline-block w-3 h-3 border-2 border-neutral-500 border-t-transparent rounded-full animate-spin" />
           <span>
-            Chamando: <span className="font-mono text-slate-700">{currentTool}</span>
+            Chamando: <span className="font-mono text-neutral-300">{currentTool}</span>
           </span>
         </div>
       )}
 
       {/* Phase labels */}
-      <div className="flex justify-between text-[9px] uppercase tracking-wider text-slate-500">
-        <span className={currentPhaseIndex >= 0 ? "text-slate-600" : ""}>Classificar</span>
-        <span className={currentPhaseIndex >= 2 ? "text-slate-600" : ""}>Planejar</span>
-        <span className={currentPhaseIndex >= 3 ? "text-slate-600" : ""}>Executar</span>
-        <span className={currentPhaseIndex >= 5 ? "text-slate-600" : ""}>Integrar</span>
+      <div className="flex justify-between text-[9px] uppercase tracking-wider text-neutral-600">
+        <span className={currentPhaseIndex >= 0 ? "text-neutral-400" : ""}>Classificar</span>
+        <span className={currentPhaseIndex >= 2 ? "text-neutral-400" : ""}>Planejar</span>
+        <span className={currentPhaseIndex >= 3 ? "text-neutral-400" : ""}>Executar</span>
+        <span className={currentPhaseIndex >= 5 ? "text-neutral-400" : ""}>Integrar</span>
       </div>
     </div>
   );
@@ -247,10 +245,8 @@ export function ThinkingIndicator({
 
 /**
  * Parse phase from SSE event data
- * The backend can send phase information in the event stream
  */
 export function parsePhaseFromEvent(eventData: string): ThinkingPhase | null {
-  // Look for phase markers in the event data
   const phasePatterns: Record<string, ThinkingPhase> = {
     "classificando": "classifying",
     "classifying": "classifying",

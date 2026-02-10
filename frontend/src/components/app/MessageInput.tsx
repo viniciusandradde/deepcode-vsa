@@ -55,7 +55,7 @@ export function MessageInput({
   }
 
   return (
-    <footer className="border-t-2 border-slate-300 bg-white px-10 py-5 shadow-sm">
+    <footer className="border-t border-white/[0.06] bg-obsidian-900/80 backdrop-blur-md px-10 py-5">
       <form onSubmit={handleSubmit} className="flex w-full items-start gap-4">
         <div className="flex-1">
           <div className="flex items-start gap-2">
@@ -65,7 +65,7 @@ export function MessageInput({
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               placeholder={isLoading ? "Carregando..." : "Digite sua mensagem ou use o microfone..."}
-              className="h-[90px] w-full resize-none rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-vsa-orange focus:outline-none focus:ring-2 focus:ring-vsa-orange/40"
+              className="h-[90px] w-full resize-none rounded-xl border border-white/10 bg-obsidian-800 px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
@@ -129,10 +129,10 @@ export function MessageInput({
             }
             variant={isSending ? "outline" : "primary"}
             className={clsx(
-              "h-[80px] rounded-xl px-6 text-sm font-semibold uppercase tracking-wide shadow-md focus:outline-none focus:ring-2",
+              "h-[80px] rounded-xl px-6 text-sm font-semibold uppercase tracking-wide focus:outline-none focus:ring-2",
               isSending
-                ? "border-2 border-red-400 bg-red-50 text-red-800 hover:border-red-500 hover:bg-red-100 focus:ring-red-500/50"
-                : "bg-vsa-orange text-white border-vsa-orange-600/30 hover:bg-vsa-orange-600 hover:shadow-vsa-orange"
+                ? "border border-red-500/40 bg-red-900/20 text-red-400 hover:border-red-500/60 hover:bg-red-900/30 focus:ring-red-500/30"
+                : "bg-brand-primary text-white hover:bg-brand-primary/80 hover:shadow-glow-orange"
             )}
             aria-label={isSending ? "Cancelar envio" : "Enviar mensagem"}
           >

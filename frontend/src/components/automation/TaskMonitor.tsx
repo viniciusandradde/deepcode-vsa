@@ -82,12 +82,12 @@ export function TaskMonitor() {
 
     if (loading) {
         return (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 animate-pulse">
-                <div className="h-4 bg-zinc-800 rounded w-1/3 mb-3"></div>
+            <div className="rounded-lg border border-white/[0.06] bg-obsidian-800 p-4 animate-pulse">
+                <div className="h-4 bg-white/5 rounded w-1/3 mb-3"></div>
                 <div className="grid grid-cols-3 gap-2">
-                    <div className="h-12 bg-zinc-800 rounded"></div>
-                    <div className="h-12 bg-zinc-800 rounded"></div>
-                    <div className="h-12 bg-zinc-800 rounded"></div>
+                    <div className="h-12 bg-white/5 rounded"></div>
+                    <div className="h-12 bg-white/5 rounded"></div>
+                    <div className="h-12 bg-white/5 rounded"></div>
                 </div>
             </div>
         );
@@ -95,9 +95,15 @@ export function TaskMonitor() {
 
     if (error) {
         return (
-            <div className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-4 text-amber-400">
-                <p className="text-sm font-medium">⚠️ Worker Celery</p>
+            <div className="rounded-lg border border-amber-500/30 bg-amber-900/20 p-4 text-amber-400">
+                <p className="text-sm font-medium">Worker Celery indisponível</p>
                 <p className="text-xs opacity-70 mt-1">{error}</p>
+                <button
+                    onClick={() => { setLoading(true); setError(null); fetchStats(); }}
+                    className="mt-2 text-xs underline hover:text-amber-300 transition-colors"
+                >
+                    Tentar novamente
+                </button>
             </div>
         );
     }
@@ -107,24 +113,24 @@ export function TaskMonitor() {
     const totalActive = stats.active + stats.reserved;
 
     return (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+        <div className="rounded-lg border border-white/[0.06] bg-obsidian-800 p-4">
             <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-zinc-300">📊 Fila de Tarefas</h3>
-                <span className="text-xs text-zinc-500">{stats.workerName}</span>
+                <h3 className="text-sm font-medium text-neutral-300">📊 Fila de Tarefas</h3>
+                <span className="text-xs text-neutral-500">{stats.workerName}</span>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-3 rounded-md bg-zinc-800/50">
+                <div className="text-center p-3 rounded-md bg-white/5/50">
                     <p className="text-2xl font-bold text-emerald-400">{totalActive}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Ativas</p>
+                    <p className="text-xs text-neutral-500 mt-1">Ativas</p>
                 </div>
-                <div className="text-center p-3 rounded-md bg-zinc-800/50">
+                <div className="text-center p-3 rounded-md bg-white/5/50">
                     <p className="text-2xl font-bold text-amber-400">{stats.scheduled}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Agendadas</p>
+                    <p className="text-xs text-neutral-500 mt-1">Agendadas</p>
                 </div>
-                <div className="text-center p-3 rounded-md bg-zinc-800/50">
+                <div className="text-center p-3 rounded-md bg-white/5/50">
                     <p className="text-2xl font-bold text-blue-400">{stats.reserved}</p>
-                    <p className="text-xs text-zinc-500 mt-1">Reservadas</p>
+                    <p className="text-xs text-neutral-500 mt-1">Reservadas</p>
                 </div>
             </div>
         </div>

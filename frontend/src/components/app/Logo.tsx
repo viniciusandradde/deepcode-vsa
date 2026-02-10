@@ -32,7 +32,7 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
     return (
       <div className={clsx("flex items-center gap-2", className)}>
         <div className={clsx(
-          "flex items-center justify-center rounded-lg font-bold text-slate-900",
+          "flex items-center justify-center rounded-lg font-bold text-white",
           sizeClasses[size]
         )} style={{
           background: "var(--vsa-orange-gradient)",
@@ -42,8 +42,8 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
         </div>
         {showText && (
           <div className="flex flex-col">
-            <span className={clsx("font-bold text-slate-900", textSizeClasses[size])}>VSA</span>
-            <span className={clsx("text-slate-500 text-xs", size === "sm" ? "text-[10px]" : "")}>
+            <span className={clsx("font-bold text-white", textSizeClasses[size])}>VSA</span>
+            <span className={clsx("text-neutral-500 text-xs", size === "sm" ? "text-[10px]" : "")}>
               Soluções em Tecnologia
             </span>
           </div>
@@ -67,8 +67,8 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
       </div>
       {showText && (
         <div className="flex flex-col">
-          <span className={clsx("font-bold text-slate-900", textSizeClasses[size])}>VSA Nexus AI</span>
-          <span className={clsx("text-slate-500 text-xs", size === "sm" ? "text-[10px]" : "")}>
+          <span className={clsx("font-bold text-white", textSizeClasses[size])}>VSA Nexus AI</span>
+          <span className={clsx("text-neutral-500 text-xs", size === "sm" ? "text-[10px]" : "")}>
             Soluções em Tecnologia
           </span>
         </div>

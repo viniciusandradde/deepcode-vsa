@@ -1,9 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import clsx from "clsx";
 
 export type ToastType = "success" | "error" | "info";
+
+interface ToastItem {
+  id: string;
+  message: string;
+  type: ToastType;
+}
+
+interface ToastContextValue {
+  addToast: (message: string, type?: ToastType) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  return ctx;
+}
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const addToast = useCallback((message: string, type: ToastType = "info") => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((prev) => [...prev, { id, message, type }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ addToast }}>
+      {children}
+      {/* Toast stack container */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {toasts.map((toast) => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => removeToast(toast.id)}
+          />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
 
 interface ToastProps {
   message: string;
@@ -30,7 +78,7 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
   return (
     <div
       className={clsx(
-        "fixed bottom-4 right-4 z-50 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-md transition-all",
+        "pointer-events-auto rounded-lg border px-4 py-3 shadow-vsa-lg backdrop-blur-md transition-all animate-vsa-slide-up",
         typeStyles[type],
       )}
     >
@@ -54,25 +102,5 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
         </button>
       </div>
     </div>
-  );
-}
-
-interface ToastManagerProps {
-  toasts: Array<{ id: string; message: string; type?: ToastType }>;
-  onRemove: (id: string) => void;
-}
-
-export function ToastManager({ toasts, onRemove }: ToastManagerProps) {
-  return (
-    <>
-      {toasts.map((toast) => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          onClose={() => onRemove(toast.id)}
-        />
-      ))}
-    </>
   );
 }
