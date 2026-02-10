@@ -218,31 +218,31 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
             <SettingsPanel />
           </>
         ) : (
-            <div className="flex flex-col gap-4 items-center">
-              <button
-                onClick={() => setSelectedModelId(selectedModelId || models[0]?.id)}
-                className={clsx(
-                  "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
-                  selectedModelId
-                    ? "border-brand-primary/40 bg-brand-primary/10 text-white"
-                    : "border-white/[0.06] bg-white/5 text-neutral-500"
-                )}
-                title={models.find(m => m.id === selectedModelId)?.label || "Modelo"}
-              >
+          <div className="flex flex-col gap-4 items-center">
+            <button
+              onClick={() => setSelectedModelId(selectedModelId || models[0]?.id)}
+              className={clsx(
+                "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
+                selectedModelId
+                  ? "border-brand-primary/40 bg-brand-primary/10 text-white"
+                  : "border-white/[0.06] bg-white/5 text-neutral-500"
+              )}
+              title={models.find(m => m.id === selectedModelId)?.label || "Modelo"}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </button>
-              <button
-                onClick={() => setUseTavily(!useTavily)}
-                className={clsx(
-                  "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
-                  useTavily
-                    ? "border-brand-primary/40 bg-brand-primary/10 text-white"
-                    : "border-white/[0.06] bg-white/5 text-neutral-500"
-                )}
-                title={useTavily ? "Busca Web habilitada" : "Busca Web desabilitada"}
-              >
+            <button
+              onClick={() => setUseTavily(!useTavily)}
+              className={clsx(
+                "w-12 h-12 rounded-lg border flex items-center justify-center transition-colors",
+                useTavily
+                  ? "border-brand-primary/40 bg-brand-primary/10 text-white"
+                  : "border-white/[0.06] bg-white/5 text-neutral-500"
+              )}
+              title={useTavily ? "Busca Web habilitada" : "Busca Web desabilitada"}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
