@@ -71,7 +71,6 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       FILES_MAX_SIZE_MB: ${FILES_MAX_SIZE_MB:-4}
       SIGNED_URL_TTL_SECONDS: ${SIGNED_URL_TTL_SECONDS:-3600}
-      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       # Redis/Celery
       REDIS_URL: ${REDIS_URL:-redis://:${REDIS_PASSWORD:-changeme_redis_password}@redis:6379/0}
       # Auth & CORS
@@ -216,7 +215,7 @@ services:
 
   # MinIO - Object Storage
   minio:
-    image: minio/minio:RELEASE.2025-01-11T18-03-25Z
+    image: minio/minio:latest
     container_name: ai_agent_minio
     command: server /data --console-address ":9001"
     environment:

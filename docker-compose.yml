@@ -221,7 +221,7 @@ services:
 
   # MinIO - Object Storage
   minio:
-    image: minio/minio:RELEASE.2025-01-11T18-03-25Z
+    image: minio/minio:latest
     container_name: ai_agent_minio
     command: server /data --console-address ":9001"
     environment:
