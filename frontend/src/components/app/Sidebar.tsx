@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select } from "@/components/ui/select";
 import { SettingsPanel } from "./SettingsPanel";
+import { Logo } from "./Logo";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { SkeletonSessionCard } from "@/components/ui/skeleton";
 
@@ -135,22 +136,9 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}>
         {!collapsed ? (
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.4em] text-neutral-500">AI Agent</div>
-              <div
-                className="text-2xl font-black uppercase text-white"
-              >
-                VSA Nexus AI
-              </div>
-            </div>
-          </div>
+          <Logo size="sm" showText />
         ) : (
-          <div className="flex items-center justify-center mb-4">
-            <div className="text-2xl font-black uppercase text-white">
-              V
-            </div>
-          </div>
+          <Logo size="sm" showText={false} />
         )}
 
         {!collapsed ? (

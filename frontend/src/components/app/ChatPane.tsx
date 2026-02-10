@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import clsx from "clsx";
-import { Virtuoso } from "react-virtuoso";
+import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Logo } from "./Logo";
 import { MessageInput } from "./MessageInput";
@@ -62,6 +62,8 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
     [selectedArtifactId, artifactMap],
   );
 
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+
   const [editingContent, setEditingContent] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
@@ -75,6 +77,16 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
     window.addEventListener("resize", updateViewport);
     return () => window.removeEventListener("resize", updateViewport);
   }, []);
+
+  useEffect(() => {
+    if (isSending && messages.length > 0) {
+      virtuosoRef.current?.scrollToIndex({
+        index: messages.length - 1,
+        behavior: "smooth",
+        align: "end",
+      });
+    }
+  }, [isSending, messages.length]);
 
   const handleMessageSubmit = useCallback(async (message: string, streaming: boolean) => {
     await sendMessage(message, streaming);
@@ -142,10 +154,10 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
           )}
           <div className="flex min-w-0 flex-col">
             <span className="hidden sm:block text-xs uppercase tracking-[0.35em] text-neutral-500">
-              VSA Nexus
+              AI Agent
             </span>
-            <span className="truncate text-sm font-semibold text-white">
-              Chat Inteligente
+            <span className="truncate text-sm font-bold uppercase text-white">
+              VSA Tecnologia
             </span>
           </div>
           <div className="hidden md:block h-12 w-px bg-brand-primary/30" />
@@ -223,10 +235,14 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
           </div>
         ) : (
           <Virtuoso
+            ref={virtuosoRef}
             key={currentSessionId}
             style={{ flex: 1 }}
             data={messages}
-            followOutput="smooth"
+            followOutput={(isAtBottom) => {
+              if (isSending) return "smooth";
+              return isAtBottom ? "smooth" : false;
+            }}
             initialTopMostItemIndex={messages.length - 1}
             computeItemKey={(_, msg) => msg.id}
             itemContent={(_, message) => {

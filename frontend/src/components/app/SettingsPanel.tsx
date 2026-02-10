@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import clsx from "clsx";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -42,24 +41,6 @@ export function SettingsPanel() {
                 >
                     {isOpen ? "Ocultar" : "Mostrar"} Configurações
                 </Button>
-                <Link href="/planning">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full border-brand-primary/30 text-neutral-300 hover:bg-brand-primary/10"
-                    >
-                        Projetos
-                    </Button>
-                </Link>
-                <Link href="/automation/scheduler">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full border-brand-primary/30 text-neutral-300 hover:bg-brand-primary/10"
-                    >
-                        Agendamento
-                    </Button>
-                </Link>
             </div>
 
             {isOpen && (

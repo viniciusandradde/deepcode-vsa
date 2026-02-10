@@ -42,10 +42,8 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
         </div>
         {showText && (
           <div className="flex flex-col">
-            <span className={clsx("font-bold text-white", textSizeClasses[size])}>VSA</span>
-            <span className={clsx("text-neutral-500 text-xs", size === "sm" ? "text-[10px]" : "")}>
-              Soluções em Tecnologia
-            </span>
+            <div className="text-[11px] uppercase tracking-[0.4em] text-neutral-500">AI Agent</div>
+            <span className={clsx("font-bold text-white uppercase", textSizeClasses[size])}>VSA Tecnologia</span>
           </div>
         )}
       </div>
@@ -67,10 +65,8 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
       </div>
       {showText && (
         <div className="flex flex-col">
-          <span className={clsx("font-bold text-white", textSizeClasses[size])}>VSA Nexus AI</span>
-          <span className={clsx("text-neutral-500 text-xs", size === "sm" ? "text-[10px]" : "")}>
-            Soluções em Tecnologia
-          </span>
+          <div className="text-[11px] uppercase tracking-[0.4em] text-neutral-500">AI Agent</div>
+          <span className={clsx("font-bold text-white uppercase", textSizeClasses[size])}>VSA Tecnologia</span>
         </div>
       )}
     </div>
