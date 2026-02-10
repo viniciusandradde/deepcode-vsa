@@ -8,7 +8,6 @@ type SectionId =
   | "overview"
   | "palette"
   | "shadows"
-  | "glass"
   | "typography"
   | "layout";
 
@@ -23,11 +22,10 @@ const NAV: NavGroup[] = [
   {
     label: "Design Tokens",
     items: [
+      { id: "layout", label: "Layout & Grid" },
       { id: "palette", label: "Paleta Obsidian" },
       { id: "shadows", label: "Sombras & Efeitos" },
-      { id: "glass", label: "Vidro Fosco" },
       { id: "typography", label: "Tipografia" },
-      { id: "layout", label: "Layout & Grid" },
     ],
   },
 ];
@@ -68,7 +66,7 @@ const RADII = [
 /* ═══════════════════════════════════════════════════════════ */
 
 export default function VSADesignShowcase() {
-  const [activeSection, setActiveSection] = useState<SectionId>("overview");
+  const [activeSection, setActiveSection] = useState<SectionId>("layout");
   const [mobileOpen, setMobileOpen] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -157,9 +155,9 @@ export default function VSADesignShowcase() {
                     key={item.id}
                     type="button"
                     onClick={() => navigate(item.id)}
-                    className={`w-full text-left px-3 py-2 rounded-vsa-lg text-sm transition-all ${
+                    className={`relative w-full text-left px-3 py-2 rounded-vsa-lg text-sm transition-all overflow-hidden ${
                       activeSection === item.id
-                        ? "bg-white/5 text-white font-medium"
+                        ? "text-white font-semibold border-l-2 border-brand-primary bg-gradient-to-r from-brand-primary/20 to-transparent"
                         : "text-gray-400 hover:text-white hover:bg-white/[0.03]"
                     }`}
                   >
@@ -172,12 +170,14 @@ export default function VSADesignShowcase() {
         </nav>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-white/5 space-y-2">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-gray-400">Online</span>
+        <div className="px-4 py-4 border-t border-white/5">
+          <div className="rounded-vsa-xl border border-white/10 bg-white/[0.02] p-3">
+            <p className="text-xs font-semibold text-white mb-1">Status do Sistema</p>
+            <div className="flex items-center gap-2 text-[11px] text-gray-400">
+              <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+              <span>Online & Atualizado</span>
+            </div>
           </div>
-          <p className="text-[10px] text-gray-600 m-0">Obsidian v2.0 - Atualizado</p>
         </div>
       </aside>
 
@@ -195,9 +195,9 @@ export default function VSADesignShowcase() {
           </div>
           <Link
             href="/"
-            className="text-xs px-4 py-2 rounded-vsa-lg bg-brand-primary text-white font-medium shadow-glow-orange hover:shadow-glow-orange-lg transition-all"
+            className="inline-flex items-center gap-2 text-xs px-4 py-2 rounded-vsa-lg bg-vsa-brand text-white font-medium shadow-glow-brand hover:shadow-glow-orange-lg transition-all"
           >
-            Voltar ao Chat
+            Exportar
           </Link>
         </header>
 
@@ -214,9 +214,6 @@ export default function VSADesignShowcase() {
 
           {/* ════════ SHADOWS ════════ */}
           {activeSection === "shadows" && <SectionShadows />}
-
-          {/* ════════ GLASS ════════ */}
-          {activeSection === "glass" && <SectionGlass />}
 
           {/* ════════ TYPOGRAPHY ════════ */}
           {activeSection === "typography" && <SectionTypography />}
@@ -485,67 +482,27 @@ function SectionShadows() {
         </div>
       </div>
 
+
+      {/* Vidro Fosco integrado aos efeitos */}
+      <div className="rounded-vsa-2xl bg-gradient-to-br from-brand-primary/10 via-transparent to-brand-secondary/10 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-6">
+          Vidro Fosco
+        </p>
+        <div className="glass-panel rounded-vsa-2xl p-6 max-w-lg">
+          <h3 className="text-xl font-semibold text-white mb-2">Vidro Fosco</h3>
+          <p className="text-sm text-gray-300 leading-relaxed mb-4">
+            O efeito de vidro adiciona profundidade mantendo o contexto do fundo visível,
+            usando blur, borda translúcida e brilho sutil.
+          </p>
+          <div className="h-1 w-24 rounded-full bg-vsa-brand shadow-glow-brand" />
+        </div>
+      </div>
+
       {/* Guideline */}
       <div className="rounded-vsa-xl bg-obsidian-900 border border-white/5 p-5">
         <p className="text-sm text-gray-400 leading-relaxed">
           <span className="text-brand-primary font-medium">Diretriz:</span>{" "}
           Substituímos sombras pretas por Colored Glows que simulam emissão de luz neon. Isso cria profundidade sem pesar o visual escuro.
-        </p>
-      </div>
-    </>
-  );
-}
-
-/* ─── Glass / Glassmorphism ─── */
-function SectionGlass() {
-  return (
-    <>
-      <SectionHeading
-        title="Vidro Fosco"
-        subtitle="Glassmorphism para separação de camadas e profundidade"
-      />
-
-      <div className="bg-gradient-to-br from-brand-primary/10 via-transparent to-brand-secondary/10 rounded-vsa-2xl p-8">
-        <div className="glass-panel rounded-vsa-2xl p-6 max-w-md">
-          <h3 className="text-lg font-semibold text-white mb-2">Vidro Fosco</h3>
-          <p className="text-sm text-gray-400 leading-relaxed mb-4">
-            O efeito de vidro fosco (glassmorphism) cria separação visual entre camadas sem adicionar peso.
-            Usa backdrop-blur, bordas translúcidas e sombra sutil para simular profundidade em superfícies escuras.
-          </p>
-          <div className="flex gap-2 text-xs font-mono text-gray-600">
-            <span className="px-2 py-1 rounded-vsa-md bg-white/5">blur(20px)</span>
-            <span className="px-2 py-1 rounded-vsa-md bg-white/5">bg: 3%</span>
-            <span className="px-2 py-1 rounded-vsa-md bg-white/5">border: 5%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Multiple glass panels demo */}
-      <div className="mt-8">
-        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-4">
-          Variações de intensidade
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="glass-panel rounded-vsa-2xl p-5">
-            <p className="text-sm font-medium text-white mb-1">Padrão</p>
-            <p className="text-xs text-gray-500">.glass-panel</p>
-          </div>
-          <div className="rounded-vsa-2xl p-5 bg-white/[0.05] backdrop-blur-xl border border-white/10">
-            <p className="text-sm font-medium text-white mb-1">Elevado</p>
-            <p className="text-xs text-gray-500">bg: 5%, border: 10%</p>
-          </div>
-          <div className="rounded-vsa-2xl p-5 bg-white/[0.08] backdrop-blur-2xl border border-white/[0.15] shadow-glass-panel">
-            <p className="text-sm font-medium text-white mb-1">Destaque</p>
-            <p className="text-xs text-gray-500">bg: 8%, border: 15%</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Guideline */}
-      <div className="rounded-vsa-xl bg-obsidian-900 border border-white/5 p-5 mt-8">
-        <p className="text-sm text-gray-400 leading-relaxed">
-          <span className="text-brand-primary font-medium">Diretriz:</span>{" "}
-          Use glass panels para separar contexto (sidebar, modais, cards flutuantes). Evite empilhar mais de 2 camadas de blur para manter performance.
         </p>
       </div>
     </>
