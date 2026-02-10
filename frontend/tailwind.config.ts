@@ -108,10 +108,12 @@ const config: Config = {
         "vsa-brand": "0 4px 14px rgba(249, 115, 22, 0.20), 0 4px 14px rgba(59, 130, 246, 0.15)",
         "vsa-inner": "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
         "vsa-inner-lg": "inset 0 4px 8px rgba(0, 0, 0, 0.4)",
-        "glow-orange": "0 0 20px rgba(249, 115, 22, 0.15)",
-        "glow-orange-lg": "0 0 40px rgba(249, 115, 22, 0.25)",
-        "glow-blue": "0 0 20px rgba(59, 130, 246, 0.15)",
-        "glow-blue-lg": "0 0 40px rgba(59, 130, 246, 0.25)",
+        "glow-brand": "0 0 40px -10px rgba(249, 115, 22, 0.4)",
+        "glow-orange": "0 0 30px -5px rgba(249, 115, 22, 0.3)",
+        "glow-orange-lg": "0 0 40px -10px rgba(249, 115, 22, 0.4)",
+        "glow-blue": "0 0 30px -5px rgba(59, 130, 246, 0.3)",
+        "glow-blue-lg": "0 0 40px -10px rgba(59, 130, 246, 0.4)",
+        "glass-panel": "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
       },
       borderRadius: {
         "vsa-sm": "0.25rem",
@@ -138,8 +140,8 @@ const config: Config = {
         "vsa-scale": "vsaScale 0.2s ease-out",
         "vsa-pulse-orange": "vsaPulseOrange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "vsa-gradient": "vsaGradient 3s ease infinite",
-        float: "float 8s ease-in-out infinite",
-        "pulse-slow": "pulse-slow 4s ease-in-out infinite",
+        float: "float 6s ease-in-out infinite",
+        "pulse-slow": "pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
       keyframes: {
         vsaFadeIn: {
@@ -167,8 +169,8 @@ const config: Config = {
           "50%": { backgroundPosition: "100% 50%" },
         },
         float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-20px)" },
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-15px)" },
         },
         "pulse-slow": {
           "0%, 100%": { opacity: "0.4" },

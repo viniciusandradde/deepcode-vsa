@@ -51,16 +51,17 @@
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-default: rgba(255, 255, 255, 0.10);
 
-  /* GLASS */
-  --glass-bg: rgba(20, 20, 20, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --glass-blur: 16px;
+  /* GLASS (white-base for crystalline depth on #050505) */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-blur: 20px;
 
-  /* GLOW */
-  --glow-orange: 0 0 20px rgba(249, 115, 22, 0.15);
-  --glow-orange-lg: 0 0 40px rgba(249, 115, 22, 0.25);
-  --glow-blue: 0 0 20px rgba(59, 130, 246, 0.15);
-  --glow-blue-lg: 0 0 40px rgba(59, 130, 246, 0.25);
+  /* GLOW (vibrant neon on deep void) */
+  --glow-orange: 0 0 30px -5px rgba(249, 115, 22, 0.3);
+  --glow-orange-lg: 0 0 40px -10px rgba(249, 115, 22, 0.4);
+  --glow-blue: 0 0 30px -5px rgba(59, 130, 246, 0.3);
+  --glow-blue-lg: 0 0 40px -10px rgba(59, 130, 246, 0.4);
+  --glow-brand: 0 0 40px -10px rgba(249, 115, 22, 0.4);
 
   /* SEMÂNTICAS */
   --vsa-success-light: #D1FAE5;

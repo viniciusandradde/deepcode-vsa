@@ -13,16 +13,23 @@
 }
 
 body {
-  @apply bg-[#0a0a0a] text-[#f5f5f5];
+  @apply bg-[#050505] text-[#e5e5e5];
   font-family: var(--font-sans);
 }
 
-/* Glass panel utility */
+/* Glass panel utility — crystalline glassmorphism */
 .glass-panel {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Skeleton loading animation */
@@ -44,8 +51,8 @@ body {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
 }
 
 @keyframes pulse-slow {
@@ -95,36 +102,7 @@ body {
   -webkit-touch-callout: none;
 }
 
-/* Fundo VSA – ambient orbs */
+/* Fundo VSA — ambient orbs are now physical divs in layout.tsx */
 .vsa-main-background {
   position: relative;
-  background-color: var(--obsidian-950);
-}
-
-.vsa-main-background::before,
-.vsa-main-background::after {
-  content: '';
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(120px);
-  z-index: 0;
-}
-
-.vsa-main-background::before {
-  width: 500px;
-  height: 500px;
-  top: -10%;
-  right: -5%;
-  background: rgba(249, 115, 22, 0.06);
-  animation: float 8s ease-in-out infinite;
-}
-
-.vsa-main-background::after {
-  width: 400px;
-  height: 400px;
-  bottom: -10%;
-  left: -5%;
-  background: rgba(59, 130, 246, 0.04);
-  animation: float 8s ease-in-out infinite 4s;
 }

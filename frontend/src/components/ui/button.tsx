@@ -16,7 +16,7 @@ export function Button({
     "inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-obsidian-900 disabled:opacity-50 disabled:pointer-events-none";
   const variants = {
     primary:
-      "bg-brand-primary text-white hover:bg-brand-primary-dark hover:shadow-glow-orange focus:ring-brand-primary/30 active:bg-vsa-orange-700",
+      "bg-brand-primary text-white hover:bg-brand-primary-dark shadow-glow-brand hover:shadow-glow-orange-lg focus:ring-brand-primary/30 active:bg-vsa-orange-700",
     ghost:
       "bg-transparent text-neutral-300 hover:bg-white/5 hover:text-white focus:ring-brand-primary/30",
     outline:

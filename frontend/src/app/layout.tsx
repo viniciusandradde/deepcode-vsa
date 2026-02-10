@@ -26,7 +26,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#0a0a0a",
+  themeColor: "#050505",
 };
 
 export default function RootLayout({
@@ -37,6 +37,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+        {/* Ambient Light Orbs — crystalline depth */}
+        <div className="fixed top-[-100px] left-[-100px] w-[500px] h-[500px] bg-brand-primary/15 blur-[80px] rounded-full pointer-events-none -z-10 animate-float" />
+        <div className="fixed bottom-[-50px] right-[-50px] w-[400px] h-[400px] bg-brand-secondary/15 blur-[80px] rounded-full pointer-events-none -z-10 animate-float" style={{ animationDelay: "2s" }} />
+        <div className="fixed top-[20%] right-[30%] w-[300px] h-[300px] bg-brand-primary/10 blur-[80px] rounded-full pointer-events-none -z-10 animate-pulse-slow" />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
