@@ -1,425 +1,739 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Switch } from "@/components/ui/switch";
 
-type TabId = "colors" | "typography" | "components" | "shadows";
+/* ───────── types ───────── */
+type SectionId =
+  | "overview"
+  | "palette"
+  | "shadows"
+  | "glass"
+  | "typography"
+  | "layout";
 
-type ColorShade = { name: string; hex: string; label?: string };
+interface NavGroup {
+  label: string;
+  items: { id: SectionId; label: string }[];
+}
 
-const colors: Record<string, ColorShade[]> = {
-  orange: [
-    { name: "50", hex: "#FFF7ED" },
-    { name: "100", hex: "#FFEDD5" },
-    { name: "200", hex: "#FED7AA" },
-    { name: "300", hex: "#FDBA74" },
-    { name: "400", hex: "#FB923C" },
-    { name: "500", hex: "#F7941D", label: "Principal" },
-    { name: "600", hex: "#E8611A", label: "Gradiente" },
-    { name: "700", hex: "#C2410C" },
-    { name: "800", hex: "#9A3412" },
-    { name: "900", hex: "#7C2D12" },
-  ],
-  blue: [
-    { name: "50", hex: "#EFF9FF" },
-    { name: "100", hex: "#DEF1FF" },
-    { name: "200", hex: "#B6E5FF" },
-    { name: "300", hex: "#75D4FF" },
-    { name: "400", hex: "#2CBFFF" },
-    { name: "500", hex: "#00AEEF", label: "Principal" },
-    { name: "600", hex: "#0077B5", label: "Gradiente" },
-    { name: "700", hex: "#0369A1" },
-    { name: "800", hex: "#075985" },
-    { name: "900", hex: "#0C4A6E" },
-  ],
-  gray: [
-    { name: "50", hex: "#FAFAFA" },
-    { name: "100", hex: "#F4F4F5" },
-    { name: "200", hex: "#E4E4E7" },
-    { name: "300", hex: "#D4D4D8" },
-    { name: "400", hex: "#A1A1AA" },
-    { name: "500", hex: "#71717A" },
-    { name: "600", hex: "#52525B" },
-    { name: "700", hex: "#3F3F46" },
-    { name: "800", hex: "#27272A" },
-    { name: "900", hex: "#18181B" },
-  ],
-};
-
-const tabs: { id: TabId; label: string }[] = [
-  { id: "colors", label: "Cores" },
-  { id: "typography", label: "Tipografia" },
-  { id: "components", label: "Componentes" },
-  { id: "shadows", label: "Sombras" },
+/* ───────── nav structure ───────── */
+const NAV: NavGroup[] = [
+  { label: "Menu Principal", items: [{ id: "overview", label: "Visão Geral" }] },
+  {
+    label: "Design Tokens",
+    items: [
+      { id: "palette", label: "Paleta Obsidian" },
+      { id: "shadows", label: "Sombras & Efeitos" },
+      { id: "glass", label: "Vidro Fosco" },
+      { id: "typography", label: "Tipografia" },
+      { id: "layout", label: "Layout & Grid" },
+    ],
+  },
 ];
 
-const quickActions = [
-  { icon: "🎫", title: "Tickets GLPI", subtitle: "Últimos chamados" },
-  { icon: "⚠️", title: "Alertas Zabbix", subtitle: "Problemas ativos" },
-  { icon: "📊", title: "Dashboard", subtitle: "Visão geral" },
-  { icon: "📋", title: "Issues Linear", subtitle: "Tarefas do time" },
-  { icon: "👤", title: "Novos s/ Atribuição", subtitle: "> 24h sem técnico" },
-  { icon: "⏰", title: "Pendentes > 7 dias", subtitle: "Parados há muito tempo" },
+/* ───────── obsidian scale data ───────── */
+const OBSIDIAN_SCALE = [
+  { name: "950", value: "#050505", tw: "bg-obsidian-950" },
+  { name: "900", value: "#0A0A0A", tw: "bg-obsidian-900" },
+  { name: "800", value: "#121212", tw: "bg-obsidian-800" },
+  { name: "700", value: "#1A1A1A", tw: "bg-obsidian-700" },
+  { name: "600", value: "#262626", tw: "bg-obsidian-600" },
+  { name: "500", value: "#404040", tw: "bg-obsidian-500" },
 ];
 
-const typeScale = [
-  { size: "48px", name: "text-5xl", weight: "700" },
-  { size: "36px", name: "text-4xl", weight: "700" },
-  { size: "30px", name: "text-3xl", weight: "600" },
-  { size: "24px", name: "text-2xl", weight: "600" },
-  { size: "20px", name: "text-xl", weight: "600" },
-  { size: "18px", name: "text-lg", weight: "500" },
-  { size: "16px", name: "text-base", weight: "400" },
-  { size: "14px", name: "text-sm", weight: "400" },
-  { size: "12px", name: "text-xs", weight: "400" },
+/* ───────── type scale data ───────── */
+const TYPE_SCALE = [
+  { size: "text-5xl", px: "48px", weight: "font-bold", label: "Display" },
+  { size: "text-4xl", px: "36px", weight: "font-bold", label: "H1" },
+  { size: "text-3xl", px: "30px", weight: "font-semibold", label: "H2" },
+  { size: "text-2xl", px: "24px", weight: "font-semibold", label: "H3" },
+  { size: "text-xl", px: "20px", weight: "font-semibold", label: "H4" },
+  { size: "text-lg", px: "18px", weight: "font-medium", label: "Large" },
+  { size: "text-base", px: "16px", weight: "font-normal", label: "Body" },
+  { size: "text-sm", px: "14px", weight: "font-normal", label: "Small" },
+  { size: "text-xs", px: "12px", weight: "font-normal", label: "Caption" },
 ];
 
-const shadowNeutral = [
-  { name: "shadow-vsa-xs", shadow: "0 1px 2px rgba(24, 24, 27, 0.05)" },
-  { name: "shadow-vsa-sm", shadow: "0 1px 3px rgba(24, 24, 27, 0.08), 0 1px 2px rgba(24, 24, 27, 0.04)" },
-  { name: "shadow-vsa-md", shadow: "0 4px 6px rgba(24, 24, 27, 0.07), 0 2px 4px rgba(24, 24, 27, 0.05)" },
-  { name: "shadow-vsa-lg", shadow: "0 10px 15px rgba(24, 24, 27, 0.08), 0 4px 6px rgba(24, 24, 27, 0.04)" },
-  { name: "shadow-vsa-xl", shadow: "0 20px 25px rgba(24, 24, 27, 0.10), 0 8px 10px rgba(24, 24, 27, 0.04)" },
-  { name: "shadow-vsa-2xl", shadow: "0 25px 50px rgba(24, 24, 27, 0.18)" },
+/* ───────── border radius tokens ───────── */
+const RADII = [
+  { name: "vsa-sm", value: "0.25rem", tw: "rounded-vsa-sm" },
+  { name: "vsa-md", value: "0.375rem", tw: "rounded-vsa-md" },
+  { name: "vsa-lg", value: "0.5rem", tw: "rounded-vsa-lg" },
+  { name: "vsa-xl", value: "0.75rem", tw: "rounded-vsa-xl" },
+  { name: "vsa-2xl", value: "1rem", tw: "rounded-vsa-2xl" },
+  { name: "vsa-3xl", value: "1.5rem", tw: "rounded-vsa-3xl" },
 ];
 
-const shadowColored = [
-  { name: "shadow-vsa-orange", className: "shadow-vsa-orange", bgClass: "bg-vsa-orange" },
-  { name: "shadow-vsa-orange-lg", className: "shadow-vsa-orange-lg", bgClass: "bg-vsa-orange" },
-  { name: "shadow-vsa-blue", className: "shadow-vsa-blue", bgClass: "bg-vsa-blue" },
-  { name: "shadow-vsa-blue-lg", className: "shadow-vsa-blue-lg", bgClass: "bg-vsa-blue" },
-  { name: "shadow-vsa-brand", className: "shadow-vsa-brand", bgClass: "bg-vsa-brand" },
-];
+/* ═══════════════════════════════════════════════════════════ */
 
 export default function VSADesignShowcase() {
-  const [activeTab, setActiveTab] = useState<TabId>("colors");
-  const [switchDemoOn, setSwitchDemoOn] = useState(true);
+  const [activeSection, setActiveSection] = useState<SectionId>("overview");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  const navigate = useCallback((id: SectionId) => {
+    setActiveSection(id);
+    setMobileOpen(false);
+    // scroll to top of main area
+    mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-vsa-soft font-body">
-      <header className="bg-white border-b border-vsa-gray-300 py-4 px-8 flex items-center justify-between shadow-vsa-sm">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="w-12 h-12 rounded-vsa-xl bg-vsa-brand flex items-center justify-center text-white font-bold text-xl shadow-vsa-brand hover:shadow-vsa-orange transition-all"
-            title="Voltar ao Chat"
-            aria-label="Voltar ao Chat"
-          >
-            V
+    <div className="flex h-screen bg-obsidian-950 text-white overflow-hidden">
+      {/* ─── Mobile hamburger ─── */}
+      <button
+        type="button"
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 flex items-center justify-center rounded-vsa-lg bg-obsidian-800 border border-white/10 text-white"
+        aria-label="Menu"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        >
+          {mobileOpen ? (
+            <>
+              <line x1="4" y1="4" x2="16" y2="16" />
+              <line x1="16" y1="4" x2="4" y2="16" />
+            </>
+          ) : (
+            <>
+              <line x1="3" y1="6" x2="17" y2="6" />
+              <line x1="3" y1="10" x2="17" y2="10" />
+              <line x1="3" y1="14" x2="17" y2="14" />
+            </>
+          )}
+        </svg>
+      </button>
+
+      {/* ─── Mobile overlay ─── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-black/60"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* ─── Sidebar ─── */}
+      <aside
+        className={`
+          w-72 flex-col border-r border-white/5 bg-obsidian-950/80 backdrop-blur-xl
+          fixed inset-y-0 left-0 z-40 transition-transform duration-300
+          md:relative md:translate-x-0 md:flex
+          ${mobileOpen ? "translate-x-0 flex" : "-translate-x-full hidden md:flex"}
+        `}
+      >
+        {/* Logo */}
+        <div className="px-6 pt-6 pb-4 border-b border-white/5">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-vsa-xl bg-vsa-brand flex items-center justify-center text-white font-bold text-sm shadow-glow-brand">
+              V
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-white group-hover:text-vsa-gradient transition-colors">
+                DeepCode
+              </span>
+              <p className="text-[11px] text-gray-500 m-0">VSA System v2.0</p>
+            </div>
           </Link>
-          <div>
-            <h1 className="text-xl font-bold text-vsa-gradient m-0">VSA Design System</h1>
-            <p className="text-[13px] text-vsa-gray-500 m-0">Soluções em Tecnologia</p>
+        </div>
+
+        {/* Nav groups */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {NAV.map((group) => (
+            <div key={group.label}>
+              <p className="text-[10px] uppercase tracking-widest text-gray-600 font-semibold px-3 mb-2">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => navigate(item.id)}
+                    className={`w-full text-left px-3 py-2 rounded-vsa-lg text-sm transition-all ${
+                      activeSection === item.id
+                        ? "bg-white/5 text-white font-medium"
+                        : "text-gray-400 hover:text-white hover:bg-white/[0.03]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-white/5 space-y-2">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-gray-400">Online</span>
+          </div>
+          <p className="text-[10px] text-gray-600 m-0">Obsidian v2.0 - Atualizado</p>
+        </div>
+      </aside>
+
+      {/* ─── Main area ─── */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 md:px-8 py-4 border-b border-white/5 bg-obsidian-950/60 backdrop-blur-sm">
+          <div className="flex items-center gap-3 ml-12 md:ml-0">
+            <span className="text-xs px-3 py-1 rounded-full bg-obsidian-800 border border-white/10 text-gray-400 font-mono">
+              main
+            </span>
+            <h1 className="text-sm font-medium text-white hidden sm:block">
+              Design System
+            </h1>
           </div>
           <Link
             href="/"
-            className="vsa-btn vsa-btn-outline text-sm py-2 px-4 rounded-lg"
+            className="text-xs px-4 py-2 rounded-vsa-lg bg-brand-primary text-white font-medium shadow-glow-orange hover:shadow-glow-orange-lg transition-all"
           >
             Voltar ao Chat
           </Link>
+        </header>
+
+        {/* Scrollable content */}
+        <div
+          ref={mainRef}
+          className="flex-1 overflow-y-auto p-6 md:p-8 space-y-12"
+        >
+          {/* ════════ OVERVIEW ════════ */}
+          {activeSection === "overview" && <SectionOverview />}
+
+          {/* ════════ PALETTE ════════ */}
+          {activeSection === "palette" && <SectionPalette />}
+
+          {/* ════════ SHADOWS ════════ */}
+          {activeSection === "shadows" && <SectionShadows />}
+
+          {/* ════════ GLASS ════════ */}
+          {activeSection === "glass" && <SectionGlass />}
+
+          {/* ════════ TYPOGRAPHY ════════ */}
+          {activeSection === "typography" && <SectionTypography />}
+
+          {/* ════════ LAYOUT ════════ */}
+          {activeSection === "layout" && <SectionLayout />}
         </div>
-        <div className="vsa-status vsa-status-online py-2 px-4 bg-vsa-success-light rounded-full text-[13px] text-vsa-success-dark font-medium">
-          <span className="vsa-status-dot" />
-          <span>VSA ATIVO</span>
-        </div>
-      </header>
-
-      <nav className="bg-white border-b border-vsa-gray-300 px-8 flex gap-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`py-4 px-6 border-b-2 text-sm font-normal transition-all duration-200 ${
-              activeTab === tab.id
-                ? "border-vsa-orange-500 text-vsa-orange-500 font-semibold"
-                : "border-transparent text-vsa-gray-500"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
-      <main className="vsa-main-background min-h-[60vh] p-8 max-w-[1400px] mx-auto">
-        {activeTab === "colors" && (
-          <div>
-            <h2 className="text-2xl font-semibold text-vsa-gray-900 mb-6">Paleta de Cores</h2>
-
-            <section className="mb-12">
-              <h3 className="text-base font-semibold text-vsa-gray-700 mb-4">Gradientes da Marca</h3>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
-                <div className="h-[120px] bg-vsa-brand rounded-vsa-2xl flex items-end p-4 text-white font-semibold shadow-vsa-brand">
-                  Gradiente Principal (135°)
-                </div>
-                <div className="h-[120px] bg-vsa-orange rounded-vsa-2xl flex items-end p-4 text-white font-semibold shadow-vsa-orange">
-                  Gradiente Laranja
-                </div>
-                <div className="h-[120px] bg-vsa-blue rounded-vsa-2xl flex items-end p-4 text-white font-semibold shadow-vsa-blue">
-                  Gradiente Azul
-                </div>
-              </div>
-            </section>
-
-            {Object.entries(colors).map(([colorName, shades]) => (
-              <section key={colorName} className="mb-8">
-                <h3 className="text-base font-semibold text-vsa-gray-700 mb-4">
-                  {colorName === "orange" ? "Laranja VSA" : colorName === "blue" ? "Azul VSA" : "Neutros"}
-                </h3>
-                <div className="flex gap-2 flex-wrap">
-                  {shades.map((shade) => (
-                    <div key={shade.name} className="text-center">
-                        <div
-                          className={`w-20 h-20 rounded-vsa-xl shadow-vsa-sm mb-2 ${
-                            shade.name === "50" || shade.name === "100" ? "border border-vsa-gray-400" : "border-0"
-                          }`}
-                          style={{ backgroundColor: shade.hex }}
-                        />
-                      <p className="text-xs font-semibold text-vsa-gray-700 m-0">{shade.name}</p>
-                      <p className="text-[11px] text-vsa-gray-500 m-0 mt-0.5">{shade.hex}</p>
-                      {shade.label && (
-                        <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded mt-1 inline-block ${
-                            colorName === "orange" ? "bg-vsa-orange-50 text-vsa-orange-600" : "bg-vsa-blue-50 text-vsa-blue-600"
-                          }`}
-                        >
-                          {shade.label}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-
-            <section>
-              <h3 className="text-base font-semibold text-vsa-gray-700 mb-4">Cores Semânticas</h3>
-              <div className="flex gap-4 flex-wrap">
-                {[
-                  { name: "Sucesso", bg: "bg-vsa-success", light: "bg-vsa-success-light" },
-                  { name: "Erro", bg: "bg-vsa-error", light: "bg-vsa-error-light" },
-                  { name: "Aviso", bg: "bg-vsa-orange-500", light: "bg-vsa-orange-100" },
-                  { name: "Info", bg: "bg-vsa-blue-500", light: "bg-vsa-blue-100" },
-                ].map((item) => (
-                  <div key={item.name} className="flex flex-col gap-1 items-center">
-                    <div className="flex gap-1">
-                      <div className={`w-12 h-12 rounded-vsa-lg ${item.light}`} />
-                      <div className={`w-12 h-12 rounded-vsa-lg ${item.bg}`} />
-                    </div>
-                    <span className="text-xs text-vsa-gray-600">{item.name}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {activeTab === "typography" && (
-          <div>
-            <h2 className="text-2xl font-semibold text-vsa-gray-900 mb-6">Tipografia</h2>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">
-                Font Families Recomendadas
-              </h3>
-              <div className="grid gap-6">
-                <div>
-                  <p className="text-xs text-vsa-gray-400 mb-2">Display / Títulos</p>
-                  <p className="font-display text-3xl font-semibold text-vsa-gray-900 m-0">Poppins Semibold</p>
-                </div>
-                <div>
-                  <p className="text-xs text-vsa-gray-400 mb-2">Body / Corpo</p>
-                  <p className="font-body text-base font-normal text-vsa-gray-700 m-0">
-                    Inter Regular - A tipografia para texto corrido oferece legibilidade máxima em interfaces digitais.
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-vsa-gray-400 mb-2">Mono / Código</p>
-                  <p className="font-mono text-sm text-vsa-gray-600 m-0 bg-vsa-gray-100 p-3 rounded-vsa-lg">
-                    JetBrains Mono - const vsaConfig = {"{...}"};
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">
-                Escala Tipográfica
-              </h3>
-              <div className="grid gap-4">
-                {typeScale.map((item) => (
-                  <div
-                    key={item.name}
-                    className="flex items-baseline gap-6 pb-4 border-b border-vsa-gray-300"
-                  >
-                    <span
-                      className="flex-1 text-vsa-gray-900"
-                      style={{ fontSize: item.size, fontWeight: item.weight }}
-                    >
-                      VSA Tecnologia
-                    </span>
-                    <span className="text-xs text-vsa-gray-400 w-20">{item.size}</span>
-                    <code className="text-xs bg-vsa-gray-100 px-2 py-1 rounded text-vsa-gray-600 w-[100px]">
-                      {item.name}
-                    </code>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {activeTab === "components" && (
-          <div>
-            <h2 className="text-2xl font-semibold text-vsa-gray-900 mb-6">Componentes</h2>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Botões</h3>
-              <div className="flex gap-4 flex-wrap items-center">
-                <button type="button" className="vsa-btn vsa-btn-primary">
-                  Primary
-                </button>
-                <button type="button" className="vsa-btn vsa-btn-orange">
-                  Orange
-                </button>
-                <button type="button" className="vsa-btn vsa-btn-blue">
-                  Blue
-                </button>
-                <button type="button" className="vsa-btn vsa-btn-outline">
-                  Outline
-                </button>
-                <button type="button" className="vsa-btn vsa-btn-ghost">
-                  Ghost
-                </button>
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">
-                Quick Action Cards (Nexus AI Style)
-              </h3>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-                {quickActions.map((item, i) => (
-                  <div key={i} className="vsa-quick-action">
-                    <div className="vsa-quick-action-icon">{item.icon}</div>
-                    <div className="vsa-quick-action-content">
-                      <p className="vsa-quick-action-title m-0">{item.title}</p>
-                      <p className="vsa-quick-action-subtitle m-0">{item.subtitle}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Cards</h3>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-                <div className="vsa-card">
-                  <p className="font-semibold text-vsa-gray-900 m-0 mb-2">Card padrão</p>
-                  <p className="text-sm text-vsa-gray-600 m-0">Borda neutra, hover suave.</p>
-                </div>
-                <div className="vsa-card-gradient">
-                  <p className="font-semibold text-vsa-gray-900 m-0 mb-2">Card com borda gradiente</p>
-                  <p className="text-sm text-vsa-gray-600 m-0">Hover revela borda laranja/azul.</p>
-                </div>
-                <div className="vsa-card-active">
-                  <p className="font-semibold text-vsa-gray-900 m-0 mb-2">Card ativo</p>
-                  <p className="text-sm text-vsa-gray-600 m-0">Seleção / destaque.</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Sessões (Sidebar)</h3>
-              <div className="flex gap-4 flex-wrap">
-                <div className="vsa-session">
-                  <p className="vsa-session-title m-0">Sessão inativa</p>
-                  <p className="vsa-session-subtitle m-0">Última atividade há 2h</p>
-                </div>
-                <div className="vsa-session vsa-session-active">
-                  <p className="vsa-session-title m-0">Sessão ativa</p>
-                  <p className="vsa-session-subtitle m-0">Agora</p>
-                </div>
-                <div className="vsa-session">
-                  <span className="vsa-session-badge">3</span>
-                  <p className="vsa-session-title m-0">Sessão com badge</p>
-                  <p className="vsa-session-subtitle m-0">3 mensagens</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Switch (Toggle)</h3>
-              <div className="flex flex-wrap gap-6 items-center">
-                <Switch checked={!switchDemoOn} label="Desligado" onClick={() => setSwitchDemoOn(true)} />
-                <Switch checked={switchDemoOn} label="Ligado (laranja VSA)" onClick={() => setSwitchDemoOn(!switchDemoOn)} />
-              </div>
-              <p className="text-xs text-vsa-gray-500 mt-4 m-0">
-                Quando ligado: borda e fundo laranja VSA (#F7941D), sombra laranja.
-              </p>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Badges</h3>
-              <div className="flex gap-3 flex-wrap">
-                <span className="vsa-badge vsa-badge-orange">Laranja</span>
-                <span className="vsa-badge vsa-badge-blue">Azul</span>
-                <span className="vsa-badge vsa-badge-success">Sucesso</span>
-                <span className="vsa-badge vsa-badge-error">Erro</span>
-                <span className="vsa-badge vsa-badge-gray">Neutro</span>
-                <span className="vsa-badge vsa-badge-gradient">Gradiente</span>
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">Inputs</h3>
-              <div className="grid gap-4 max-w-[400px]">
-                <input type="text" placeholder="Digite sua mensagem ou use o microfone..." className="vsa-input" />
-                <input type="text" placeholder="Input com foco laranja (clique)" className="vsa-input focus:border-vsa-orange-500 focus:ring-2 focus:ring-vsa-orange/20" />
-                <input type="text" placeholder="Input com erro" className="vsa-input vsa-input-error" />
-              </div>
-            </section>
-          </div>
-        )}
-
-        {activeTab === "shadows" && (
-          <div>
-            <h2 className="text-2xl font-semibold text-vsa-gray-900 mb-6">Sombras</h2>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm mb-6">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">
-                Sombras Neutras
-              </h3>
-              <div className="flex gap-6 flex-wrap">
-                {shadowNeutral.map((item) => (
-                  <div key={item.name} className="text-center">
-                    <div
-                      className="w-[100px] h-[100px] bg-white rounded-vsa-xl mb-3"
-                      style={{ boxShadow: item.shadow }}
-                    />
-                    <code className="text-[11px] text-vsa-gray-600">{item.name}</code>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="bg-white rounded-vsa-2xl p-8 shadow-vsa-sm">
-              <h3 className="text-sm font-semibold text-vsa-gray-500 mb-6 uppercase tracking-wider">
-                Sombras Coloridas (Glow Effect)
-              </h3>
-              <div className="flex gap-6 flex-wrap">
-                {shadowColored.map((item) => (
-                  <div key={item.name} className="text-center">
-                    <div className={`w-[100px] h-[100px] rounded-vsa-xl mb-3 ${item.bgClass} ${item.className}`} />
-                    <code className="text-[11px] text-vsa-gray-600">{item.name}</code>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
       </main>
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Section components
+   ═══════════════════════════════════════════════════════════ */
+
+function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold text-vsa-gradient">{title}</h2>
+      {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+    </div>
+  );
+}
+
+/* ─── Overview ─── */
+function SectionOverview() {
+  const pillars = [
+    {
+      title: "Brand Gradient",
+      desc: "Gradiente 135 deg de Laranja Tech para Azul Deep, aplicado em backgrounds, botões e textos.",
+      demo: (
+        <div className="h-20 rounded-vsa-2xl bg-vsa-brand shadow-glow-brand" />
+      ),
+    },
+    {
+      title: "Neon Button",
+      desc: "Botões com sombra colorida que simula emissão de luz neon sobre a superfície escura.",
+      demo: (
+        <div className="flex items-center justify-center h-20">
+          <button
+            type="button"
+            className="bg-brand-primary text-white px-6 py-3 rounded-vsa-xl font-medium shadow-glow-brand hover:shadow-glow-orange-lg transition-all"
+          >
+            Botão Neon
+          </button>
+        </div>
+      ),
+    },
+    {
+      title: "Colored Glows",
+      desc: "Sombras coloridas substituem box-shadows pretas, criando profundidade luminosa.",
+      demo: (
+        <div className="flex items-center justify-center gap-4 h-20">
+          <div className="w-12 h-12 rounded-full bg-brand-primary/20 shadow-glow-orange" />
+          <div className="w-12 h-12 rounded-full bg-brand-secondary/20 shadow-glow-blue" />
+          <div className="w-12 h-12 rounded-full bg-vsa-brand shadow-glow-brand" />
+        </div>
+      ),
+    },
+    {
+      title: "Glassmorphism",
+      desc: "Painéis de vidro fosco com backdrop-blur criam camadas de profundidade.",
+      demo: (
+        <div className="flex items-center justify-center h-20 bg-gradient-to-br from-brand-primary/10 via-transparent to-brand-secondary/10 rounded-vsa-xl">
+          <div className="glass-panel rounded-vsa-xl px-6 py-3 text-sm text-gray-300">
+            Glass Panel
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <SectionHeading
+        title="Visão Geral"
+        subtitle="Os 4 pilares visuais do sistema de design Obsidian v2.0"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {pillars.map((p) => (
+          <div
+            key={p.title}
+            className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-6 space-y-4"
+          >
+            <div>
+              <h3 className="text-base font-semibold text-white">{p.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">{p.desc}</p>
+            </div>
+            {p.demo}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ─── Palette ─── */
+function SectionPalette() {
+  return (
+    <>
+      <SectionHeading
+        title="Paleta Obsidian"
+        subtitle="Cores da marca, escala escura e diretrizes de uso"
+      />
+
+      {/* Brand gradient banner */}
+      <div className="bg-vsa-brand rounded-vsa-2xl p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-white/60 mb-2">
+          Brand Gradient
+        </p>
+        <p className="text-2xl font-bold text-white mb-4">
+          135deg — Orange to Blue
+        </p>
+        <div className="flex gap-4 text-xs text-white/70 font-mono">
+          <span>#F97316</span>
+          <span>&rarr;</span>
+          <span>#EA580C</span>
+          <span>&rarr;</span>
+          <span>#3B82F6</span>
+        </div>
+      </div>
+
+      {/* 4 color cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-brand-primary shadow-glow-orange rounded-vsa-2xl p-6">
+          <p className="text-sm font-semibold text-white mb-1">Tech Orange</p>
+          <p className="text-xs text-white/70 font-mono">#F97316</p>
+          <p className="text-xs text-white/60 mt-2">brand-primary</p>
+        </div>
+        <div className="bg-brand-secondary shadow-glow-blue rounded-vsa-2xl p-6">
+          <p className="text-sm font-semibold text-white mb-1">Deep Blue</p>
+          <p className="text-xs text-white/70 font-mono">#3B82F6</p>
+          <p className="text-xs text-white/60 mt-2">brand-secondary</p>
+        </div>
+        <div className="bg-obsidian-950 border border-white/10 rounded-vsa-2xl p-6">
+          <p className="text-sm font-semibold text-white mb-1">Deep Void</p>
+          <p className="text-xs text-white/70 font-mono">#050505</p>
+          <p className="text-xs text-white/60 mt-2">obsidian-950</p>
+        </div>
+        <div className="glass-panel rounded-vsa-2xl p-6">
+          <p className="text-sm font-semibold text-white mb-1">Glass Surface</p>
+          <p className="text-xs text-white/70 font-mono">rgba(255,255,255,0.03)</p>
+          <p className="text-xs text-white/60 mt-2">glass-panel</p>
+        </div>
+      </div>
+
+      {/* Guideline */}
+      <div className="rounded-vsa-xl bg-obsidian-900 border border-white/5 p-5 mb-8">
+        <p className="text-sm text-gray-400 leading-relaxed">
+          <span className="text-brand-primary font-medium">Diretriz:</span>{" "}
+          As cores Laranja Tech e Azul Deep são aplicadas através de gradientes e luzes, evitando blocos sólidos cansativos. Superfícies devem permanecer na escala Obsidian.
+        </p>
+      </div>
+
+      {/* Obsidian scale strip */}
+      <div>
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-3">
+          Obsidian Scale
+        </p>
+        <div className="flex gap-2">
+          {OBSIDIAN_SCALE.map((s) => (
+            <div key={s.name} className="text-center">
+              <div
+                className={`w-14 h-14 rounded-vsa-lg ${s.tw} border border-white/5`}
+              />
+              <p className="text-[10px] text-gray-500 mt-1.5 font-mono">
+                {s.name}
+              </p>
+              <p className="text-[9px] text-gray-600 font-mono">{s.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Shadows & Effects ─── */
+function SectionShadows() {
+  return (
+    <>
+      <SectionHeading
+        title="Sombras & Efeitos"
+        subtitle="Colored glows e botões neon sobre superfícies escuras"
+      />
+
+      {/* Neon button showcase */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-6">
+          Neon Button
+        </p>
+        <div className="flex flex-wrap gap-4 items-center">
+          <button
+            type="button"
+            className="bg-brand-primary text-white px-6 py-3 rounded-vsa-xl font-medium shadow-glow-brand hover:shadow-glow-orange-lg transition-all"
+          >
+            Botão Neon
+          </button>
+          <button
+            type="button"
+            className="bg-brand-secondary text-white px-6 py-3 rounded-vsa-xl font-medium shadow-glow-blue hover:shadow-glow-blue-lg transition-all"
+          >
+            Botão Azul
+          </button>
+          <button
+            type="button"
+            className="bg-vsa-brand text-white px-6 py-3 rounded-vsa-xl font-medium shadow-glow-brand hover:shadow-glow-orange-lg transition-all"
+          >
+            Gradiente
+          </button>
+        </div>
+      </div>
+
+      {/* Glow swatches */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-6">
+          Colored Glows
+        </p>
+        <div className="flex flex-wrap gap-8 items-center">
+          <div className="text-center">
+            <div className="w-20 h-20 rounded-full bg-brand-primary/20 shadow-glow-orange mx-auto" />
+            <p className="text-xs text-gray-500 mt-3 font-mono">glow-orange</p>
+          </div>
+          <div className="text-center">
+            <div className="w-20 h-20 rounded-full bg-brand-secondary/20 shadow-glow-blue mx-auto" />
+            <p className="text-xs text-gray-500 mt-3 font-mono">glow-blue</p>
+          </div>
+          <div className="text-center">
+            <div className="w-20 h-20 rounded-full bg-vsa-brand shadow-glow-brand mx-auto" />
+            <p className="text-xs text-gray-500 mt-3 font-mono">glow-brand</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Large glows */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-6">
+          Large Glows (hover states)
+        </p>
+        <div className="flex flex-wrap gap-8 items-center">
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-vsa-2xl bg-brand-primary/10 shadow-glow-orange-lg mx-auto" />
+            <p className="text-xs text-gray-500 mt-3 font-mono">glow-orange-lg</p>
+          </div>
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-vsa-2xl bg-brand-secondary/10 shadow-glow-blue-lg mx-auto" />
+            <p className="text-xs text-gray-500 mt-3 font-mono">glow-blue-lg</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Glass panel shadow */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-6">
+          Glass Panel Shadow
+        </p>
+        <div className="flex items-center gap-8">
+          <div className="w-32 h-32 rounded-vsa-2xl glass-panel shadow-glass-panel" />
+          <div>
+            <p className="text-xs text-gray-500 font-mono">shadow-glass-panel</p>
+            <p className="text-xs text-gray-600 mt-1">
+              0 8px 32px 0 rgba(0, 0, 0, 0.37)
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Guideline */}
+      <div className="rounded-vsa-xl bg-obsidian-900 border border-white/5 p-5">
+        <p className="text-sm text-gray-400 leading-relaxed">
+          <span className="text-brand-primary font-medium">Diretriz:</span>{" "}
+          Substituímos sombras pretas por Colored Glows que simulam emissão de luz neon. Isso cria profundidade sem pesar o visual escuro.
+        </p>
+      </div>
+    </>
+  );
+}
+
+/* ─── Glass / Glassmorphism ─── */
+function SectionGlass() {
+  return (
+    <>
+      <SectionHeading
+        title="Vidro Fosco"
+        subtitle="Glassmorphism para separação de camadas e profundidade"
+      />
+
+      <div className="bg-gradient-to-br from-brand-primary/10 via-transparent to-brand-secondary/10 rounded-vsa-2xl p-8">
+        <div className="glass-panel rounded-vsa-2xl p-6 max-w-md">
+          <h3 className="text-lg font-semibold text-white mb-2">Vidro Fosco</h3>
+          <p className="text-sm text-gray-400 leading-relaxed mb-4">
+            O efeito de vidro fosco (glassmorphism) cria separação visual entre camadas sem adicionar peso.
+            Usa backdrop-blur, bordas translúcidas e sombra sutil para simular profundidade em superfícies escuras.
+          </p>
+          <div className="flex gap-2 text-xs font-mono text-gray-600">
+            <span className="px-2 py-1 rounded-vsa-md bg-white/5">blur(20px)</span>
+            <span className="px-2 py-1 rounded-vsa-md bg-white/5">bg: 3%</span>
+            <span className="px-2 py-1 rounded-vsa-md bg-white/5">border: 5%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Multiple glass panels demo */}
+      <div className="mt-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-4">
+          Variações de intensidade
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="glass-panel rounded-vsa-2xl p-5">
+            <p className="text-sm font-medium text-white mb-1">Padrão</p>
+            <p className="text-xs text-gray-500">.glass-panel</p>
+          </div>
+          <div className="rounded-vsa-2xl p-5 bg-white/[0.05] backdrop-blur-xl border border-white/10">
+            <p className="text-sm font-medium text-white mb-1">Elevado</p>
+            <p className="text-xs text-gray-500">bg: 5%, border: 10%</p>
+          </div>
+          <div className="rounded-vsa-2xl p-5 bg-white/[0.08] backdrop-blur-2xl border border-white/[0.15] shadow-glass-panel">
+            <p className="text-sm font-medium text-white mb-1">Destaque</p>
+            <p className="text-xs text-gray-500">bg: 8%, border: 15%</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Guideline */}
+      <div className="rounded-vsa-xl bg-obsidian-900 border border-white/5 p-5 mt-8">
+        <p className="text-sm text-gray-400 leading-relaxed">
+          <span className="text-brand-primary font-medium">Diretriz:</span>{" "}
+          Use glass panels para separar contexto (sidebar, modais, cards flutuantes). Evite empilhar mais de 2 camadas de blur para manter performance.
+        </p>
+      </div>
+    </>
+  );
+}
+
+/* ─── Typography ─── */
+function SectionTypography() {
+  return (
+    <>
+      <SectionHeading
+        title="Tipografia"
+        subtitle="Famílias tipográficas e escala de tamanhos"
+      />
+
+      {/* Font families */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-6">
+          Font Families
+        </p>
+        <div className="space-y-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-gray-600 mb-2">
+              Display / Títulos
+            </p>
+            <p className="text-3xl font-semibold text-white">
+              Inter Semibold
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-gray-600 mb-2">
+              Body / Corpo
+            </p>
+            <p className="text-base text-gray-300">
+              Inter Regular — A tipografia para texto corrido oferece legibilidade máxima em interfaces digitais sobre fundos escuros.
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-gray-600 mb-2">
+              Mono / Código
+            </p>
+            <div className="bg-obsidian-800 rounded-vsa-lg p-4">
+              <pre className="font-mono text-sm text-gray-300">
+                <code>{`const config = { theme: "obsidian", version: "2.0" };`}</code>
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Type scale */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-6">
+          Escala Tipográfica
+        </p>
+        <div className="space-y-4">
+          {TYPE_SCALE.map((item) => (
+            <div
+              key={item.size}
+              className="flex items-baseline gap-4 pb-4 border-b border-white/5 last:border-0 last:pb-0"
+            >
+              <span
+                className={`flex-1 text-white ${item.size} ${item.weight} truncate`}
+              >
+                VSA Tecnologia
+              </span>
+              <span className="text-xs text-gray-600 w-12 text-right shrink-0">
+                {item.px}
+              </span>
+              <code className="text-xs bg-obsidian-800 px-2 py-1 rounded-vsa-md text-gray-400 font-mono shrink-0">
+                {item.size}
+              </code>
+              <span className="text-[10px] text-gray-600 w-14 shrink-0">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Layout & Grid ─── */
+function SectionLayout() {
+  return (
+    <>
+      <SectionHeading
+        title="Layout & Grid"
+        subtitle="Grids responsivos, espaçamento e raios de borda"
+      />
+
+      {/* Grid demos */}
+      <div className="space-y-6 mb-8">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-3">
+            2 Colunas
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-16 rounded-vsa-lg bg-obsidian-800 border border-white/5 flex items-center justify-center text-xs text-gray-500"
+              >
+                col {i}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-3">
+            3 Colunas
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-16 rounded-vsa-lg bg-obsidian-800 border border-white/5 flex items-center justify-center text-xs text-gray-500"
+              >
+                col {i}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-3">
+            4 Colunas
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-16 rounded-vsa-lg bg-obsidian-800 border border-white/5 flex items-center justify-center text-xs text-gray-500"
+              >
+                col {i}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Spacing tokens */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8 mb-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-4">
+          Espaçamento
+        </p>
+        <div className="space-y-3">
+          {[
+            { name: "space-1", size: "0.25rem (4px)" },
+            { name: "space-2", size: "0.5rem (8px)" },
+            { name: "space-3", size: "0.75rem (12px)" },
+            { name: "space-4", size: "1rem (16px)" },
+            { name: "space-6", size: "1.5rem (24px)" },
+            { name: "space-8", size: "2rem (32px)" },
+          ].map((s) => (
+            <div key={s.name} className="flex items-center gap-4">
+              <div
+                className="h-4 bg-brand-primary/30 rounded-sm"
+                style={{ width: s.size.split(" ")[0] === "0.25rem" ? "4px" : s.size.split("(")[1]?.replace(")", "") }}
+              />
+              <code className="text-xs text-gray-400 font-mono w-20">
+                {s.name}
+              </code>
+              <span className="text-xs text-gray-600">{s.size}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Border radius */}
+      <div className="rounded-vsa-2xl bg-obsidian-900 border border-white/5 p-8">
+        <p className="text-xs uppercase tracking-widest text-gray-600 font-semibold mb-4">
+          Border Radius
+        </p>
+        <div className="flex flex-wrap gap-4">
+          {RADII.map((r) => (
+            <div key={r.name} className="text-center">
+              <div
+                className={`w-16 h-16 bg-obsidian-800 border border-white/10 ${r.tw}`}
+              />
+              <p className="text-[10px] text-gray-500 mt-2 font-mono">
+                {r.name}
+              </p>
+              <p className="text-[9px] text-gray-600">{r.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
