@@ -27,6 +27,7 @@ export default function Home() {
     }
     return false;
   });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [cmdkOpen, setCmdkOpen] = useState(false);
 
   useEffect(() => {
@@ -34,6 +35,19 @@ export default function Home() {
       localStorage.setItem("sidebarCollapsed", String(sidebarCollapsed));
     }
   }, [sidebarCollapsed]);
+
+  const handleSidebarToggle = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth < 1024) {
+      setSidebarOpen((prev) => !prev);
+      return;
+    }
+    setSidebarCollapsed((prev) => !prev);
+  }, []);
+
+  const handleSidebarClose = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
 
   // Cmd+K / Ctrl+K global shortcut
   useEffect(() => {
@@ -50,11 +64,16 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <GenesisUIProvider>
-        <div className="flex h-screen">
-          <Sidebar collapsed={sidebarCollapsed} />
+        <div className="relative flex min-h-[100dvh]">
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            open={sidebarOpen}
+            onClose={handleSidebarClose}
+          />
           <ChatPane
             sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={handleSidebarToggle}
           />
         </div>
         <CommandPalette open={cmdkOpen} onOpenChange={setCmdkOpen} />
@@ -65,4 +84,3 @@ export default function Home() {
     </ErrorBoundary>
   );
 }
-

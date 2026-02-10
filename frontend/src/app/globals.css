@@ -15,6 +15,28 @@
 body {
   @apply bg-[#050505] text-[#e5e5e5];
   font-family: var(--font-sans);
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+@supports not (height: 100dvh) {
+  body {
+    min-height: 100vh;
+  }
+}
+
+.safe-area-top {
+  padding-top: calc(env(safe-area-inset-top) + 0.25rem);
+}
+
+.safe-area-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
 }
 
 /* Glass panel utility — crystalline glassmorphism */

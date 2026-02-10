@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import clsx from "clsx";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,11 @@ import { SkeletonSessionCard } from "@/components/ui/skeleton";
 
 interface SidebarProps {
   collapsed?: boolean;
+  open?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ collapsed = false }: SidebarProps) {
+export function Sidebar({ collapsed = false, open = false, onClose }: SidebarProps) {
   const {
     isLoading,
     models,
@@ -99,15 +102,34 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
     }
   };
 
+  const handleCreateSession = async () => {
+    await createSession();
+    onClose?.();
+  };
+
+  const handleSelectSession = async (sessionId: string) => {
+    await selectSession(sessionId);
+    onClose?.();
+  };
+
   const sessionToDeleteTitle = sessionToDelete
     ? sessions.find((s) => s.id === sessionToDelete)?.title
     : undefined;
 
   return (
     <>
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
       <aside className={clsx(
-        "flex h-screen flex-col border-r border-white/[0.06] bg-obsidian-900 text-white transition-all duration-300",
-        collapsed ? "w-20 p-4" : "w-80 p-7 gap-8"
+        "fixed inset-y-0 left-0 z-50 flex h-[100dvh] flex-col border-r border-white/[0.06] bg-obsidian-900 text-white",
+        "w-[85vw] max-w-[320px] p-6 gap-6 transition-transform duration-300",
+        "lg:static lg:h-screen lg:translate-x-0",
+        collapsed ? "lg:w-20 lg:p-4" : "lg:w-80 lg:p-7 lg:gap-8",
+        open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}>
         {!collapsed ? (
           <div className="flex items-center justify-between">
@@ -130,6 +152,35 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
 
         {!collapsed ? (
           <>
+            <section className="space-y-3">
+              <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Navegação</header>
+              <div className="space-y-2">
+                <Link
+                  href="/"
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-sm text-neutral-200 hover:border-brand-primary/30 hover:bg-white/5 transition-colors"
+                >
+                  Chat
+                  <span className="text-[10px] uppercase text-neutral-500">Principal</span>
+                </Link>
+                <Link
+                  href="/planning"
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-sm text-neutral-200 hover:border-brand-primary/30 hover:bg-white/5 transition-colors"
+                >
+                  Projetos
+                  <span className="text-[10px] uppercase text-neutral-500">Planejamento</span>
+                </Link>
+                <Link
+                  href="/automation/scheduler"
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-sm text-neutral-200 hover:border-brand-primary/30 hover:bg-white/5 transition-colors"
+                >
+                  Agendamento
+                  <span className="text-[10px] uppercase text-neutral-500">Automacao</span>
+                </Link>
+              </div>
+            </section>
             <section className="space-y-3">
               <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Seleção de Modelo</header>
               {isLoading ? (
@@ -204,7 +255,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
             <header className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neutral-500">
               Sessões Ativas
               <Button
-                onClick={() => createSession().catch(console.error)}
+                onClick={() => handleCreateSession().catch(console.error)}
                 size="sm"
                 variant="primary"
                 disabled={isLoading}
@@ -215,7 +266,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
           )}
           {collapsed && (
             <button
-              onClick={() => createSession().catch(console.error)}
+              onClick={() => handleCreateSession().catch(console.error)}
               disabled={isLoading}
               className="w-12 h-12 rounded-lg border border-brand-primary/40 bg-brand-primary text-white hover:bg-brand-primary/80 hover:shadow-glow-orange flex items-center justify-center transition-colors disabled:opacity-50"
               title="Nova Sessão"
@@ -259,7 +310,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                     collapsed ? (
                       <button
                         key={session.id}
-                        onClick={() => selectSession(session.id).catch(console.error)}
+                        onClick={() => handleSelectSession(session.id).catch(console.error)}
                         className={clsx(
                           "w-12 h-12 rounded-lg border flex items-center justify-center transition-all relative",
                           active
@@ -287,7 +338,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
                         )}
                       >
                         <button
-                          onClick={() => selectSession(session.id).catch(console.error)}
+                          onClick={() => handleSelectSession(session.id).catch(console.error)}
                           className="flex flex-1 flex-col gap-1 text-left"
                           aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
                         >

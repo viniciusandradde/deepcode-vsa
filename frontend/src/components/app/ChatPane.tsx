@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
+import clsx from "clsx";
 import { Virtuoso } from "react-virtuoso";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Logo } from "./Logo";
@@ -13,10 +14,11 @@ import { SkeletonMessage } from "@/components/ui/skeleton";
 
 interface ChatPaneProps {
   sidebarCollapsed?: boolean;
+  sidebarOpen?: boolean;
   onToggleSidebar?: () => void;
 }
 
-export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPaneProps) {
+export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onToggleSidebar }: ChatPaneProps) {
   const {
     isLoading,
     isSending,
@@ -61,6 +63,18 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
   );
 
   const [editingContent, setEditingContent] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    function updateViewport() {
+      if (typeof window !== "undefined") {
+        setIsMobile(window.innerWidth < 1024);
+      }
+    }
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   const handleMessageSubmit = useCallback(async (message: string, streaming: boolean) => {
     await sendMessage(message, streaming);
@@ -98,17 +112,17 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
   }, [editingMessageId, messages, setEditingMessageId]);
 
   return (
-    <div className="flex h-screen flex-1 min-w-0">
+    <div className="flex min-h-[100dvh] flex-1 min-w-0">
       {/* Main chat column */}
       <div className="flex flex-1 flex-col min-w-0">
-      <header className="flex h-20 shrink-0 items-center justify-between border-b border-white/[0.06] px-6 md:px-10 text-white bg-obsidian-900/80 backdrop-blur-md">
-        <div className="flex items-center gap-4">
+      <header className="safe-area-top flex h-16 md:h-20 shrink-0 items-center justify-between border-b border-white/[0.06] px-4 md:px-10 text-white bg-obsidian-900/80 backdrop-blur-md">
+        <div className="flex items-center gap-3 md:gap-4">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
               className="p-2 rounded-lg border border-white/10 bg-white/5 text-neutral-400 hover:border-brand-primary/40 hover:bg-brand-primary/10 hover:text-white transition-colors"
-              aria-label={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
-              title={sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+              aria-label={isMobile ? (sidebarOpen ? "Fechar menu" : "Abrir menu") : (sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral")}
+              title={isMobile ? (sidebarOpen ? "Fechar menu" : "Abrir menu") : (sidebarCollapsed ? "Expandir barra lateral" : "Colapsar barra lateral")}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -118,7 +132,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
                 stroke="currentColor"
                 strokeWidth={2}
               >
-                {sidebarCollapsed ? (
+                {(isMobile ? !sidebarOpen : sidebarCollapsed) ? (
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 ) : (
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -126,32 +140,51 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
               </svg>
             </button>
           )}
-          <Logo size="md" showText={true} />
-          <div className="h-12 w-px bg-brand-primary/30" />
+          <div className="md:hidden">
+            <Logo size="sm" showText={false} />
+          </div>
+          <div className="hidden md:flex">
+            <Logo size="md" showText={true} />
+          </div>
+          <div className="hidden md:block h-12 w-px bg-brand-primary/30" />
         </div>
-        <div className="flex items-center gap-4 text-[11px] uppercase tracking-wide">
-          {enableVSA ? (
-            <span className="glass-panel rounded-md px-3 py-1 text-neutral-300 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-brand-primary animate-pulse" />
-              VSA Ativo
-              {enableGLPI && <span className="text-neutral-400">GLPI</span>}
-              {enableZabbix && <span className="text-neutral-400">Zabbix</span>}
-              {enableLinear && <span className="text-neutral-400">Linear</span>}
-              {enablePlanning && <span className="text-neutral-400">Planejamento</span>}
+        <div className="flex items-center gap-2 md:gap-4 text-[11px] uppercase tracking-wide">
+          <div className="md:hidden">
+            <span className={clsx(
+              "glass-panel rounded-md px-2 py-1 text-[10px] flex items-center gap-2",
+              enableVSA ? "text-neutral-300" : "text-neutral-500",
+            )}>
+              <span className={clsx(
+                "h-2 w-2 rounded-full",
+                enableVSA ? "bg-brand-primary animate-pulse" : "bg-neutral-600",
+              )} />
+              VSA
             </span>
-          ) : (
-            <span className="glass-panel rounded-md px-3 py-1 text-neutral-500 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-neutral-600" />
-              VSA Inativo
-            </span>
-          )}
+          </div>
+          <div className="hidden md:flex items-center gap-4 text-[11px] uppercase tracking-wide">
+            {enableVSA ? (
+              <span className="glass-panel rounded-md px-3 py-1 text-neutral-300 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-brand-primary animate-pulse" />
+                VSA Ativo
+                {enableGLPI && <span className="text-neutral-400">GLPI</span>}
+                {enableZabbix && <span className="text-neutral-400">Zabbix</span>}
+                {enableLinear && <span className="text-neutral-400">Linear</span>}
+                {enablePlanning && <span className="text-neutral-400">Planejamento</span>}
+              </span>
+            ) : (
+              <span className="glass-panel rounded-md px-3 py-1 text-neutral-500 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-neutral-600" />
+                VSA Inativo
+              </span>
+            )}
+          </div>
           {sessionArtifacts.length > 0 && (
             <button
               onClick={() => {
                 const last = sessionArtifacts[sessionArtifacts.length - 1];
                 if (last) selectArtifact(last.id);
               }}
-              className="glass-panel rounded-md px-3 py-1 text-neutral-300 flex items-center gap-2 hover:border-brand-primary/40 transition-colors"
+              className="glass-panel rounded-md px-2 md:px-3 py-1 text-neutral-300 flex items-center gap-2 hover:border-brand-primary/40 transition-colors"
               title="Ver artefatos"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -163,7 +196,7 @@ export function ChatPane({ sidebarCollapsed = false, onToggleSidebar }: ChatPane
         </div>
       </header>
 
-      <main className="vsa-main-background relative flex flex-1 flex-col min-h-0">
+        <main className="vsa-main-background relative flex flex-1 flex-col min-h-0">
         {isLoading ? (
           <div className="space-y-4 px-6 md:px-10 py-6 md:py-8">
             <SkeletonMessage align="right" />
