@@ -31,8 +31,16 @@ COPY backend/ /app/backend/
 COPY sql/ /app/sql/
 COPY models.yaml /app/models.yaml
 
+# Criar usuario nao-root para execucao
+RUN useradd --create-home --shell /usr/sbin/nologin app && \
+    mkdir -p /home/app/.cache && \
+    chown -R app:app /app /home/app
+
 # Expor porta
 EXPOSE 8000
+
+# Rodar como usuario nao-root
+USER app
 
 # Comando padrao (pode ser sobrescrito no docker-compose)
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

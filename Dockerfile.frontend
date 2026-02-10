@@ -11,11 +11,21 @@ RUN npm install -g pnpm@10.26.0
 # Copiar todo o codigo do frontend primeiro
 COPY frontend/ .
 
+# Copiar models.yaml para runtime
+COPY models.yaml /app/models.yaml
+COPY models.yaml /models.yaml
+
 # Instalar dependencias com pnpm
 RUN pnpm install --frozen-lockfile || pnpm install
 
+# Ajustar permissoes e trocar para usuario nao-root
+RUN chown -R node:node /app
+
 # Expor porta
 EXPOSE 3000
+
+# Rodar como usuario nao-root
+USER node
 
 # Comando padrao (pode ser sobrescrito no docker-compose)
 CMD ["pnpm", "run", "dev"]
