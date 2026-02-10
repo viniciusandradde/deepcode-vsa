@@ -147,7 +147,7 @@ export function MessageInput({
             }
             variant={isSending ? "outline" : "primary"}
             className={clsx(
-              "h-12 w-full md:w-auto md:h-[80px] rounded-xl px-4 md:px-6 text-xs md:text-sm font-semibold uppercase tracking-wide focus:outline-none focus:ring-2",
+              "h-12 w-auto md:h-[80px] rounded-xl px-4 md:px-6 text-xs md:text-sm font-semibold uppercase tracking-wide focus:outline-none focus:ring-2",
               isSending
                 ? "border border-red-500/40 bg-red-900/20 text-red-400 hover:border-red-500/60 hover:bg-red-900/30 focus:ring-red-500/30"
                 : "bg-brand-primary text-white hover:bg-brand-primary/80 hover:shadow-glow-orange"

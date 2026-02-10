@@ -141,7 +141,7 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
             </button>
           )}
           <div className="flex min-w-0 flex-col">
-            <span className="text-xs uppercase tracking-[0.35em] text-neutral-500">
+            <span className="hidden sm:block text-xs uppercase tracking-[0.35em] text-neutral-500">
               VSA Nexus
             </span>
             <span className="truncate text-sm font-semibold text-white">

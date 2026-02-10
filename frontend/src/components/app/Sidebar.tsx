@@ -120,8 +120,11 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
     <>
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden cursor-pointer"
           onClick={onClose}
+          onTouchEnd={onClose}
+          role="button"
+          aria-label="Fechar menu"
         />
       )}
       <aside className={clsx(
@@ -155,14 +158,6 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
             <section className="space-y-3">
               <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Navegação</header>
               <div className="space-y-2">
-                <Link
-                  href="/"
-                  onClick={onClose}
-                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-sm text-neutral-200 hover:border-brand-primary/30 hover:bg-white/5 transition-colors"
-                >
-                  Chat
-                  <span className="text-[10px] uppercase text-neutral-500">Principal</span>
-                </Link>
                 <Link
                   href="/planning"
                   onClick={onClose}
@@ -396,7 +391,7 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
                         <button
                           onClick={(e) => handleDeleteClick(e, session.id)}
                           className={clsx(
-                            "opacity-0 transition-opacity group-hover:opacity-100",
+                            "opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100",
                             "rounded p-1.5 text-neutral-500 hover:bg-red-500/10 hover:text-red-400",
                             "focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-400/50",
                           )}
