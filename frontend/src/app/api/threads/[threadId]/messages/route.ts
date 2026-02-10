@@ -9,6 +9,18 @@ interface PostPayload {
   content: string;
   model: string;
   useTavily: boolean;
+  attachments?: Array<{
+    file_id: string;
+    name?: string;
+    mime?: string;
+    size?: number;
+    url?: string;
+  }>;
+  enable_vsa?: boolean;
+  enable_glpi?: boolean;
+  enable_zabbix?: boolean;
+  enable_linear?: boolean;
+  enable_planning?: boolean;
 }
 
 export async function POST(
@@ -32,6 +44,12 @@ export async function POST(
         thread_id: threadId,
         model: body.model,
         use_tavily: body.useTavily ?? false,
+        enable_vsa: body.enable_vsa ?? false,
+        enable_glpi: body.enable_glpi ?? false,
+        enable_zabbix: body.enable_zabbix ?? false,
+        enable_linear: body.enable_linear ?? false,
+        enable_planning: body.enable_planning ?? false,
+        attachments: body.attachments ?? [],
       }),
     });
 

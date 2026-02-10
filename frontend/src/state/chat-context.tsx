@@ -8,14 +8,14 @@ import { useConfig } from "./config-context";
 import { useSession } from "./session-context";
 import { useArtifacts } from "./artifact-context";
 import { useArtifactDetection } from "@/hooks/useArtifactDetection";
-import type { GenesisMessage } from "./types";
+import type { GenesisMessage, FileAttachment } from "./types";
 import type { ArtifactStartData } from "./artifact-types";
 
 interface ChatState {
   isLoading: boolean;
   isSending: boolean;
   messagesBySession: Record<string, GenesisMessage[]>;
-  sendMessage: (content: string, useStreaming?: boolean) => Promise<void>;
+  sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[]) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
   editMessage: (messageId: string, newContent: string) => void;
@@ -85,7 +85,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, useStreaming: boolean = true) => {
+    async (content: string, useStreaming: boolean = true, attachments: FileAttachment[] = []) => {
       // Read fresh values from refs to avoid stale closures
       const { selectedModelId, useTavily, enableVSA, enableGLPI, enableZabbix, enableLinear, enablePlanning } = configRef.current;
       const { currentSessionId, sessions, createSession, setSessions } = sessionRef.current;
@@ -106,6 +106,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         timestamp: Date.now(),
         modelId: selectedModelId,
         usedTavily: useTavily,
+        ...(attachments.length > 0 ? { attachments } : {}),
       };
 
       setMessagesBySession((prev) => {
@@ -180,6 +181,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
               enable_zabbix: enableZabbix,
               enable_linear: enableLinear,
               enable_planning: enablePlanning,
+              attachments: attachments.map((att) => ({
+                file_id: att.id,
+                name: att.name,
+                mime: att.mime,
+                size: att.size,
+                url: att.url,
+              })),
             }),
           });
 
@@ -589,7 +597,23 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             signal: controller.signal,
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content, model: selectedModelId, useTavily }),
+            body: JSON.stringify({
+              content,
+              model: selectedModelId,
+              useTavily,
+              enable_vsa: enableVSA,
+              enable_glpi: enableGLPI,
+              enable_zabbix: enableZabbix,
+              enable_linear: enableLinear,
+              enable_planning: enablePlanning,
+              attachments: attachments.map((att) => ({
+                file_id: att.id,
+                name: att.name,
+                mime: att.mime,
+                size: att.size,
+                url: att.url,
+              })),
+            }),
           });
 
           if (!res.ok) {
@@ -603,14 +627,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           setMessagesBySession((prev) => {
             const existing = prev[threadId] ?? [];
             const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
-            const assistantMessage: GenesisMessage = {
-              id: `assistant-${Date.now()}`,
-              role: "assistant",
-              content: responseContent,
-              timestamp: Date.now(),
-              modelId: selectedModelId,
-              usedTavily: useTavily,
-            };
+          const assistantMessage: GenesisMessage = {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            content: responseContent,
+            timestamp: Date.now(),
+            modelId: selectedModelId,
+            usedTavily: useTavily,
+          };
             return { ...prev, [threadId]: [...withoutThinking, assistantMessage] };
           });
 
@@ -725,7 +749,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }));
       storage.messages.save(threadId, messagesToKeep);
 
-      await sendMessage(message.content, true);
+      await sendMessage(message.content, true, message.attachments || []);
     },
     [sendMessage]
   );

@@ -7,7 +7,7 @@ import { ChatProvider, useChat } from "./chat-context";
 import { ArtifactProvider, useArtifacts } from "./artifact-context";
 
 // Re-export types for backward compatibility
-export type { Role, GenesisMessage, GenesisSession, ModelOption } from "./types";
+export type { Role, GenesisMessage, GenesisSession, ModelOption, FileAttachment } from "./types";
 
 export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   return (

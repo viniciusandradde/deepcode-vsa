@@ -13,8 +13,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class ModelTier(str, Enum):
     """LLM model tiers for different task types."""
 
-    FAST = "fast"        # Classification, GUT, simple tasks
-    SMART = "smart"      # RCA, planning, analysis
+    FAST = "fast"  # Classification, GUT, simple tasks
+    SMART = "smart"  # RCA, planning, analysis
     PREMIUM = "premium"  # Critical tasks, fallback
     CREATIVE = "creative"  # Reports, summaries
 
@@ -57,7 +57,9 @@ class LLMSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LLM_")
 
     provider: str = "openrouter"
-    api_key: str = Field(default="", validation_alias=AliasChoices("LLM_API_KEY", "OPENROUTER_API_KEY"))
+    api_key: str = Field(
+        default="", validation_alias=AliasChoices("LLM_API_KEY", "OPENROUTER_API_KEY")
+    )
 
     # Fast model - classification, GUT (free/cheap)
     fast_model: str = "meta-llama/llama-3.3-70b-instruct"
@@ -71,6 +73,9 @@ class LLMSettings(BaseSettings):
     # Creative model - reports, summaries
     creative_model: str = "minimax/minimax-m2-her"
 
+    # Vision model - multimodal (images)
+    vision_model: str = "openai/gpt-4o-mini"
+
     # Default tier
     default_tier: ModelTier = ModelTier.SMART
 
@@ -82,7 +87,9 @@ class DatabaseSettings(BaseSettings):
 
     host: str = Field(default="localhost")
     port: int = Field(default=5432)
-    database: str = Field(default="deepcode_vsa", validation_alias=AliasChoices("DB_DATABASE", "DB_NAME"))
+    database: str = Field(
+        default="deepcode_vsa", validation_alias=AliasChoices("DB_DATABASE", "DB_NAME")
+    )
     user: str = Field(default="postgres")
     password: str = Field(default="")
 
@@ -90,6 +97,7 @@ class DatabaseSettings(BaseSettings):
     def connection_string(self) -> str:
         """Get PostgreSQL connection string."""
         from urllib.parse import quote_plus
+
         safe_user = quote_plus(self.user)
         safe_password = quote_plus(self.password)
         return f"postgresql://{safe_user}:{safe_password}@{self.host}:{self.port}/{self.database}"
@@ -98,21 +106,16 @@ class DatabaseSettings(BaseSettings):
 class Settings(BaseSettings):
     """Main application settings."""
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Application
     app_name: str = "DeepCode VSA"
     debug: bool = False
     dry_run: bool = True  # Safe by default
-    
+
     # Modelo padrão para tarefas agendadas
     default_model_name: str = Field(
-        default="z-ai/glm-4.5-air:free",
-        validation_alias=AliasChoices("DEFAULT_MODEL_NAME")
+        default="z-ai/glm-4.5-air:free", validation_alias=AliasChoices("DEFAULT_MODEL_NAME")
     )
 
     # Sub-settings
@@ -122,10 +125,25 @@ class Settings(BaseSettings):
     llm: LLMSettings = Field(default_factory=LLMSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
+    # File storage (MinIO)
+    minio_endpoint: str = Field(default="", validation_alias=AliasChoices("MINIO_ENDPOINT"))
+    minio_public_endpoint: str = Field(
+        default="", validation_alias=AliasChoices("MINIO_PUBLIC_ENDPOINT")
+    )
+    minio_access_key: str = Field(default="", validation_alias=AliasChoices("MINIO_ACCESS_KEY"))
+    minio_secret_key: str = Field(default="", validation_alias=AliasChoices("MINIO_SECRET_KEY"))
+    minio_bucket: str = Field(default="vsa-uploads", validation_alias=AliasChoices("MINIO_BUCKET"))
+    files_max_size_mb: int = Field(default=4, validation_alias=AliasChoices("FILES_MAX_SIZE_MB"))
+    signed_url_ttl_seconds: int = Field(
+        default=3600,
+        validation_alias=AliasChoices("SIGNED_URL_TTL_SECONDS"),
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     from dotenv import load_dotenv
+
     load_dotenv()
     return Settings()

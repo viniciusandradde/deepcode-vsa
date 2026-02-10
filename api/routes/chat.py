@@ -14,7 +14,9 @@ from api.models.responses import ChatResponse
 from core.agents.simple import SimpleAgent
 from core.agents.unified import UnifiedAgent
 from core.tools.search import tavily_search
+from core.tools.images import image_search
 from core.checkpointing import get_async_checkpointer
+from core.files.service import extract_text_from_file, generate_signed_url
 
 # Integration tools (Task 1.1)
 from core.tools.glpi import glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket
@@ -63,11 +65,54 @@ def _resolve_model_for_request(request: ChatRequest, has_tools: bool) -> str:
     return chosen
 
 
+def _resolve_vision_model() -> str:
+    """Modelo multimodal para imagens: VISION_MODEL ou config vision_model."""
+    from core.config import get_settings
+
+    return os.getenv("VISION_MODEL") or get_settings().llm.vision_model
+
+
 def _resolve_fast_model() -> str:
     """Modelo barato para router/classifier (tiered): FAST_MODEL ou config fast_model."""
     from core.config import get_settings
 
     return os.getenv("FAST_MODEL") or get_settings().llm.fast_model
+
+
+def _build_human_message(request: ChatRequest) -> HumanMessage:
+    attachments = request.attachments or []
+    image_blocks = []
+    extra_sections = []
+    for att in attachments:
+        mime = att.mime or ""
+        if mime.startswith("image/"):
+            url = att.url
+            if not url and att.file_id:
+                try:
+                    url = generate_signed_url(att.file_id)["url"]
+                except Exception:
+                    url = None
+            if url:
+                image_blocks.append({"type": "image_url", "image_url": {"url": url}})
+        else:
+            if att.file_id:
+                try:
+                    extracted = extract_text_from_file(att.file_id)
+                except Exception:
+                    extracted = ""
+                if extracted:
+                    title = att.name or att.file_id
+                    extra_sections.append(f"[CONTEUDO EXTRAIDO DO ARQUIVO {title}]\n{extracted}")
+
+    text = request.message or ""
+    if extra_sections:
+        text = text + "\n\n" + "\n\n".join(extra_sections)
+
+    if image_blocks:
+        content = [{"type": "text", "text": text}] + image_blocks
+        return HumanMessage(content=content)
+
+    return HumanMessage(content=text)
 
 
 # Router por regras: detecta intenção de relatório para bypass LLM (zero tokens)
@@ -109,7 +154,7 @@ INTENT_PATTERNS = {
     # Relatório Excel Centro de Custo
     "glpi_excel_report": re.compile(
         r"^(gerar\s+)?relat[oó]rio\s+(excel\s+)?(de\s+)?(atendimentos\s+)?(por\s+)?centro\s+(de\s+)?custo",
-        re.I
+        re.I,
     ),
 }
 
@@ -126,12 +171,12 @@ def _resolve_intent(message: str) -> str | None:
 
 
 CACHE_TTL = {
-    "glpi_tickets": 120,         # 2 min
+    "glpi_tickets": 120,  # 2 min
     "glpi_new_unassigned": 120,  # 2 min
-    "glpi_pending_old": 300,     # 5 min — very stable data
-    "zabbix_alerts": 60,         # 1 min — changes faster
-    "linear_issues": 180,        # 3 min
-    "dashboard": 90,             # 1.5 min — combines sources
+    "glpi_pending_old": 300,  # 5 min — very stable data
+    "zabbix_alerts": 60,  # 1 min — changes faster
+    "linear_issues": 180,  # 3 min
+    "dashboard": 90,  # 1.5 min — combines sources
 }
 
 # Mapping from intent to artifact metadata for SSE artifact events
@@ -184,9 +229,7 @@ async def _generate_report_by_intent(intent: str) -> tuple[str, bool]:
             client = get_client()
             result = await client.get_tickets_new_unassigned(min_age_hours=24, limit=20)
             if result.success:
-                report_md = format_new_unassigned_report(
-                    result.output, glpi_base_url=glpi_base_url
-                )
+                report_md = format_new_unassigned_report(result.output, glpi_base_url=glpi_base_url)
                 success = True
             else:
                 report_md = f"**Erro GLPI:** {result.error}"
@@ -336,6 +379,7 @@ Infraestrutura, Rede, Software, Hardware, Segurança, Acesso, Consulta.
 - Use TABELAS MARKDOWN para dados (GLPI, Zabbix, classificação).
 - Seja direto e técnico. Cite IDs reais (Ticket #N, etc).
 - Sem dados: diga "Nenhum registro encontrado" ou "Erro ao consultar".
+- Para busca de imagens, use a ferramenta image_search quando solicitada.
 - **Criar projeto no Linear:** Use linear_get_teams para obter team_id. Gere o plano (project + milestones + tasks) em JSON e chame linear_create_full_project(team_id, project_plan, dry_run=True). Mostre o preview ao usuário e diga que pode confirmar. Na confirmação do usuário, você DEVE chamar linear_create_full_project novamente com o MESMO JSON de project_plan que usou no preview (copie o JSON exato da sua resposta anterior). Nunca chame com project_plan vazio.
 
 ## Anti-alucinação
@@ -386,7 +430,7 @@ async def chat(request: ChatRequest):
 
         # === RULE-BASED ROUTER: Zero LLM tokens for known report intents ===
         # Check if message matches a known report pattern (GLPI, Zabbix, Linear, Dashboard)
-        intent = _resolve_intent(request.message)
+        intent = _resolve_intent(request.message) if not request.attachments else None
         if intent:
             logger.info("📊 [RULE-ROUTER] Intent detectado: %s (bypass LLM)", intent)
             report_md, success = await _generate_report_by_intent(intent)
@@ -407,6 +451,8 @@ async def chat(request: ChatRequest):
         tools = []
         if request.use_tavily:
             tools.append(tavily_search)
+        if os.getenv("TAVILY_API_KEY"):
+            tools.append(image_search)
 
         # GLPI tools (Task 1.2)
         if request.enable_glpi:
@@ -443,7 +489,12 @@ async def chat(request: ChatRequest):
             logger.info("✅ Project RAG enabled (project_id=%s)", request.project_id)
 
         has_tools = bool(tools)
+        has_images = bool(request.attachments) and any(
+            (att.mime or "").startswith("image/") for att in request.attachments
+        )
         model_name = _resolve_model_for_request(request, has_tools)
+        if has_images and not request.model:
+            model_name = _resolve_vision_model()
 
         system_prompt = get_system_prompt(request.enable_vsa)
         if request.project_id:
@@ -483,9 +534,8 @@ async def chat(request: ChatRequest):
             }
         }
 
-        result = await agent.ainvoke(
-            {"messages": [HumanMessage(content=request.message)]}, config=config
-        )
+        human_message = _build_human_message(request)
+        result = await agent.ainvoke({"messages": [human_message]}, config=config)
 
         # Extract response
         messages = result.get("messages", [])
@@ -507,7 +557,7 @@ async def stream_chat(request: ChatRequest):
     thread_id = request.thread_id or f"thread_{uuid.uuid4().hex[:8]}"
 
     # === RULE-BASED ROUTER: Zero LLM tokens for known report intents ===
-    intent = _resolve_intent(request.message)
+    intent = _resolve_intent(request.message) if not request.attachments else None
     if intent:
         logger.info("📊 [RULE-ROUTER/STREAM] Intent detectado: %s (bypass LLM)", intent)
 
@@ -527,10 +577,13 @@ async def stream_chat(request: ChatRequest):
                 if success and report_md:
                     # --- Artifact SSE events ---
                     artifact_id = f"art-{uuid.uuid4().hex[:12]}"
-                    meta = INTENT_ARTIFACT_META.get(intent, {
-                        "title": "Relatório",
-                        "artifact_type": "generic_report",
-                    })
+                    meta = INTENT_ARTIFACT_META.get(
+                        intent,
+                        {
+                            "title": "Relatório",
+                            "artifact_type": "generic_report",
+                        },
+                    )
 
                     # artifact_start
                     yield f"data: {json.dumps({'type': 'artifact_start', 'thread_id': thread_id, 'artifact': {'artifact_id': artifact_id, 'title': meta['title'], 'artifact_type': meta['artifact_type'], 'intent': intent, 'source': 'rule-based'}}, ensure_ascii=False)}\n\n"
@@ -578,6 +631,8 @@ async def stream_chat(request: ChatRequest):
         tools = []
         if request.use_tavily:
             tools.append(tavily_search)
+        if os.getenv("TAVILY_API_KEY"):
+            tools.append(image_search)
 
         # GLPI tools (Task 1.2)
         if request.enable_glpi:
@@ -614,7 +669,12 @@ async def stream_chat(request: ChatRequest):
             logger.info("✅ Project RAG enabled (project_id=%s) [stream]", request.project_id)
 
         has_tools = bool(tools)
+        has_images = bool(request.attachments) and any(
+            (att.mime or "").startswith("image/") for att in request.attachments
+        )
         model_name = _resolve_model_for_request(request, has_tools)
+        if has_images and not request.model:
+            model_name = _resolve_vision_model()
 
         system_prompt = get_system_prompt(request.enable_vsa)
         if request.project_id:
@@ -676,8 +736,9 @@ async def stream_chat(request: ChatRequest):
                 from langchain_core.messages import AIMessage, AIMessageChunk
 
                 # Use stream_mode="messages" to get deltas (tokens) for a smoother experience
+                human_message = _build_human_message(request)
                 async for chunk, metadata in agent.astream(
-                    {"messages": [HumanMessage(content=request.message)]},
+                    {"messages": [human_message]},
                     config=config,
                     stream_mode="messages",
                 ):

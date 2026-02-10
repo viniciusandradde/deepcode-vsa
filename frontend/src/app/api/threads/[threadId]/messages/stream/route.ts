@@ -10,6 +10,13 @@ interface PostPayload {
   model: string;
   useTavily: boolean;
   thread_id?: string;
+  attachments?: Array<{
+    file_id: string;
+    name?: string;
+    mime?: string;
+    size?: number;
+    url?: string;
+  }>;
   // VSA Integration fields (Task 1.1)
   enable_vsa?: boolean;
   enable_glpi?: boolean;
@@ -57,6 +64,7 @@ export async function POST(
           enable_zabbix: body.enable_zabbix ?? false,
           enable_linear: body.enable_linear ?? false,
           enable_planning: body.enable_planning ?? false,
+          attachments: body.attachments ?? [],
         }),
         signal: controller.signal,
       });

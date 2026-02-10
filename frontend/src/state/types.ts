@@ -2,6 +2,14 @@ import type { MutableRefObject } from "react";
 
 export type Role = "user" | "assistant";
 
+export interface FileAttachment {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  url: string;
+}
+
 export interface GenesisMessage {
   id: string;
   role: Role;
@@ -11,6 +19,7 @@ export interface GenesisMessage {
   usedTavily?: boolean;
   editedAt?: number;
   artifactIds?: string[];
+  attachments?: FileAttachment[];
 }
 
 export interface GenesisSession {
@@ -60,7 +69,7 @@ export interface GenesisUIState {
   renameSession: (id: string, title: string) => void;
   deleteSession: (id: string) => Promise<void>;
   messagesBySession: Record<string, GenesisMessage[]>;
-  sendMessage: (content: string, useStreaming?: boolean) => Promise<void>;
+  sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[]) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
   editMessage: (messageId: string, newContent: string) => void;

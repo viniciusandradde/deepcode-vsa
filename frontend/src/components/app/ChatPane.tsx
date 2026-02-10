@@ -88,9 +88,12 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
     }
   }, [isSending, messages.length]);
 
-  const handleMessageSubmit = useCallback(async (message: string, streaming: boolean) => {
-    await sendMessage(message, streaming);
-  }, [sendMessage]);
+  const handleMessageSubmit = useCallback(
+    async (message: string, streaming: boolean, attachments = []) => {
+      await sendMessage(message, streaming, attachments);
+    },
+    [sendMessage]
+  );
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {

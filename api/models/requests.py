@@ -5,8 +5,17 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator
 
 
+class AttachmentRef(BaseModel):
+    file_id: Optional[str] = None
+    name: Optional[str] = None
+    mime: Optional[str] = None
+    size: Optional[int] = None
+    url: Optional[str] = None
+
+
 class ChatRequest(BaseModel):
     """Chat request model."""
+
     message: str = Field(..., max_length=32000)
     thread_id: Optional[str] = None
     model: Optional[str] = None
@@ -14,6 +23,7 @@ class ChatRequest(BaseModel):
     client_id: Optional[str] = None
     use_tavily: Optional[bool] = None
     project_id: Optional[str] = None  # DeepCode Projects: RAG scoped to this project
+    attachments: Optional[List[AttachmentRef]] = None
 
     # VSA-specific fields (Task 1.1)
     enable_vsa: bool = False
@@ -26,6 +36,7 @@ class ChatRequest(BaseModel):
 
 class RAGSearchRequest(BaseModel):
     """RAG search request model."""
+
     query: str = Field(..., max_length=4000)
     k: int = Field(default=5, ge=1, le=100)
     search_type: str = "hybrid"
@@ -42,6 +53,7 @@ _SAFE_DIR_PATTERN = re.compile(r"^[a-zA-Z0-9_\-./]+$")
 
 class RAGIngestRequest(BaseModel):
     """RAG ingestion request model."""
+
     base_dir: str = Field(default="kb", max_length=200)
     strategy: str = "semantic"
     empresa: Optional[str] = None
@@ -62,6 +74,7 @@ class RAGIngestRequest(BaseModel):
 
 class AgentInvokeRequest(BaseModel):
     """Agent invocation request model."""
+
     agent_id: str
     input: dict
     config: Optional[dict] = None

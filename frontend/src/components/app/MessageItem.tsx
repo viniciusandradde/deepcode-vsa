@@ -67,6 +67,7 @@ export const MessageItem = memo(function MessageItem({
   const isThinking = message.content === "Pensando...";
   const isError = message.content.startsWith("Erro:");
   const isUserMessage = message.role === "user";
+  const attachments = message.attachments || [];
 
   const [copied, setCopied] = useState(false);
 
@@ -130,6 +131,30 @@ export const MessageItem = memo(function MessageItem({
         </span>
         <span className="text-neutral-600">{new Date(message.timestamp).toLocaleTimeString()}</span>
       </div>
+      {attachments.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          {attachments.map((att) => (
+            <div
+              key={att.id}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-obsidian-800/60 px-3 py-2 text-xs text-neutral-300"
+            >
+              {att.mime.startsWith("image/") ? (
+                <img src={att.url} alt={att.name} className="h-10 w-10 rounded object-cover" />
+              ) : (
+                <span className="h-10 w-10 rounded bg-white/10 flex items-center justify-center text-[10px] text-neutral-400">
+                  DOC
+                </span>
+              )}
+              <div className="flex flex-col">
+                <span className="max-w-[180px] truncate">{att.name}</span>
+                <span className="text-[10px] text-neutral-500">
+                  {(att.size / 1024).toFixed(0)} KB
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {isEditing ? (
         <div className="space-y-2">
           <textarea

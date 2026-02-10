@@ -63,6 +63,15 @@ services:
       ZABBIX_API_TOKEN: ${ZABBIX_API_TOKEN:-}
       # Linear Integration (Phase 1)
       LINEAR_API_KEY: ${LINEAR_API_KEY:-}
+      # MinIO Storage
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_BUCKET: ${MINIO_BUCKET:-vsa-uploads}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      FILES_MAX_SIZE_MB: ${FILES_MAX_SIZE_MB:-4}
+      SIGNED_URL_TTL_SECONDS: ${SIGNED_URL_TTL_SECONDS:-3600}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
       # Redis/Celery
       REDIS_URL: ${REDIS_URL:-redis://:${REDIS_PASSWORD:-changeme_redis_password}@redis:6379/0}
       # Auth & CORS
@@ -82,6 +91,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
     networks:
       - ai_agent_network
     restart: unless-stopped
@@ -132,6 +143,13 @@ services:
       GLPI_BASE_URL: ${GLPI_BASE_URL:-}
       GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:-}
       LINEAR_API_KEY: ${LINEAR_API_KEY:-}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_BUCKET: ${MINIO_BUCKET:-vsa-uploads}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      FILES_MAX_SIZE_MB: ${FILES_MAX_SIZE_MB:-4}
+      SIGNED_URL_TTL_SECONDS: ${SIGNED_URL_TTL_SECONDS:-3600}
     depends_on:
       redis:
         condition: service_healthy
@@ -201,12 +219,36 @@ services:
     restart: unless-stopped
     command: sh -c "npm install -g pnpm@10.26.0 && pnpm install && rm -rf .next && pnpm run dev"
 
+  # MinIO - Object Storage
+  minio:
+    image: minio/minio:RELEASE.2025-01-11T18-03-25Z
+    container_name: ai_agent_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ai_agent_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
   backend_cache:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:

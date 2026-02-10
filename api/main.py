@@ -13,7 +13,9 @@ from api.routes import (
     automation,
     chat,
     config,
+    files,
     export,
+    images,
     planning,
     projects,
     queue,
@@ -75,6 +77,7 @@ async def lifespan(app: FastAPI):
     # Close notification service HTTP client
     try:
         from core.notifications import notification_service
+
         await notification_service.close()
     except Exception as e:
         logger.warning("Notification service cleanup failed: %s", e)
@@ -105,15 +108,27 @@ app.add_middleware(
 _api_deps = [Depends(verify_api_key)]
 
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"], dependencies=_api_deps)
+app.include_router(files.router, prefix="/api/v1/files", tags=["files"], dependencies=_api_deps)
+app.include_router(images.router, prefix="/api/v1/images", tags=["images"], dependencies=_api_deps)
 app.include_router(rag.router, prefix="/api/v1/rag", tags=["rag"], dependencies=_api_deps)
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["agents"], dependencies=_api_deps)
-app.include_router(threads.router, prefix="/api/v1/threads", tags=["threads"], dependencies=_api_deps)
-app.include_router(reports.router, prefix="/api/v1/reports", tags=["reports"], dependencies=_api_deps)
-app.include_router(planning.router, prefix="/api/v1/planning", tags=["planning"], dependencies=_api_deps)
+app.include_router(
+    threads.router, prefix="/api/v1/threads", tags=["threads"], dependencies=_api_deps
+)
+app.include_router(
+    reports.router, prefix="/api/v1/reports", tags=["reports"], dependencies=_api_deps
+)
+app.include_router(
+    planning.router, prefix="/api/v1/planning", tags=["planning"], dependencies=_api_deps
+)
 app.include_router(config.router, prefix="/api/v1/config", tags=["config"], dependencies=_api_deps)
-app.include_router(automation.router, prefix="/api/v1/automation", tags=["automation"], dependencies=_api_deps)
+app.include_router(
+    automation.router, prefix="/api/v1/automation", tags=["automation"], dependencies=_api_deps
+)
 app.include_router(queue.router, prefix="/api/v1/queue", tags=["queue"], dependencies=_api_deps)
-app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"], dependencies=_api_deps)
+app.include_router(
+    projects.router, prefix="/api/v1/projects", tags=["projects"], dependencies=_api_deps
+)
 app.include_router(export.router, prefix="/api/v1/export", tags=["export"], dependencies=_api_deps)
 
 

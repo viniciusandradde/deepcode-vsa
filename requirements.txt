@@ -42,3 +42,6 @@ croniter>=2.0.1
 celery[redis]>=5.3.6
 redis>=5.0.1
 flower>=2.0.1
+
+# Storage
+minio>=7.2.8
