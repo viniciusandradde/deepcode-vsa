@@ -116,7 +116,7 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
       {/* Main chat column */}
       <div className="flex flex-1 flex-col min-w-0">
       <header className="safe-area-top flex h-16 md:h-20 shrink-0 items-center justify-between border-b border-white/[0.06] px-4 md:px-10 text-white bg-obsidian-900/80 backdrop-blur-md">
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex min-w-0 items-center gap-3 md:gap-4">
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
@@ -140,25 +140,27 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
               </svg>
             </button>
           )}
-          <div className="md:hidden">
-            <Logo size="sm" showText={false} />
-          </div>
-          <div className="hidden md:flex">
-            <Logo size="md" showText={true} />
+          <div className="flex min-w-0 flex-col">
+            <span className="text-xs uppercase tracking-[0.35em] text-neutral-500">
+              VSA Nexus
+            </span>
+            <span className="truncate text-sm font-semibold text-white">
+              Chat Inteligente
+            </span>
           </div>
           <div className="hidden md:block h-12 w-px bg-brand-primary/30" />
         </div>
-        <div className="flex items-center gap-2 md:gap-4 text-[11px] uppercase tracking-wide">
-          <div className="md:hidden">
+        <div className="flex min-w-0 items-center gap-2 md:gap-4 text-[11px] uppercase tracking-wide">
+          <div className="md:hidden min-w-0">
             <span className={clsx(
-              "glass-panel rounded-md px-2 py-1 text-[10px] flex items-center gap-2",
+              "glass-panel rounded-md px-2 py-1 text-[10px] flex items-center gap-2 max-w-[160px]",
               enableVSA ? "text-neutral-300" : "text-neutral-500",
             )}>
               <span className={clsx(
                 "h-2 w-2 rounded-full",
                 enableVSA ? "bg-brand-primary animate-pulse" : "bg-neutral-600",
               )} />
-              VSA
+              <span className="truncate">{enableVSA ? "VSA Ativo" : "VSA Inativo"}</span>
             </span>
           </div>
           <div className="hidden md:flex items-center gap-4 text-[11px] uppercase tracking-wide">

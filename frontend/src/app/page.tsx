@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <GenesisUIProvider>
-        <div className="relative flex min-h-[100dvh]">
+        <div className="relative min-h-[100dvh] min-w-0 overflow-x-hidden lg:flex">
           <Sidebar
             collapsed={sidebarCollapsed}
             open={sidebarOpen}

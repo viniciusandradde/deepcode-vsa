@@ -10,6 +10,7 @@
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-display: ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
+  --keyboard-offset: 0px;
 }
 
 body {
@@ -23,6 +24,8 @@ body {
 html,
 body {
   height: 100%;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 @supports not (height: 100dvh) {
@@ -37,6 +40,10 @@ body {
 
 .safe-area-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.25rem);
+}
+
+.keyboard-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom) + var(--keyboard-offset, 0px) + 0.25rem);
 }
 
 /* Glass panel utility — crystalline glassmorphism */
