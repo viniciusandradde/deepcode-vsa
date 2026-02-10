@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { useGenesisUI } from "@/state/useGenesisUI";
@@ -39,12 +39,30 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>("");
+  const [showAllSessions, setShowAllSessions] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleDeleteClick = (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation();
     setSessionToDelete(sessionId);
     setDeleteDialogOpen(true);
   };
+
+  useEffect(() => {
+    function handleGlobalKeyDown(event: KeyboardEvent) {
+      const isMeta = event.metaKey || event.ctrlKey;
+
+      if (isMeta && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+    }
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -235,17 +253,49 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
 
         <section className="flex-1 space-y-3 overflow-hidden">
           {!collapsed && (
-            <header className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neutral-500">
-              Sessões Ativas
-              <Button
-                onClick={() => handleCreateSession().catch(console.error)}
-                size="sm"
-                variant="primary"
-                disabled={isLoading}
-              >
-                Nova Sessão
-              </Button>
-            </header>
+            <>
+              <header className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neutral-500">
+                Sessões Ativas
+                <Button
+                  onClick={() => handleCreateSession().catch(console.error)}
+                  size="sm"
+                  variant="primary"
+                  disabled={isLoading}
+                >
+                  Nova Sessão
+                </Button>
+              </header>
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500 pointer-events-none"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar sessões... (Ctrl+K)"
+                  className="w-full rounded-lg border border-white/[0.06] bg-obsidian-800 pl-9 pr-3 py-2 text-sm text-white placeholder:text-neutral-500 focus:border-brand-primary/40 focus:outline-none transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-500 hover:text-white transition-colors"
+                    aria-label="Limpar busca"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </>
           )}
           {collapsed && (
             <button
@@ -273,139 +323,187 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
               <div className="space-y-2 rounded-md border border-white/[0.06] bg-white/5 p-3 text-xs text-neutral-500">
                 Nenhuma sessão. Clique em "Nova Sessão" para começar.
               </div>
-            ) : (
-              [...sessions]
+            ) : (() => {
+              const filteredSessions = [...sessions]
                 .sort((a, b) => {
                   const aTs = a.lastActivityAt ?? a.createdAt;
                   const bTs = b.lastActivityAt ?? b.createdAt;
                   return bTs - aTs;
                 })
-                .map((session) => {
-                  const active = session.id === currentSessionId;
-                  const messages = messagesBySession[session.id] || [];
-                  const messageCount = messages.length;
-                  const lastMessage = messages[messages.length - 1];
-                  const lastMessagePreview = lastMessage
-                    ? lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? "..." : "")
-                    : "Nenhuma mensagem";
-
+                .filter((session) => {
+                  if (!searchQuery.trim()) return true;
+                  const query = searchQuery.toLowerCase();
                   return (
-                    collapsed ? (
-                      <button
-                        key={session.id}
-                        onClick={() => handleSelectSession(session.id).catch(console.error)}
-                        className={clsx(
-                          "w-12 h-12 rounded-lg border flex items-center justify-center transition-all relative",
-                          active
-                            ? "border-brand-primary/40 bg-brand-primary/10 text-white shadow-glow-orange"
-                            : "border-white/[0.06] bg-obsidian-800 text-neutral-300 hover:border-brand-primary/30 hover:bg-white/5",
-                        )}
-                        title={`${session.title} (${messageCount} mensagens)`}
-                        aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
-                      >
-                        <span className="text-xs font-bold">{session.title.charAt(0).toUpperCase()}</span>
-                        {messageCount > 0 && (
-                          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-brand-primary/20 text-[8px] flex items-center justify-center text-white border border-brand-primary/40">
-                            {messageCount > 9 ? "9+" : messageCount}
-                          </span>
-                        )}
-                      </button>
-                    ) : (
-                      <div
-                        key={session.id}
-                        className={clsx(
-                          "group relative flex items-center gap-2 rounded-xl border px-3 py-2 transition-all animate-in fade-in slide-in-from-left-2 duration-200",
-                          active
-                            ? "border-brand-primary/40 bg-brand-primary/10 text-white shadow-glow-orange"
-                            : "border-white/[0.06] bg-obsidian-800 text-neutral-300 hover:border-brand-primary/30 hover:bg-white/5",
-                        )}
-                      >
+                    session.title.toLowerCase().includes(query) ||
+                    (messagesBySession[session.id] || []).some((msg) =>
+                      msg.content.toLowerCase().includes(query)
+                    )
+                  );
+                });
+
+              const displayedSessions = showAllSessions
+                ? filteredSessions
+                : filteredSessions.slice(0, 3);
+
+              const hiddenCount = filteredSessions.length - displayedSessions.length;
+
+              return (
+                <>
+                  {displayedSessions.map((session) => {
+                    const active = session.id === currentSessionId;
+                    const messages = messagesBySession[session.id] || [];
+                    const messageCount = messages.length;
+                    const lastMessage = messages[messages.length - 1];
+                    const lastMessagePreview = lastMessage
+                      ? lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? "..." : "")
+                      : "Nenhuma mensagem";
+
+                    return (
+                      collapsed ? (
                         <button
+                          key={session.id}
                           onClick={() => handleSelectSession(session.id).catch(console.error)}
-                          className="flex flex-1 flex-col gap-1 text-left"
+                          className={clsx(
+                            "w-12 h-12 rounded-lg border flex items-center justify-center transition-all relative",
+                            active
+                              ? "border-brand-primary/40 bg-brand-primary/10 text-white shadow-glow-orange"
+                              : "border-white/[0.06] bg-obsidian-800 text-neutral-300 hover:border-brand-primary/30 hover:bg-white/5",
+                          )}
+                          title={`${session.title} (${messageCount} mensagens)`}
                           aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
                         >
-                          <div className="flex items-center justify-between">
-                            {editingSessionId === session.id ? (
-                              <input
-                                autoFocus
-                                value={editingTitle}
-                                onChange={(e) => setEditingTitle(e.target.value)}
-                                onBlur={() => {
-                                  if (editingTitle.trim()) {
-                                    renameSession(session.id, editingTitle.trim());
-                                  }
-                                  setEditingSessionId(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
+                          <span className="text-xs font-bold">{session.title.charAt(0).toUpperCase()}</span>
+                          {messageCount > 0 && (
+                            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-brand-primary/20 text-[8px] flex items-center justify-center text-white border border-brand-primary/40">
+                              {messageCount > 9 ? "9+" : messageCount}
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <div
+                          key={session.id}
+                          className={clsx(
+                            "group relative flex items-center gap-2 rounded-xl border px-3 py-2 transition-all animate-in fade-in slide-in-from-left-2 duration-200",
+                            active
+                              ? "border-brand-primary/40 bg-brand-primary/10 text-white shadow-glow-orange"
+                              : "border-white/[0.06] bg-obsidian-800 text-neutral-300 hover:border-brand-primary/30 hover:bg-white/5",
+                          )}
+                        >
+                          <button
+                            onClick={() => handleSelectSession(session.id).catch(console.error)}
+                            className="flex flex-1 flex-col gap-1 text-left"
+                            aria-label={`Sessão ${session.title}, ${messageCount} mensagens`}
+                          >
+                            <div className="flex items-center justify-between">
+                              {editingSessionId === session.id ? (
+                                <input
+                                  autoFocus
+                                  value={editingTitle}
+                                  onChange={(e) => setEditingTitle(e.target.value)}
+                                  onBlur={() => {
                                     if (editingTitle.trim()) {
                                       renameSession(session.id, editingTitle.trim());
                                     }
                                     setEditingSessionId(null);
-                                  } else if (e.key === "Escape") {
-                                    setEditingSessionId(null);
-                                  }
-                                }}
-                                className="w-full rounded bg-obsidian-800 px-1 py-0.5 text-sm font-semibold text-white outline-none border border-white/10 focus:border-brand-primary"
-                              />
-                            ) : (
-                              <span
-                                className="text-sm font-semibold uppercase tracking-wide text-white"
-                                onDoubleClick={() => {
-                                  setEditingSessionId(session.id);
-                                  setEditingTitle(session.title);
-                                }}
-                              >
-                                {session.title}
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      if (editingTitle.trim()) {
+                                        renameSession(session.id, editingTitle.trim());
+                                      }
+                                      setEditingSessionId(null);
+                                    } else if (e.key === "Escape") {
+                                      setEditingSessionId(null);
+                                    }
+                                  }}
+                                  className="w-full rounded bg-obsidian-800 px-1 py-0.5 text-sm font-semibold text-white outline-none border border-white/10 focus:border-brand-primary"
+                                />
+                              ) : (
+                                <span
+                                  className="text-sm font-semibold uppercase tracking-wide text-white"
+                                  onDoubleClick={() => {
+                                    setEditingSessionId(session.id);
+                                    setEditingTitle(session.title);
+                                  }}
+                                >
+                                  {session.title}
+                                </span>
+                              )}
+                              {messageCount > 0 && (
+                                <span className="ml-2 rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] text-neutral-300">
+                                  {messageCount}
+                                </span>
+                              )}
+                            </div>
+                            {lastMessage && (
+                              <span className="text-[11px] text-neutral-500 line-clamp-1">
+                                {lastMessage.role === "user" ? "Você: " : "Agente: "}
+                                {lastMessagePreview}
                               </span>
                             )}
-                            {messageCount > 0 && (
-                              <span className="ml-2 rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] text-neutral-300">
-                                {messageCount}
-                              </span>
+                            {!lastMessage && (
+                              <span className="text-[11px] text-neutral-500 italic">{lastMessagePreview}</span>
                             )}
-                          </div>
-                          {lastMessage && (
-                            <span className="text-[11px] text-neutral-500 line-clamp-1">
-                              {lastMessage.role === "user" ? "Você: " : "Agente: "}
-                              {lastMessagePreview}
-                            </span>
-                          )}
-                          {!lastMessage && (
-                            <span className="text-[11px] text-neutral-500 italic">{lastMessagePreview}</span>
-                          )}
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, session.id)}
-                          className={clsx(
-                            "opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100",
-                            "rounded p-1.5 text-neutral-500 hover:bg-red-500/10 hover:text-red-400",
-                            "focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-400/50",
-                          )}
-                          aria-label={`Deletar sessão ${session.title}`}
-                          title="Deletar sessão (Delete)"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteClick(e, session.id)}
+                            className={clsx(
+                              "opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100",
+                              "rounded p-1.5 text-neutral-500 hover:bg-red-500/10 hover:text-red-400",
+                              "focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-400/50",
+                            )}
+                            aria-label={`Deletar sessão ${session.title}`}
+                            title="Deletar sessão (Delete)"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      )
+                    );
+                  })}
+                  {!collapsed && filteredSessions.length > 0 && hiddenCount > 0 && (
+                    <button
+                      onClick={() => setShowAllSessions(!showAllSessions)}
+                      className="w-full rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-sm text-neutral-400 hover:border-brand-primary/30 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      {showAllSessions ? (
+                        <>
+                          <svg className="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                           </svg>
-                        </button>
-                      </div>
-                    )
-                  );
-                })
-            )}
+                          Mostrar menos
+                        </>
+                      ) : (
+                        <>
+                          <svg className="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                          Ver histórico completo ({hiddenCount} oculta{hiddenCount > 1 ? 's' : ''})
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {!collapsed && searchQuery && filteredSessions.length === 0 && (
+                    <div className="rounded-lg border border-white/[0.06] bg-white/5 px-3 py-4 text-center text-sm text-neutral-500">
+                      Nenhuma sessão encontrada para "{searchQuery}"
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </section>
       </aside>
