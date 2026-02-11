@@ -1,7 +1,8 @@
 .PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db setup-planning-db setup-files-db \
 	build build-backend build-frontend rebuild rebuild-all up down up-build \
 	up-prod down-prod build-prod up-build-prod \
-	status logs-backend logs-frontend logs-postgres logs-worker logs-flower logs-minio logs-minio-prod \
+	status status-prod logs-backend logs-frontend logs-postgres logs-worker logs-flower logs-minio logs-minio-prod \
+	logs-backend-prod logs-frontend-prod logs-postgres-prod logs-worker-prod logs-flower-prod \
 	restart-backend restart-frontend restart-postgres restart-worker restart-minio restart-minio-prod \
 	models-validate models-print models-rebuild-frontend models-rebuild-frontend-prod models-refresh-prod models-refresh-dev \
 	cleanup-checkpoints cleanup-checkpoints-dry-run health clean-frontend-cache maintenance queue-test
@@ -46,6 +47,7 @@ help:
 	@echo ""
 	@echo "Docker:"
 	@echo "  make status        - Mostra status dos containers Docker"
+	@echo "  make status-prod   - Mostra status dos containers (prod)"
 	@echo "  make logs-backend  - Mostra logs recentes do backend"
 	@echo "  make logs-frontend - Mostra logs recentes do frontend"
 	@echo "  make logs-postgres - Mostra logs recentes do Postgres"
@@ -53,6 +55,11 @@ help:
 	@echo "  make logs-flower   - Mostra logs do Flower (Monitor)"
 	@echo "  make logs-minio    - Mostra logs do MinIO"
 	@echo "  make logs-minio-prod - Mostra logs do MinIO (prod)"
+	@echo "  make logs-backend-prod  - Logs do backend (prod)"
+	@echo "  make logs-frontend-prod - Logs do frontend (prod)"
+	@echo "  make logs-postgres-prod - Logs do Postgres (prod)"
+	@echo "  make logs-worker-prod   - Logs do Celery Worker (prod)"
+	@echo "  make logs-flower-prod   - Logs do Flower (prod)"
 	@echo "  make restart-backend  - Reinicia o backend"
 	@echo "  make restart-frontend - Reinicia o frontend (limpa cache automaticamente)"
 	@echo "  make restart-postgres - Reinicia o Postgres"
@@ -76,23 +83,24 @@ install-frontend:
 
 build:
 	@echo "Building backend e frontend containers..."
-	docker compose build backend frontend
+	docker compose -f docker-compose.yml build backend frontend
+
 
 build-backend:
 	@echo "Building backend container..."
-	docker compose build backend
+	docker compose -f docker-compose.yml build backend
 
 build-frontend:
 	@echo "Building frontend container..."
-	docker compose build frontend
+	docker compose -f docker-compose.yml build frontend
 
 rebuild:
 	@echo "Rebuild completo (sem cache) de backend e frontend..."
-	docker compose build --no-cache backend frontend
+	docker compose -f docker-compose.yml build --no-cache backend frontend
 
 rebuild-all:
 	@echo "Rebuild completo de TODOS os containers (sem cache)..."
-	docker compose build --no-cache
+	docker compose -f docker-compose.yml build --no-cache
 
 setup-db:
 	@echo "Configurando banco de dados..."
@@ -111,15 +119,15 @@ frontend:
 
 up:
 	@echo "Iniciando todos os containers..."
-	docker compose up -d
+	docker compose -f docker-compose.yml up -d
 
 down:
 	@echo "Parando todos os containers..."
-	docker compose down
+	docker compose -f docker-compose.yml down
 
 up-build:
 	@echo "Building e iniciando todos os containers..."
-	docker compose up -d --build
+	docker compose -f docker-compose.yml up -d --build
 
 up-prod:
 	@echo "Iniciando containers (prod)..."
@@ -155,24 +163,48 @@ status:
 	@echo "Status dos containers Docker:"
 	docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
+status-prod:
+	@echo "Status dos containers Docker (prod):"
+	docker compose -f docker-compose.prod.yml ps
+
 logs-backend:
 	@echo "Logs do backend (ai_agent_backend):"
+	docker logs ai_agent_backend --tail 100 -f
+
+logs-backend-prod:
+	@echo "Logs do backend (prod):"
 	docker logs ai_agent_backend --tail 100 -f
 
 logs-frontend:
 	@echo "Logs do frontend (ai_agent_frontend):"
 	docker logs ai_agent_frontend --tail 100 -f
 
+logs-frontend-prod:
+	@echo "Logs do frontend (prod):"
+	docker logs ai_agent_frontend --tail 100 -f
+
 logs-postgres:
 	@echo "Logs do Postgres (ai_agent_postgres):"
+	docker logs ai_agent_postgres --tail 100 -f
+
+logs-postgres-prod:
+	@echo "Logs do Postgres (prod):"
 	docker logs ai_agent_postgres --tail 100 -f
 
 logs-worker:
 	@echo "Logs do Celery Worker:"
 	docker logs ai_agent_celery_worker --tail 100 -f
 
+logs-worker-prod:
+	@echo "Logs do Celery Worker (prod):"
+	docker logs ai_agent_celery_worker --tail 100 -f
+
 logs-flower:
 	@echo "Logs do Flower:"
+	docker logs ai_agent_flower --tail 100 -f
+
+logs-flower-prod:
+	@echo "Logs do Flower (prod):"
 	docker logs ai_agent_flower --tail 100 -f
 
 logs-minio:
@@ -185,20 +217,20 @@ logs-minio-prod:
 
 restart-backend:
 	@echo "Reiniciando backend..."
-	docker compose restart backend
+	docker compose -f docker-compose.yml restart backend
 
 restart-frontend:
 	@echo "Reiniciando frontend (limpando cache)..."
 	docker exec ai_agent_frontend sh -c "rm -rf .next" 2>/dev/null || true
-	docker compose restart frontend
+	docker compose -f docker-compose.yml restart frontend
 
 restart-worker:
 	@echo "Reiniciando Celery Worker..."
-	docker compose restart celery_worker
+	docker compose -f docker-compose.yml restart celery_worker
 
 restart-minio:
 	@echo "Reiniciando MinIO..."
-	docker compose restart minio
+	docker compose -f docker-compose.yml restart minio
 
 clean-frontend-cache:
 	@echo "Limpando cache do Next.js (.next) no container frontend..."
@@ -206,7 +238,7 @@ clean-frontend-cache:
 
 restart-postgres:
 	@echo "Reiniciando Postgres..."
-	docker compose restart postgres
+	docker compose -f docker-compose.yml restart postgres
 
 restart-minio-prod:
 	@echo "Reiniciando MinIO (prod)..."
@@ -238,7 +270,7 @@ setup-files-db:
 
 models-validate:
 	@echo "Validando models.yaml via container frontend..."
-	docker compose run --rm frontend node -e "const fs=require('fs');const yaml=require('js-yaml');const data=yaml.load(fs.readFileSync('/app/models.yaml','utf8'));if(!data||!Array.isArray(data.models))throw new Error('models.yaml invalido');console.log('OK - modelos:', data.models.length);"
+	docker compose -f docker-compose.yml run --rm frontend node -e "const fs=require('fs');const yaml=require('js-yaml');const data=yaml.load(fs.readFileSync('/app/models.yaml','utf8'));if(!data||!Array.isArray(data.models))throw new Error('models.yaml invalido');console.log('OK - modelos:', data.models.length);"
 
 models-print:
 	@echo "Modelos carregados pela API local (/api/models):"
@@ -247,8 +279,8 @@ models-print:
 
 models-rebuild-frontend:
 	@echo "Rebuild e reinicio do frontend (dev)..."
-	docker compose build --no-cache frontend
-	docker compose up -d --force-recreate frontend
+	docker compose -f docker-compose.yml build --no-cache frontend
+	docker compose -f docker-compose.yml up -d --force-recreate frontend
 
 models-rebuild-frontend-prod:
 	@echo "Rebuild e recriacao do frontend (prod)..."
@@ -278,11 +310,11 @@ models-refresh-dev:
 maintenance:
 	@echo "🚑 Iniciando manutenção profunda (reset do Docker)..."
 	@echo "1. Parando containers..."
-	-docker compose down --remove-orphans
+	-docker compose -f docker-compose.yml down --remove-orphans
 	@echo "2. Removendo containers fantasmas..."
 	-docker ps -aq | grep "ai_agent" | xargs -r docker rm -f
 	@echo "3. Subindo ambiente novamente com build..."
-	docker compose up -d --build --force-recreate
+	docker compose -f docker-compose.yml up -d --build --force-recreate
 	@echo "✅ Manutenção concluída!"
 
 queue-test:
