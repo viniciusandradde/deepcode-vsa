@@ -3,6 +3,7 @@
 	up-prod down-prod build-prod up-build-prod \
 	status logs-backend logs-frontend logs-postgres logs-worker logs-flower logs-minio logs-minio-prod \
 	restart-backend restart-frontend restart-postgres restart-worker restart-minio restart-minio-prod \
+	models-validate models-print models-rebuild-frontend models-rebuild-frontend-prod models-refresh-prod models-refresh-dev \
 	cleanup-checkpoints cleanup-checkpoints-dry-run health clean-frontend-cache maintenance queue-test
 
 help:
@@ -28,6 +29,12 @@ help:
 	@echo "  make down-prod     - Para containers usando docker-compose.prod.yml"
 	@echo "  make build-prod    - Build de containers usando docker-compose.prod.yml"
 	@echo "  make up-build-prod - Build e inicia containers usando docker-compose.prod.yml"
+	@echo "  make models-validate - Valida models.yaml via container frontend"
+	@echo "  make models-print  - Mostra modelos carregados (http://localhost:3000/api/models)"
+	@echo "  make models-rebuild-frontend - Rebuild e reinicia frontend (dev)"
+	@echo "  make models-rebuild-frontend-prod - Rebuild e recria frontend (prod)"
+	@echo "  make models-refresh-prod - Rebuild prod + instrucoes para limpar cache PWA"
+	@echo "  make models-refresh-dev - Rebuild dev + instrucoes para limpar cache PWA"
 	@echo ""
 	@echo "Desenvolvimento:"
 	@echo "  make dev           - Inicia servidor de desenvolvimento (API)"
@@ -228,6 +235,45 @@ setup-planning-db:
 setup-files-db:
 	@echo "Aplicando schema de arquivos (uploads/attachments)..."
 	./scripts/setup-files-schema.sh
+
+models-validate:
+	@echo "Validando models.yaml via container frontend..."
+	docker compose run --rm frontend node -e "const fs=require('fs');const yaml=require('js-yaml');const data=yaml.load(fs.readFileSync('/app/models.yaml','utf8'));if(!data||!Array.isArray(data.models))throw new Error('models.yaml invalido');console.log('OK - modelos:', data.models.length);"
+
+models-print:
+	@echo "Modelos carregados pela API local (/api/models):"
+	@echo "Se estiver em producao, use o dominio publico em vez de localhost."
+	curl -s http://localhost:3000/api/models | sed 's/{/\n{/g'
+
+models-rebuild-frontend:
+	@echo "Rebuild e reinicio do frontend (dev)..."
+	docker compose build --no-cache frontend
+	docker compose up -d --force-recreate frontend
+
+models-rebuild-frontend-prod:
+	@echo "Rebuild e recriacao do frontend (prod)..."
+	docker compose -f docker-compose.prod.yml build --no-cache frontend
+	docker compose -f docker-compose.prod.yml up -d --force-recreate frontend
+
+models-refresh-prod:
+	@echo "Rebuild do frontend (prod) + cache PWA..."
+	docker compose -f docker-compose.prod.yml build --no-cache frontend
+	docker compose -f docker-compose.prod.yml up -d --force-recreate frontend
+	@echo "" 
+	@echo "PWA: se o modelo novo nao aparecer, limpe o cache do Service Worker:"
+	@echo "1) DevTools > Application > Service Workers > Unregister"
+	@echo "2) DevTools > Application > Clear storage > Clear site data"
+	@echo "3) Recarregar em aba anonima"
+
+models-refresh-dev:
+	@echo "Rebuild do frontend (dev) + cache PWA..."
+	docker compose -f docker-compose.yml build --no-cache frontend
+	docker compose -f docker-compose.yml up -d --force-recreate frontend
+	@echo "" 
+	@echo "PWA: se o modelo novo nao aparecer, limpe o cache do Service Worker:"
+	@echo "1) DevTools > Application > Service Workers > Unregister"
+	@echo "2) DevTools > Application > Clear storage > Clear site data"
+	@echo "3) Recarregar em aba anonima"
 
 maintenance:
 	@echo "🚑 Iniciando manutenção profunda (reset do Docker)..."

@@ -21,28 +21,26 @@
 # Modelos disponíveis:
 models:
   # --- Tier VSA (core/config.py) ---
-  # fast_model: classificação, GUT
-  
+  # fast_model: classificacao, GUT
 
   # smart_model: RCA, planejamento
-  
 
-  # premium_model: fallback, tarefas críticas
-  # Modelo premium principal
+  # premium_model: fallback, tarefas criticas
+  # Categoria: premium | Uso: fallback e tarefas criticas
   - id: anthropic/claude-3.5-sonnet
     label: Claude 3.5 Sonnet (premium)
     input_cost: 3.00
     output_cost: 15.00
 
-  # creative_model: relatórios, resumos
-  # Modelo criativo para relatórios
+  # creative_model: relatorios, resumos
+  # Categoria: creative | Uso: relatorios e resumos
   - id: minimax/minimax-m2-her
     label: MiniMax M2 Her (creative)
     input_cost: 0.26
     output_cost: 1.02
 
   # --- Top 3 Free (para teste) ---
-  # Modelo gratuito principal
+  # Categoria: free | Uso: testes e baixo custo
   - id: z-ai/glm-4.5-air:free
     label: GLM 4.5 Air (free)
     input_cost: 0.00
@@ -50,25 +48,25 @@ models:
     default: true
 
   # --- Outros ---
-  # Modelo leve e rapido
+  # Categoria: fast | Uso: resposta rapida
   - id: google/gemini-2.5-flash
     label: Gemini 2.5 Flash
     input_cost: 0.30
     output_cost: 2.50
 
-  # Modelo vision para imagens
+  # Categoria: vision | Uso: analise de imagens
   - id: qwen/qwen-2.5-vl-7b-instruct
     label: Qwen 2.5 VL 7B (vision)
     input_cost: 0.00
     output_cost: 0.00
 
-  # Roteamento automatico do OpenRouter
+  # Categoria: router | Uso: roteamento automatico
   - id: openrouter/auto
     label: Auto Router
     input_cost: 0.00
     output_cost: 0.00
 
-  # Modelo rapido alternativo
+  # Categoria: fast | Uso: alternativo
   - id: z-ai/glm-4.7-flash
     label: GLM 4.7 Flash
     input_cost: 0.07
