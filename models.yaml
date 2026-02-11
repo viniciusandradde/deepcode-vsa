@@ -25,24 +25,24 @@ models:
   
 
   # smart_model: RCA, planejamento
-  - id: deepseek/deepseek-chat
-    label: DeepSeek Chat (smart)
-    input_cost: 0.14
-    output_cost: 0.28
+  
 
   # premium_model: fallback, tarefas críticas
+  # Modelo premium principal
   - id: anthropic/claude-3.5-sonnet
     label: Claude 3.5 Sonnet (premium)
     input_cost: 3.00
     output_cost: 15.00
 
   # creative_model: relatórios, resumos
+  # Modelo criativo para relatórios
   - id: minimax/minimax-m2-her
     label: MiniMax M2 Her (creative)
     input_cost: 0.26
     output_cost: 1.02
 
   # --- Top 3 Free (para teste) ---
+  # Modelo gratuito principal
   - id: z-ai/glm-4.5-air:free
     label: GLM 4.5 Air (free)
     input_cost: 0.00
@@ -50,27 +50,30 @@ models:
     default: true
 
   # --- Outros ---
+  # Modelo leve e rapido
   - id: google/gemini-2.5-flash
     label: Gemini 2.5 Flash
     input_cost: 0.30
     output_cost: 2.50
 
+  # Modelo vision para imagens
+  - id: qwen/qwen-2.5-vl-7b-instruct
+    label: Qwen 2.5 VL 7B (vision)
+    input_cost: 0.00
+    output_cost: 0.00
+
+  # Roteamento automatico do OpenRouter
   - id: openrouter/auto
     label: Auto Router
     input_cost: 0.00
     output_cost: 0.00
 
+  # Modelo rapido alternativo
   - id: z-ai/glm-4.7-flash
     label: GLM 4.7 Flash
     input_cost: 0.07
     output_cost: 0.40
 
-  - id: deepseek/deepseek-v3
-    label: DeepSeek V3
-    input_cost: 0.28
-    output_cost: 0.40
 
-  - id: liquid/lfm-2.5-1.2b-thinking:free
-    label: Liquid LFM 1.2B (Free)
-    input_cost: 0.00
-    output_cost: 0.00
+
+  

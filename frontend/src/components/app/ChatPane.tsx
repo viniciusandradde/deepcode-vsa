@@ -6,6 +6,7 @@ import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { useGenesisUI } from "@/state/useGenesisUI";
 import { Logo } from "./Logo";
 import { MessageInput } from "./MessageInput";
+import type { FileAttachment } from "@/state/types";
 import { MessageItem } from "./MessageItem";
 import { SuggestionChips } from "./SuggestionChips";
 import { ArtifactPanel } from "./ArtifactPanel";
@@ -88,9 +89,13 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
     }
   }, [isSending, messages.length]);
 
-  const handleMessageSubmit = useCallback(
-    async (message: string, streaming: boolean, attachments = []) => {
-      await sendMessage(message, streaming, attachments);
+  const handleMessageSubmit: (
+    message: string,
+    streaming: boolean,
+    attachments?: FileAttachment[]
+  ) => Promise<void> = useCallback(
+    async (message, streaming, attachments) => {
+      await sendMessage(message, streaming, attachments ?? []);
     },
     [sendMessage]
   );

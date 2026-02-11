@@ -1,7 +1,8 @@
-.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db setup-planning-db \
+.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db setup-planning-db setup-files-db \
 	build build-backend build-frontend rebuild rebuild-all up down up-build \
-	status logs-backend logs-frontend logs-postgres logs-worker logs-flower \
-	restart-backend restart-frontend restart-postgres restart-worker \
+	up-prod down-prod build-prod up-build-prod \
+	status logs-backend logs-frontend logs-postgres logs-worker logs-flower logs-minio logs-minio-prod \
+	restart-backend restart-frontend restart-postgres restart-worker restart-minio restart-minio-prod \
 	cleanup-checkpoints cleanup-checkpoints-dry-run health clean-frontend-cache maintenance queue-test
 
 help:
@@ -12,6 +13,7 @@ help:
 	@echo "  make install-frontend - Instala dependências do frontend (pnpm)"
 	@echo "  make setup-db      - Configura banco de dados (executa scripts SQL)"
 	@echo "  make setup-planning-db - Aplica schema de planning (projetos/etapas/orcamento)"
+	@echo "  make setup-files-db - Aplica schema de arquivos (uploads/attachments)"
 	@echo ""
 	@echo "Build:"
 	@echo "  make build         - Build de todos os containers (backend + frontend)"
@@ -22,6 +24,10 @@ help:
 	@echo "  make up            - Inicia todos os containers Docker"
 	@echo "  make down          - Para todos os containers Docker"
 	@echo "  make up-build      - Build e inicia todos os containers"
+	@echo "  make up-prod       - Inicia containers usando docker-compose.prod.yml"
+	@echo "  make down-prod     - Para containers usando docker-compose.prod.yml"
+	@echo "  make build-prod    - Build de containers usando docker-compose.prod.yml"
+	@echo "  make up-build-prod - Build e inicia containers usando docker-compose.prod.yml"
 	@echo ""
 	@echo "Desenvolvimento:"
 	@echo "  make dev           - Inicia servidor de desenvolvimento (API)"
@@ -38,10 +44,14 @@ help:
 	@echo "  make logs-postgres - Mostra logs recentes do Postgres"
 	@echo "  make logs-worker   - Mostra logs do Celery Worker"
 	@echo "  make logs-flower   - Mostra logs do Flower (Monitor)"
+	@echo "  make logs-minio    - Mostra logs do MinIO"
+	@echo "  make logs-minio-prod - Mostra logs do MinIO (prod)"
 	@echo "  make restart-backend  - Reinicia o backend"
 	@echo "  make restart-frontend - Reinicia o frontend (limpa cache automaticamente)"
 	@echo "  make restart-postgres - Reinicia o Postgres"
 	@echo "  make restart-worker   - Reinicia o Celery Worker"
+	@echo "  make restart-minio    - Reinicia o MinIO"
+	@echo "  make restart-minio-prod - Reinicia o MinIO (prod)"
 	@echo "  make clean-frontend-cache - Limpa cache do Next.js (.next) no container"
 	@echo ""
 	@echo "Manutenção:"
@@ -104,6 +114,22 @@ up-build:
 	@echo "Building e iniciando todos os containers..."
 	docker compose up -d --build
 
+up-prod:
+	@echo "Iniciando containers (prod)..."
+	docker compose -f docker-compose.prod.yml up -d
+
+down-prod:
+	@echo "Parando containers (prod)..."
+	docker compose -f docker-compose.prod.yml down
+
+build-prod:
+	@echo "Building containers (prod)..."
+	docker compose -f docker-compose.prod.yml build
+
+up-build-prod:
+	@echo "Building e iniciando containers (prod)..."
+	docker compose -f docker-compose.prod.yml up -d --build
+
 studio:
 	cd backend && langgraph dev
 
@@ -142,6 +168,14 @@ logs-flower:
 	@echo "Logs do Flower:"
 	docker logs ai_agent_flower --tail 100 -f
 
+logs-minio:
+	@echo "Logs do MinIO (ai_agent_minio):"
+	docker logs ai_agent_minio --tail 100 -f
+
+logs-minio-prod:
+	@echo "Logs do MinIO (prod):"
+	docker logs ai_agent_minio --tail 100 -f
+
 restart-backend:
 	@echo "Reiniciando backend..."
 	docker compose restart backend
@@ -155,6 +189,10 @@ restart-worker:
 	@echo "Reiniciando Celery Worker..."
 	docker compose restart celery_worker
 
+restart-minio:
+	@echo "Reiniciando MinIO..."
+	docker compose restart minio
+
 clean-frontend-cache:
 	@echo "Limpando cache do Next.js (.next) no container frontend..."
 	docker exec ai_agent_frontend sh -c "rm -rf .next" || echo "Container não está rodando ou cache já limpo"
@@ -162,6 +200,10 @@ clean-frontend-cache:
 restart-postgres:
 	@echo "Reiniciando Postgres..."
 	docker compose restart postgres
+
+restart-minio-prod:
+	@echo "Reiniciando MinIO (prod)..."
+	docker compose -f docker-compose.prod.yml restart minio
 
 cleanup-checkpoints:
 	@echo "Limpando checkpoints antigos (180 dias) dentro do container backend..."
@@ -182,6 +224,10 @@ setup-planning-db:
 	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/06_rag_planning.sql
 	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/07_model_agnostic.sql
 	@echo "✅ Schema de planning e RAG (project_id) aplicados com sucesso!"
+
+setup-files-db:
+	@echo "Aplicando schema de arquivos (uploads/attachments)..."
+	./scripts/setup-files-schema.sh
 
 maintenance:
 	@echo "🚑 Iniciando manutenção profunda (reset do Docker)..."

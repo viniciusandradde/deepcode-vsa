@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+if [ -f ".env" ]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
 if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
   echo "DB_HOST, DB_NAME e DB_USER precisam estar definidos."
   exit 1
