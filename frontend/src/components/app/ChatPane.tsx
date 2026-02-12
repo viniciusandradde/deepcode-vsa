@@ -66,6 +66,7 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
   const virtuosoRef = useRef<VirtuosoHandle>(null);
 
   const [editingContent, setEditingContent] = useState("");
+  const [editingAttachments, setEditingAttachments] = useState<FileAttachment[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -268,28 +269,35 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
                     onEdit={() => {
                       setEditingMessageId(message.id);
                       setEditingContent(message.content);
+                      setEditingAttachments(message.attachments || []);
                     }}
                     onResend={() => resendMessage(message.id)}
                     onEditChange={setEditingContent}
                     onEditSave={() => {
                       if (editingContent.trim()) {
-                        editMessage(message.id, editingContent.trim());
+                        editMessage(message.id, editingContent.trim(), editingAttachments);
                         setEditingMessageId(null);
                         setEditingContent("");
+                        setEditingAttachments([]);
                       }
                     }}
                     onEditCancel={() => {
                       setEditingMessageId(null);
                       setEditingContent("");
+                      setEditingAttachments([]);
                     }}
                     onEditSaveAndResend={async () => {
                       if (editingContent.trim()) {
-                        editMessage(message.id, editingContent.trim());
+                        editMessage(message.id, editingContent.trim(), editingAttachments);
                         setEditingMessageId(null);
                         setEditingContent("");
-                        await resendMessage(message.id);
+                        const attachments = editingAttachments;
+                        setEditingAttachments([]);
+                        await sendMessage(editingContent.trim(), true, attachments);
                       }
                     }}
+                    editingAttachments={editingAttachments}
+                    onEditAttachmentsChange={setEditingAttachments}
                     onConfirmLinearProject={
                       enableLinear
                         ? () => handleMessageSubmit("Confirmar criação do projeto no Linear.", true)

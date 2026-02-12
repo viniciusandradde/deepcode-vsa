@@ -102,6 +102,15 @@ class DatabaseSettings(BaseSettings):
         safe_password = quote_plus(self.password)
         return f"postgresql://{safe_user}:{safe_password}@{self.host}:{self.port}/{self.database}"
 
+    @property
+    def connection_string_sqlalchemy(self) -> str:
+        """Get PostgreSQL connection string for SQLAlchemy (APScheduler compatibility).
+        
+        Returns the same as connection_string since both use postgresql:// dialect.
+        This method exists for explicit intent when used with SQLAlchemy/APScheduler.
+        """
+        return self.connection_string
+
 
 class Settings(BaseSettings):
     """Main application settings."""

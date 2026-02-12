@@ -72,7 +72,7 @@ export interface GenesisUIState {
   sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[]) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
-  editMessage: (messageId: string, newContent: string) => void;
+  editMessage: (messageId: string, newContent: string, attachments?: FileAttachment[]) => void;
   resendMessage: (messageId: string) => Promise<void>;
   cancelMessage: () => void;
   abortControllerRef: MutableRefObject<AbortController | null>;

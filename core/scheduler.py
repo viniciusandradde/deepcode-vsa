@@ -17,8 +17,8 @@ class SchedulerService:
     """Serviço de agendamento com persistência PostgreSQL usando AsyncIO."""
 
     def __init__(self):
-        # JobStore no PostgreSQL
-        jobstores = {"default": SQLAlchemyJobStore(url=settings.database.connection_string)}
+        # JobStore no PostgreSQL (usa dialect 'postgresql://' para SQLAlchemy)
+        jobstores = {"default": SQLAlchemyJobStore(url=settings.database.connection_string_sqlalchemy)}
 
         # Executors
         executors = {

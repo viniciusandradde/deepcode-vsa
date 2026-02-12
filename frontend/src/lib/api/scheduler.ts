@@ -3,7 +3,6 @@
  * Communicates with backend endpoints in api/routes/automation.py and api/routes/queue.py
  */
 
-import { clientApiBaseUrl } from '../config';
 import type {
     Schedule,
     ScheduleCreateRequest,
@@ -12,7 +11,9 @@ import type {
     TaskInfo,
 } from '@/types/automation';
 
-const API_BASE = `${clientApiBaseUrl}/api/v1`;
+// Use relative path to leverage Next.js rewrites (frontend/next.config.mjs)
+// This prevents URL duplication: /api/v1/api/v1/...
+const API_BASE = '/api/v1';
 
 /**
  * List all scheduled jobs

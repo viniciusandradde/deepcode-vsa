@@ -28,6 +28,7 @@ interface MessageItemProps {
   message: GenesisMessage;
   isEditing: boolean;
   editingContent: string;
+  editingAttachments?: GenesisMessage["attachments"];
   enableVSA: boolean;
   onEdit: () => void;
   onResend: () => void;
@@ -35,6 +36,7 @@ interface MessageItemProps {
   onEditSave: () => void;
   onEditCancel: () => void;
   onEditSaveAndResend: () => Promise<void>;
+  onEditAttachmentsChange?: (attachments: NonNullable<GenesisMessage["attachments"]>) => void;
   onConfirmLinearProject?: () => void;
   isSending: boolean;
   /** Artifacts linked to this message (resolved from artifactIds). */
@@ -51,6 +53,7 @@ export const MessageItem = memo(function MessageItem({
   message,
   isEditing,
   editingContent,
+  editingAttachments,
   enableVSA,
   onEdit,
   onResend,
@@ -58,6 +61,7 @@ export const MessageItem = memo(function MessageItem({
   onEditSave,
   onEditCancel,
   onEditSaveAndResend,
+  onEditAttachmentsChange,
   onConfirmLinearProject,
   isSending,
   artifacts,
@@ -68,6 +72,7 @@ export const MessageItem = memo(function MessageItem({
   const isError = message.content.startsWith("Erro:");
   const isUserMessage = message.role === "user";
   const attachments = message.attachments || [];
+  const activeEditingAttachments = editingAttachments || attachments;
 
   const [copied, setCopied] = useState(false);
 
@@ -157,6 +162,44 @@ export const MessageItem = memo(function MessageItem({
       )}
       {isEditing ? (
         <div className="space-y-2">
+          {activeEditingAttachments.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {activeEditingAttachments.map((att) => (
+                <div
+                  key={att.id}
+                  className="flex items-center gap-2 rounded-lg border border-white/10 bg-obsidian-800/60 px-3 py-2 text-xs text-neutral-300"
+                >
+                  {att.mime.startsWith("image/") ? (
+                    <img src={att.url} alt={att.name} className="h-8 w-8 rounded object-cover" />
+                  ) : (
+                    <span className="h-8 w-8 rounded bg-white/10 flex items-center justify-center text-[10px] text-neutral-400">
+                      DOC
+                    </span>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="max-w-[140px] truncate">{att.name}</span>
+                    <span className="text-[10px] text-neutral-500">
+                      {(att.size / 1024).toFixed(0)} KB
+                    </span>
+                  </div>
+                  {onEditAttachmentsChange && (
+                    <button
+                      type="button"
+                      className="ml-1 text-neutral-500 hover:text-white"
+                      onClick={() =>
+                        onEditAttachmentsChange(
+                          activeEditingAttachments.filter((item) => item.id !== att.id)
+                        )
+                      }
+                      aria-label="Remover anexo"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           <textarea
             value={editingContent}
             onChange={(e) => onEditChange(e.target.value)}

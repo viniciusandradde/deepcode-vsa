@@ -18,7 +18,7 @@ interface ChatState {
   sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[]) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
-  editMessage: (messageId: string, newContent: string) => void;
+  editMessage: (messageId: string, newContent: string, attachments?: FileAttachment[]) => void;
   resendMessage: (messageId: string) => Promise<void>;
   cancelMessage: () => void;
   clearSessionMessages: (sessionId: string) => void;
@@ -709,7 +709,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     [session.fetchSession],
   );
 
-  const editMessage = useCallback((messageId: string, newContent: string) => {
+  const editMessage = useCallback((messageId: string, newContent: string, attachments?: FileAttachment[]) => {
     setMessagesBySession((prev) => {
       const updated = { ...prev };
       for (const sessionId in updated) {
@@ -718,7 +718,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         if (index !== -1) {
           updated[sessionId] = messages.map((msg, i) =>
             i === index
-              ? { ...msg, content: newContent, editedAt: Date.now() }
+              ? {
+                  ...msg,
+                  content: newContent,
+                  editedAt: Date.now(),
+                  ...(attachments ? { attachments } : {}),
+                }
               : msg
           );
           storage.messages.save(sessionId, updated[sessionId]);
