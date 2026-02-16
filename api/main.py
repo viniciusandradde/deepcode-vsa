@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.middleware.auth import verify_api_key
 from api.routes import (
     agents,
+    agents_admin,
     auth,
     automation,
     chat,
@@ -132,6 +133,9 @@ app.include_router(
     projects.router, prefix="/api/v1/projects", tags=["projects"], dependencies=_api_deps
 )
 app.include_router(export.router, prefix="/api/v1/export", tags=["export"], dependencies=_api_deps)
+app.include_router(
+    agents_admin.router, prefix="/api/v1/admin", tags=["admin"], dependencies=_api_deps
+)
 
 
 @app.get("/")

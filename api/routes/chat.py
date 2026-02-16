@@ -13,24 +13,9 @@ from api.models.requests import ChatRequest
 from api.models.responses import ChatResponse
 from core.agents.simple import SimpleAgent
 from core.agents.unified import UnifiedAgent
-from core.tools.search import tavily_search
-from core.tools.images import image_search
+from core.agents.resolver import resolve, resolve_for_legacy, ResolvedAgent
 from core.checkpointing import get_async_checkpointer
 from core.files.service import extract_text_from_file, generate_signed_url
-
-# Integration tools (Task 1.1)
-from core.tools.glpi import glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket
-from core.tools.zabbix import zabbix_get_alerts, zabbix_get_host
-from core.tools.linear import (
-    linear_get_issues,
-    linear_get_issue,
-    linear_create_issue,
-    linear_get_teams,
-    linear_create_project,
-    linear_create_full_project,
-)
-from core.tools.planning import PLANNING_TOOLS
-from core.tools.planning_rag import search_project_knowledge
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -349,6 +334,7 @@ O relatório **Atendimentos por Centro de Custo ({start_date} a {end_date})** po
 
 def _fetch_project_context(query: str, project_id: str) -> str | None:
     try:
+        from core.tools.planning_rag import search_project_knowledge
         return search_project_knowledge.invoke(
             {
                 "query": query,
@@ -421,6 +407,36 @@ def get_system_prompt(enable_vsa: bool, include_examples: bool = False) -> str:
     return suffix
 
 
+def _resolve_tools_and_prompt(request: ChatRequest) -> ResolvedAgent:
+    """Resolve tools and system prompt from agent_id or legacy flags.
+
+    When agent_id is provided, resolves from DB.
+    Otherwise, falls back to legacy per-flag resolution.
+    """
+    if request.agent_id:
+        try:
+            resolved = resolve(request.agent_id)
+            logger.info(
+                "🔧 [RESOLVER] agent_id=%s -> %d tools, type=%s",
+                request.agent_id, len(resolved.tools), resolved.agent_type,
+            )
+            return resolved
+        except Exception as e:
+            logger.warning("Agent resolve failed for %s: %s, falling back to legacy", request.agent_id, e)
+
+    resolved = resolve_for_legacy(
+        use_tavily=bool(request.use_tavily),
+        enable_glpi=request.enable_glpi,
+        enable_zabbix=request.enable_zabbix,
+        enable_linear=request.enable_linear,
+        enable_planning=request.enable_planning,
+        enable_vsa=request.enable_vsa,
+        project_id=request.project_id,
+    )
+    logger.info("🔧 [RESOLVER/LEGACY] %d tools, type=%s", len(resolved.tools), resolved.agent_type)
+    return resolved
+
+
 @router.post("", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Chat endpoint - synchronous."""
@@ -444,59 +460,23 @@ async def chat(request: ChatRequest):
             logger.warning("⚠️ Report generation failed, falling back to LLM")
 
         # === LLM PATH: Use agent for complex/unknown intents ===
-        # Get checkpointer (initialized via lifespan)
         checkpointer = get_async_checkpointer()
 
-        # Create agent with tools (Task 1.1 - Dynamic tools)
-        tools = []
-        if request.use_tavily:
-            tools.append(tavily_search)
-        if os.getenv("TAVILY_API_KEY"):
-            tools.append(image_search)
-
-        # GLPI tools (Task 1.2)
-        if request.enable_glpi:
-            tools.extend([glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket])
-            logger.info("✅ GLPI tools enabled")
-
-        # Zabbix tools (Task 1.3)
-        if request.enable_zabbix:
-            tools.extend([zabbix_get_alerts, zabbix_get_host])
-            logger.info("✅ Zabbix tools enabled")
-
-        # Linear tools
-        if request.enable_linear:
-            tools.extend(
-                [
-                    linear_get_issues,
-                    linear_get_issue,
-                    linear_create_issue,
-                    linear_get_teams,
-                    linear_create_project,
-                    linear_create_full_project,
-                ]
-            )
-            logger.info("✅ Linear tools enabled")
-
-        # Planning tools
-        if request.enable_planning:
-            tools.extend(PLANNING_TOOLS)
-            logger.info("✅ Planning tools enabled")
-
-        # DeepCode Projects: RAG scoped to project
-        if request.project_id:
-            tools.append(search_project_knowledge)
-            logger.info("✅ Project RAG enabled (project_id=%s)", request.project_id)
+        # Resolve tools and prompt from agent_id or legacy flags
+        resolved = _resolve_tools_and_prompt(request)
+        tools = resolved.tools
 
         has_tools = bool(tools)
         has_images = bool(request.attachments) and any(
             (att.mime or "").startswith("image/") for att in request.attachments
         )
-        model_name = _resolve_model_for_request(request, has_tools)
+        model_name = resolved.model_name or _resolve_model_for_request(request, has_tools)
         if has_images and not request.model:
             model_name = _resolve_vision_model()
 
-        system_prompt = get_system_prompt(request.enable_vsa)
+        # System prompt: use resolved prompt or fall back to VSA prompt
+        enable_vsa = resolved.agent_type in ("unified", "vsa") or request.enable_vsa
+        system_prompt = resolved.system_prompt or get_system_prompt(enable_vsa)
         if request.project_id:
             system_prompt += (
                 f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
@@ -506,15 +486,15 @@ async def chat(request: ChatRequest):
             if project_context:
                 system_prompt += f"\n\nCONTEXTO RECUPERADO DO PROJETO:\n{project_context}"
 
-        # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
-        if request.enable_vsa:
+        # Select agent based on resolved type
+        if enable_vsa:
             agent = UnifiedAgent(
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
                 system_prompt=system_prompt,
-                enable_itil=False,
-                enable_planning=False,
+                enable_itil=resolved.enable_itil,
+                enable_planning=resolved.enable_planning,
                 fast_model_name=_resolve_fast_model(),
             )
             logger.info("🤖 Using UnifiedAgent (ITIL mode)")
@@ -624,59 +604,23 @@ async def stream_chat(request: ChatRequest):
 
     # === LLM PATH: Use agent for complex/unknown intents ===
     try:
-        # Get checkpointer (initialized via lifespan)
         checkpointer = get_async_checkpointer()
 
-        # Create agent with tools (Task 1.1 - Dynamic tools)
-        tools = []
-        if request.use_tavily:
-            tools.append(tavily_search)
-        if os.getenv("TAVILY_API_KEY"):
-            tools.append(image_search)
-
-        # GLPI tools (Task 1.2)
-        if request.enable_glpi:
-            tools.extend([glpi_get_tickets, glpi_get_ticket_details, glpi_create_ticket])
-            logger.info("✅ GLPI tools enabled (stream)")
-
-        # Zabbix tools (Task 1.3)
-        if request.enable_zabbix:
-            tools.extend([zabbix_get_alerts, zabbix_get_host])
-            logger.info("✅ Zabbix tools enabled (stream)")
-
-        # Linear tools
-        if request.enable_linear:
-            tools.extend(
-                [
-                    linear_get_issues,
-                    linear_get_issue,
-                    linear_create_issue,
-                    linear_get_teams,
-                    linear_create_project,
-                    linear_create_full_project,
-                ]
-            )
-            logger.info("✅ Linear tools enabled (stream)")
-
-        # Planning tools
-        if request.enable_planning:
-            tools.extend(PLANNING_TOOLS)
-            logger.info("✅ Planning tools enabled (stream)")
-
-        # DeepCode Projects: RAG scoped to project
-        if request.project_id:
-            tools.append(search_project_knowledge)
-            logger.info("✅ Project RAG enabled (project_id=%s) [stream]", request.project_id)
+        # Resolve tools and prompt from agent_id or legacy flags
+        resolved = _resolve_tools_and_prompt(request)
+        tools = resolved.tools
 
         has_tools = bool(tools)
         has_images = bool(request.attachments) and any(
             (att.mime or "").startswith("image/") for att in request.attachments
         )
-        model_name = _resolve_model_for_request(request, has_tools)
+        model_name = resolved.model_name or _resolve_model_for_request(request, has_tools)
         if has_images and not request.model:
             model_name = _resolve_vision_model()
 
-        system_prompt = get_system_prompt(request.enable_vsa)
+        # System prompt: use resolved prompt or fall back to VSA prompt
+        enable_vsa = resolved.agent_type in ("unified", "vsa") or request.enable_vsa
+        system_prompt = resolved.system_prompt or get_system_prompt(enable_vsa)
         if request.project_id:
             system_prompt += (
                 f"\n\nCONTEXTO ATIVO: Você está no projeto {request.project_id}. "
@@ -686,15 +630,15 @@ async def stream_chat(request: ChatRequest):
             if project_context:
                 system_prompt += f"\n\nCONTEXTO RECUPERADO DO PROJETO:\n{project_context}"
 
-        # Select agent based on VSA mode (Task 1.13: UnifiedAgent)
-        if request.enable_vsa:
+        # Select agent based on resolved type
+        if enable_vsa:
             agent = UnifiedAgent(
                 model_name=model_name,
                 tools=tools,
                 checkpointer=checkpointer,
                 system_prompt=system_prompt,
-                enable_itil=False,
-                enable_planning=False,
+                enable_itil=resolved.enable_itil,
+                enable_planning=resolved.enable_planning,
                 fast_model_name=_resolve_fast_model(),
             )
             logger.info("🤖 Using UnifiedAgent (ITIL mode) [stream]")

@@ -88,7 +88,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const sendMessage = useCallback(
     async (content: string, useStreaming: boolean = true, attachments: FileAttachment[] = []) => {
       // Read fresh values from refs to avoid stale closures
-      const { selectedModelId, useTavily, enableVSA, enableGLPI, enableZabbix, enableLinear, enablePlanning } = configRef.current;
+      const { selectedModelId, useTavily, enableVSA, enableGLPI, enableZabbix, enableLinear, enablePlanning, selectedAgentId } = configRef.current;
       const { currentSessionId, sessions, createSession, setSessions } = sessionRef.current;
 
       let threadId = currentSessionId;
@@ -173,6 +173,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             model: selectedModelId,
             useTavily,
             thread_id: threadId,
+            agent_id: selectedAgentId || undefined,
             enable_vsa: enableVSA,
             enable_glpi: enableGLPI,
             enable_zabbix: enableZabbix,
@@ -595,6 +596,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             content,
             model: selectedModelId,
             useTavily,
+            agent_id: selectedAgentId || undefined,
             enable_vsa: enableVSA,
             enable_glpi: enableGLPI,
             enable_zabbix: enableZabbix,

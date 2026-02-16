@@ -2,7 +2,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -23,6 +23,9 @@ router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
+# Default org ID for users without org assignment
+DEFAULT_ORG_ID = "00000000-0000-0000-0000-000000000001"
+
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
     """Dependency to get the currently authenticated user."""
@@ -34,18 +37,41 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
     payload = decode_access_token(token)
     if payload is None:
         raise credentials_exception
-    
+
     username: str = payload.get("sub")
     if username is None:
         raise credentials_exception
-    
+
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute("SELECT * FROM users WHERE username = %s", (username,))
             user_data = cur.fetchone()
             if user_data is None:
                 raise credentials_exception
+            # Backward compat: default org and role if not set
+            if user_data.get("org_id") is None:
+                user_data["org_id"] = DEFAULT_ORG_ID
+            if not user_data.get("role"):
+                user_data["role"] = "user"
             return User(**user_data)
+
+
+def require_role(*allowed_roles: str) -> Callable:
+    """Factory that returns a dependency checking user role.
+
+    Usage:
+        @router.get("/admin", dependencies=[Depends(require_role("admin", "manager"))])
+    """
+    async def _check_role(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role '{current_user.role}' not authorized. Required: {', '.join(allowed_roles)}",
+            )
+        return current_user
+    return _check_role
 
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)

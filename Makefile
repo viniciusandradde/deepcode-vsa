@@ -1,4 +1,4 @@
-.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db setup-planning-db setup-files-db \
+.PHONY: help install install-frontend dev api studio frontend test test-integrations test-linear-project setup-db setup-planning-db setup-agents-db setup-files-db \
 	build build-backend build-frontend rebuild rebuild-all up down up-build \
 	up-prod down-prod build-prod up-build-prod \
 	status status-prod logs-backend logs-frontend logs-postgres logs-worker logs-flower logs-minio logs-minio-prod \
@@ -263,6 +263,11 @@ setup-planning-db:
 	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/06_rag_planning.sql
 	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/07_model_agnostic.sql
 	@echo "✅ Schema de planning e RAG (project_id) aplicados com sucesso!"
+
+setup-agents-db:
+	@echo "Aplicando schema multi-agente (organizações, agentes, conectores, habilidades, domínios)..."
+	docker exec -i ai_agent_postgres psql -U postgres -d ai_agent_db < sql/kb/12_multi_agent_schema.sql
+	@echo "✅ Schema multi-agente aplicado com sucesso!"
 
 setup-files-db:
 	@echo "Aplicando schema de arquivos (uploads/attachments)..."

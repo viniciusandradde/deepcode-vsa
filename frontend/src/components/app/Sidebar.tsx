@@ -28,6 +28,9 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
     setSelectedModelId,
     useTavily,
     setUseTavily,
+    agents,
+    selectedAgentId,
+    setSelectedAgentId,
     sessions,
     currentSessionId,
     selectSession,
@@ -209,8 +212,33 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
                   Agendamento
                   <span className="text-[10px] uppercase text-neutral-500">Automacao</span>
                 </Link>
+                <Link
+                  href="/admin"
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-obsidian-800 px-3 py-2 text-sm text-neutral-200 hover:border-brand-primary/30 hover:bg-white/5 transition-colors"
+                >
+                  Admin
+                  <span className="text-[10px] uppercase text-neutral-500">Agentes</span>
+                </Link>
               </div>
             </section>
+            {agents.length > 0 && (
+              <section className="space-y-3">
+                <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Agente</header>
+                <Select
+                  value={selectedAgentId}
+                  onChange={setSelectedAgentId}
+                  options={agents.map((agent) => ({
+                    value: agent.id,
+                    label: `${agent.name}${agent.isDefault ? " ⭐" : ""}`,
+                    description: agent.description || `${agent.connectorCount} conectores, ${agent.skillCount} habilidades`,
+                  }))}
+                  placeholder="Selecione um agente..."
+                  className="w-full"
+                />
+              </section>
+            )}
+
             <section className="space-y-3">
               <header className="text-xs uppercase tracking-[0.35em] text-neutral-500">Seleção de Modelo</header>
               {isLoading ? (

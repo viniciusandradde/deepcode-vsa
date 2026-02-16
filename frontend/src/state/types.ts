@@ -44,6 +44,18 @@ export interface TranslatedError {
   isRecoverable: boolean;
 }
 
+export interface AgentOption {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  avatar?: string;
+  agentType: string;
+  isDefault: boolean;
+  connectorCount: number;
+  skillCount: number;
+}
+
 export interface GenesisUIState {
   isLoading: boolean;
   isSending: boolean;
@@ -62,6 +74,10 @@ export interface GenesisUIState {
   setEnableLinear: (value: boolean) => void;
   enablePlanning: boolean;
   setEnablePlanning: (value: boolean) => void;
+  // Multi-agent support
+  agents: AgentOption[];
+  selectedAgentId: string;
+  setSelectedAgentId: (id: string) => void;
   sessions: GenesisSession[];
   currentSessionId: string;
   createSession: () => Promise<string | undefined>;

@@ -4,6 +4,18 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useLocalStorageState } from "./use-local-storage-state";
 import type { ModelOption } from "./types";
 
+export interface AgentOption {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  avatar?: string;
+  agentType: string;
+  isDefault: boolean;
+  connectorCount: number;
+  skillCount: number;
+}
+
 interface ConfigState {
   models: ModelOption[];
   selectedModelId: string;
@@ -20,6 +32,10 @@ interface ConfigState {
   setEnableLinear: (value: boolean) => void;
   enablePlanning: boolean;
   setEnablePlanning: (value: boolean) => void;
+  // Multi-agent support
+  agents: AgentOption[];
+  selectedAgentId: string;
+  setSelectedAgentId: (id: string) => void;
 }
 
 const ConfigContext = createContext<ConfigState | null>(null);
@@ -33,6 +49,10 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [enableZabbix, setEnableZabbix] = useLocalStorageState('vsa_enableZabbix', false);
   const [enableLinear, setEnableLinear] = useLocalStorageState('vsa_enableLinear', false);
   const [enablePlanning, setEnablePlanning] = useLocalStorageState('vsa_enablePlanning', false);
+
+  // Multi-agent state
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useLocalStorageState<string>('vsa_selectedAgentId', '');
 
   useEffect(() => {
     async function loadModels() {
@@ -59,6 +79,40 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     loadModels();
   }, []);
 
+  // Load agents from API
+  useEffect(() => {
+    async function loadAgents() {
+      try {
+        const res = await fetch("/api/v1/admin/agents", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const mapped: AgentOption[] = (data ?? []).map((agent: any) => ({
+          id: agent.id,
+          slug: agent.slug,
+          name: agent.name,
+          description: agent.description,
+          avatar: agent.avatar,
+          agentType: agent.agent_type,
+          isDefault: agent.is_default,
+          connectorCount: agent.connector_count ?? 0,
+          skillCount: agent.skill_count ?? 0,
+        }));
+        setAgents(mapped);
+        // Auto-select default agent if none selected
+        if (!selectedAgentId) {
+          const defaultAgent = mapped.find(a => a.isDefault) ?? mapped[0];
+          if (defaultAgent) {
+            setSelectedAgentId(defaultAgent.id);
+          }
+        }
+      } catch (error) {
+        // Agents API not available yet (schema not applied) - silently ignore
+        console.debug("Agents API not available:", error);
+      }
+    }
+    loadAgents();
+  }, []);
+
   const value = useMemo<ConfigState>(
     () => ({
       models,
@@ -76,6 +130,9 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       setEnableLinear,
       enablePlanning,
       setEnablePlanning,
+      agents,
+      selectedAgentId,
+      setSelectedAgentId,
     }),
     [
       models,
@@ -92,6 +149,9 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       setEnableLinear,
       enablePlanning,
       setEnablePlanning,
+      agents,
+      selectedAgentId,
+      setSelectedAgentId,
     ],
   );
 

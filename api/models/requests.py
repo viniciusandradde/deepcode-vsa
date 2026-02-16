@@ -25,7 +25,10 @@ class ChatRequest(BaseModel):
     project_id: Optional[str] = None  # DeepCode Projects: RAG scoped to this project
     attachments: Optional[List[AttachmentRef]] = None
 
-    # VSA-specific fields (Task 1.1)
+    # Multi-agent: when provided, resolves tools/prompt from DB agent definition
+    agent_id: Optional[str] = None
+
+    # Legacy VSA-specific fields (used when agent_id is not provided)
     enable_vsa: bool = False
     enable_glpi: bool = False
     enable_zabbix: bool = False

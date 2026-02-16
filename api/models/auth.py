@@ -2,6 +2,8 @@
 
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -19,6 +21,9 @@ class UserCreate(UserBase):
 class User(UserBase):
     """User in database."""
     id: int
+    org_id: Optional[UUID] = None
+    role: str = "user"
+    display_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
