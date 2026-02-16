@@ -40,6 +40,8 @@ Thumbs.db
 logs/
 
 # Generated test/temp files
+*.png
+*.html
 test_report.xlsx
 trace_output.json
 tmp_*.md
