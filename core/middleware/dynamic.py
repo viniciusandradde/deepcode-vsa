@@ -75,6 +75,51 @@ def strip_settings_messages(messages):
     return cleaned
 
 
+def sanitize_image_messages(messages):
+    """Replace image_url blocks with text placeholders in historical HumanMessages.
+
+    Preserves the LAST HumanMessage intact (current request may have images
+    for a vision model). All previous HumanMessages with image_url blocks
+    get a text placeholder instead. In-memory only — checkpointer is not affected.
+    """
+    if not messages:
+        return messages
+
+    from langchain_core.messages import HumanMessage
+
+    # Find index of last HumanMessage
+    last_human_idx = -1
+    for i in range(len(messages) - 1, -1, -1):
+        if isinstance(messages[i], HumanMessage):
+            last_human_idx = i
+            break
+
+    result = []
+    for i, msg in enumerate(messages):
+        if isinstance(msg, HumanMessage) and i != last_human_idx:
+            content = msg.content
+            if isinstance(content, list):
+                new_blocks = []
+                img_count = 0
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "image_url":
+                        img_count += 1
+                    else:
+                        new_blocks.append(block)
+                if img_count > 0:
+                    new_blocks.append({
+                        "type": "text",
+                        "text": f"[{img_count} imagem(ns) enviada(s) anteriormente]",
+                    })
+                    msg = HumanMessage(
+                        content=new_blocks,
+                        id=getattr(msg, "id", None),
+                    )
+        result.append(msg)
+
+    return result
+
+
 def resolve_settings(messages, runtime) -> tuple[Optional[str], dict]:
     """Resolve model_name and tool settings from all sources.
     
@@ -159,7 +204,8 @@ class DynamicSettingsMiddleware(AgentMiddleware):
         # Clean messages
         messages = getattr(request, "messages", None) or []
         cleaned = strip_settings_messages(messages)
-        
+        cleaned = sanitize_image_messages(cleaned)
+
         # Create new model if specified
         new_model = getattr(request, "model", None)
         try:

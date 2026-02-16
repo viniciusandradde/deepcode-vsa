@@ -4,15 +4,21 @@ import withPWA from "next-pwa";
 const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
-  allowedDevOrigins: [
-    process.env.ALLOWED_DEV_ORIGIN || "localhost",
-  ].filter(Boolean),
   experimental: {
+    allowedDevOrigins: [
+      "localhost:3000",
+      "localhost:3001",
+      "agente-ai.hospitalevangelico.com.br",
+      "https://agente-ai.hospitalevangelico.com.br",
+      "http://agente-ai.hospitalevangelico.com.br",
+    ],
     serverActions: {
       allowedOrigins: [
-        "localhost",
-        process.env.ALLOWED_DEV_ORIGIN || "",
-      ].filter(Boolean),
+        "localhost:3000",
+        "localhost:3001",
+        "agente-ai.hospitalevangelico.com.br",
+        "https://agente-ai.hospitalevangelico.com.br",
+      ],
     },
   },
   // Security headers
@@ -42,8 +48,15 @@ const nextConfig = {
   // Desabilitar cache em desenvolvimento para evitar problemas de modulos ausentes
   ...(process.env.NODE_ENV === "development" && {
     webpack: (config, { dev, isServer }) => {
-      if (dev) {
+      if (dev && !isServer) {
         config.cache = false;
+        // Fix HMR WebSocket connection issues when behind a proxy
+        if (config.devServer) {
+          config.devServer.client = {
+            ...config.devServer.client,
+            webSocketURL: "wss://agente-ai.hospitalevangelico.com.br/_next/webpack-hmr",
+          };
+        }
       }
       return config;
     },

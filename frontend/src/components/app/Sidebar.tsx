@@ -11,6 +11,8 @@ import { SettingsPanel } from "./SettingsPanel";
 import { Logo } from "./Logo";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { SkeletonSessionCard } from "@/components/ui/skeleton";
+import { useAuth } from "@/state/auth-context";
+import { LogOut } from "lucide-react";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -34,6 +36,8 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
     renameSession,
     messagesBySession,
   } = useGenesisUI();
+
+  const { logout, user } = useAuth();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
@@ -154,9 +158,34 @@ export function Sidebar({ collapsed = false, open = false, onClose }: SidebarPro
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}>
         {!collapsed ? (
-          <Logo size="sm" showText />
+          <div className="flex items-center justify-between relative z-50">
+            <Logo size="sm" showText />
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                logout();
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-neutral-400 hover:text-red-400 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full transition-all group cursor-pointer"
+              title="Sair do sistema"
+            >
+              <LogOut className="w-3.5 h-3.5 group-hover:text-red-400 transition-colors" />
+              <span>Sair</span>
+            </button>
+          </div>
         ) : (
-          <Logo size="sm" showText={false} />
+          <div className="flex flex-col items-center gap-6 relative z-50">
+            <Logo size="sm" showText={false} />
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                logout();
+              }}
+              className="p-2 text-neutral-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all group cursor-pointer"
+              title="Sair"
+            >
+              <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform group-hover:text-red-400" />
+            </button>
+          </div>
         )}
 
         {!collapsed ? (

@@ -61,6 +61,7 @@ export function Logo({ size = "md", className, showText = true }: LogoProps) {
           className="object-contain"
           onError={() => setImageError(true)}
           priority
+          unoptimized
         />
       </div>
       {showText && (

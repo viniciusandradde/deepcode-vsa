@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { storage } from "@/lib/storage";
+import { apiClient } from "@/lib/api-client";
 import type { GenesisSession } from "./types";
 
 interface SessionState {
@@ -26,7 +27,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const createSession = useCallback(async (): Promise<string | undefined> => {
     try {
-      const res = await fetch("/api/threads", { method: "POST" });
+      const res = await apiClient.post("/api/threads", {});
       if (!res.ok) return;
       const data = await res.json();
       const threadId = data.thread_id || data.thread?.thread_id || data.id;
@@ -59,7 +60,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSession = useCallback(async (sessionId: string, merge: boolean = false) => {
     try {
-      const res = await fetch(`/api/threads/${sessionId}`);
+      const res = await apiClient.get(`/api/threads/${sessionId}`);
       if (!res.ok) return [];
       const data = await res.json();
       const messages = (data.messages || []).map((msg: any, idx: number) => ({
@@ -87,7 +88,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const deleteSession = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/threads/${id}`, { method: "DELETE" });
+      const res = await apiClient.delete(`/api/threads/${id}`);
       if (!res.ok && res.status !== 204) {
         console.error("Failed to delete thread in backend:", res.status);
       }
@@ -110,7 +111,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       const storedSessions = storage.sessions.getAll();
 
       try {
-        const res = await fetch("/api/threads", { cache: "no-store" });
+        const res = await apiClient.get("/api/threads", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           const threads = Array.isArray(data.threads) ? data.threads : [];

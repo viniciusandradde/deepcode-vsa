@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { translateApiError, formatErrorMessage } from "./error-utils";
 import { useConfig } from "./config-context";
 import { useSession } from "./session-context";
+import { apiClient } from "@/lib/api-client";
 import { useArtifacts } from "./artifact-context";
 import { useArtifactDetection } from "@/hooks/useArtifactDetection";
 import type { GenesisMessage, FileAttachment } from "./types";
@@ -167,28 +168,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           const controller = new AbortController();
           abortControllerRef.current = controller;
 
-          const res = await fetch(`/api/threads/${threadId}/messages/stream`, {
+          const res = await apiClient.post(`/api/threads/${threadId}/messages/stream`, {
+            content,
+            model: selectedModelId,
+            useTavily,
+            thread_id: threadId,
+            enable_vsa: enableVSA,
+            enable_glpi: enableGLPI,
+            enable_zabbix: enableZabbix,
+            enable_linear: enableLinear,
+            enable_planning: enablePlanning,
+            attachments: attachments.map((att) => ({
+              file_id: att.id,
+              name: att.name,
+              mime: att.mime,
+              size: att.size,
+              url: att.url,
+            })),
+          }, {
             signal: controller.signal,
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content,
-              model: selectedModelId,
-              useTavily,
-              thread_id: threadId,
-              enable_vsa: enableVSA,
-              enable_glpi: enableGLPI,
-              enable_zabbix: enableZabbix,
-              enable_linear: enableLinear,
-              enable_planning: enablePlanning,
-              attachments: attachments.map((att) => ({
-                file_id: att.id,
-                name: att.name,
-                mime: att.mime,
-                size: att.size,
-                url: att.url,
-              })),
-            }),
           });
 
           if (!res.ok) {
@@ -593,27 +591,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           const controller = new AbortController();
           abortControllerRef.current = controller;
 
-          const res = await fetch(`/api/threads/${threadId}/messages`, {
-            signal: controller.signal,
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content,
-              model: selectedModelId,
-              useTavily,
-              enable_vsa: enableVSA,
-              enable_glpi: enableGLPI,
-              enable_zabbix: enableZabbix,
-              enable_linear: enableLinear,
-              enable_planning: enablePlanning,
-              attachments: attachments.map((att) => ({
-                file_id: att.id,
-                name: att.name,
-                mime: att.mime,
-                size: att.size,
-                url: att.url,
-              })),
-            }),
+          const res = await apiClient.post(`/api/threads/${threadId}/messages`, {
+            content,
+            model: selectedModelId,
+            useTavily,
+            enable_vsa: enableVSA,
+            enable_glpi: enableGLPI,
+            enable_zabbix: enableZabbix,
+            enable_linear: enableLinear,
+            enable_planning: enablePlanning,
+            attachments: attachments.map((att) => ({
+              file_id: att.id,
+              name: att.name,
+              mime: att.mime,
+              size: att.size,
+              url: att.url,
+            })),
           });
 
           if (!res.ok) {
@@ -627,14 +620,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           setMessagesBySession((prev) => {
             const existing = prev[threadId] ?? [];
             const withoutThinking = existing.filter(msg => msg.id !== thinkingMessageId);
-          const assistantMessage: GenesisMessage = {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: responseContent,
-            timestamp: Date.now(),
-            modelId: selectedModelId,
-            usedTavily: useTavily,
-          };
+            const assistantMessage: GenesisMessage = {
+              id: `assistant-${Date.now()}`,
+              role: "assistant",
+              content: responseContent,
+              timestamp: Date.now(),
+              modelId: selectedModelId,
+              usedTavily: useTavily,
+            };
             return { ...prev, [threadId]: [...withoutThinking, assistantMessage] };
           });
 
@@ -719,11 +712,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           updated[sessionId] = messages.map((msg, i) =>
             i === index
               ? {
-                  ...msg,
-                  content: newContent,
-                  editedAt: Date.now(),
-                  ...(attachments ? { attachments } : {}),
-                }
+                ...msg,
+                content: newContent,
+                editedAt: Date.now(),
+                ...(attachments ? { attachments } : {}),
+              }
               : msg
           );
           storage.messages.save(sessionId, updated[sessionId]);

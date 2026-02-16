@@ -24,6 +24,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from langchain_core.runnables import RunnableConfig
 from core.agents.base import BaseAgent
+from core.middleware.dynamic import sanitize_image_messages
 
 
 load_dotenv()
@@ -742,6 +743,7 @@ Foque em atendimento rápido e padronizado.
             else:
                 truncated_messages.append(msg)
         full_messages = truncated_messages
+        full_messages = sanitize_image_messages(full_messages)
 
         try:
             response = model_with_tools.invoke(full_messages)

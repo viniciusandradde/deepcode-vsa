@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.middleware.auth import verify_api_key
 from api.routes import (
     agents,
+    auth,
     automation,
     chat,
     config,
@@ -107,6 +108,7 @@ app.add_middleware(
 # Include routers with auth dependency on all API endpoints
 _api_deps = [Depends(verify_api_key)]
 
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"], dependencies=_api_deps)
 app.include_router(files.router, prefix="/api/v1/files", tags=["files"], dependencies=_api_deps)
 app.include_router(images.router, prefix="/api/v1/images", tags=["images"], dependencies=_api_deps)

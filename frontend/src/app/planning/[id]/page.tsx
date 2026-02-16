@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { Dialog } from "@/components/ui/dialog";
 import { PageNavBar } from "@/components/app/PageNavBar";
 import { markdownToHtml } from "@/lib/markdown-to-html";
+import { apiClient } from "@/lib/api-client";
 // Using relative URLs - Next.js rewrites proxy to backend
 
 interface Document {
@@ -99,7 +100,7 @@ export default function ProjectDetailPage() {
   const fetchProject = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/v1/planning/projects/${projectId}`);
+      const res = await apiClient.get(`/api/v1/planning/projects/${projectId}`);
       if (!res.ok) throw new Error("Erro ao carregar projeto");
       const data: Project = await res.json();
       setProject(data);
@@ -118,7 +119,7 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const res = await fetch(`/api/v1/config/rag-models`);
+        const res = await apiClient.get(`/api/v1/config/rag-models`);
         if (!res.ok) throw new Error("Erro ao carregar modelos RAG");
         const data: RagModel[] = await res.json();
         if (data && data.length > 0) {
@@ -151,7 +152,7 @@ export default function ProjectDetailPage() {
     const fetchThread = async () => {
       try {
         const threadId = `planning:${projectId}`;
-        const res = await fetch(`/api/v1/threads/${encodeURIComponent(threadId)}`);
+        const res = await apiClient.get(`/api/v1/threads/${encodeURIComponent(threadId)}`);
         if (!res.ok) throw new Error("Erro ao carregar histórico do chat");
         const data = await res.json();
         if (Array.isArray(data.messages)) {
@@ -188,10 +189,7 @@ export default function ProjectDetailPage() {
         const formData = new FormData();
         formData.append("file", file);
 
-        const res = await fetch(`/api/v1/planning/projects/${projectId}/documents`, {
-          method: "POST",
-          body: formData,
-        });
+        const res = await apiClient.post(`/api/v1/planning/projects/${projectId}/documents`, formData);
 
         if (!res.ok) {
           const err = await res.json();
@@ -212,9 +210,7 @@ export default function ProjectDetailPage() {
     const { id: docId } = deleteDocTarget;
     setDeleteDocTarget(null);
     try {
-      const res = await fetch(`/api/v1/planning/projects/${projectId}/documents/${docId}`, {
-        method: "DELETE",
-      });
+      const res = await apiClient.delete(`/api/v1/planning/projects/${projectId}/documents/${docId}`);
       if (!res.ok) throw new Error("Erro ao excluir");
       addToast("Documento excluído", "success");
       fetchProject();
@@ -228,11 +224,7 @@ export default function ProjectDetailPage() {
     if (embeddingModel === project.embedding_model) return;
     try {
       setSavingEmbedding(true);
-      const res = await fetch(`/api/v1/planning/projects/${projectId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ embedding_model: embeddingModel }),
-      });
+      const res = await apiClient.put(`/api/v1/planning/projects/${projectId}`, { embedding_model: embeddingModel });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail || "Erro ao atualizar modelo");
@@ -251,9 +243,7 @@ export default function ProjectDetailPage() {
   const handleClearChat = async () => {
     try {
       const threadId = `planning:${projectId}`;
-      const res = await fetch(`/api/v1/threads/${encodeURIComponent(threadId)}`, {
-        method: "DELETE",
-      });
+      const res = await apiClient.delete(`/api/v1/threads/${encodeURIComponent(threadId)}`);
       if (!res.ok) throw new Error("Erro ao limpar chat");
       setChatMessages([]);
       setChatError(null);
@@ -338,17 +328,14 @@ export default function ProjectDetailPage() {
     chatAbortRef.current = controller;
 
     try {
-      const res = await fetch(`/api/v1/chat/stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          project_id: projectId,
-          thread_id: threadId,
-          enable_planning: true,
-        }),
-        signal: controller.signal,
-      });
+      const res = await apiClient.post(`/api/v1/chat/stream`, {
+        message,
+        project_id: projectId,
+        thread_id: threadId,
+        enable_planning: true,
+      },
+        { signal: controller.signal }
+      );
 
       if (!res.ok || !res.body) {
         throw new Error("Erro ao iniciar streaming");

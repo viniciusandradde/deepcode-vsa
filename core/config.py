@@ -106,10 +106,12 @@ class DatabaseSettings(BaseSettings):
     def connection_string_sqlalchemy(self) -> str:
         """Get PostgreSQL connection string for SQLAlchemy (APScheduler compatibility).
         
-        Returns the same as connection_string since both use postgresql:// dialect.
-        This method exists for explicit intent when used with SQLAlchemy/APScheduler.
+        Uses postgresql+psycopg dialect to ensure compatibility with psycopg3.
         """
-        return self.connection_string
+        from urllib.parse import quote_plus
+        safe_user = quote_plus(self.user)
+        safe_password = quote_plus(self.password)
+        return f"postgresql+psycopg://{safe_user}:{safe_password}@{self.host}:{self.port}/{self.database}"
 
 
 class Settings(BaseSettings):

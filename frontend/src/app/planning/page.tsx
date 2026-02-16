@@ -8,6 +8,7 @@ import { SkeletonProjectCard } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { Dialog } from "@/components/ui/dialog";
 import { PageNavBar } from "@/components/app/PageNavBar";
+import { apiClient } from "@/lib/api-client";
 // Using relative URLs - Next.js rewrites proxy to backend
 
 interface Project {
@@ -48,7 +49,7 @@ export default function PlanningPage() {
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/v1/planning/projects`);
+      const res = await apiClient.get(`/api/v1/planning/projects`);
       if (!res.ok) {
         if (process.env.NODE_ENV === "development") {
           console.error("[Planning] Fetch failed:", res.status, res.statusText);
@@ -75,7 +76,7 @@ export default function PlanningPage() {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const res = await fetch(`/api/v1/config/rag-models`);
+        const res = await apiClient.get(`/api/v1/config/rag-models`);
         if (!res.ok) throw new Error("Erro ao carregar modelos RAG");
         const data: RagModel[] = await res.json();
         if (data && data.length > 0) {
@@ -98,21 +99,17 @@ export default function PlanningPage() {
 
   const handleCreateProject = async () => {
     if (!newProjectTitle.trim()) return;
-    
+
     try {
       setCreating(true);
-      const res = await fetch(`/api/v1/planning/projects`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newProjectTitle,
-          description: newProjectDescription,
-          embedding_model: embeddingModel,
-        }),
+      const res = await apiClient.post(`/api/v1/planning/projects`, {
+        title: newProjectTitle,
+        description: newProjectDescription,
+        embedding_model: embeddingModel,
       });
-      
+
       if (!res.ok) throw new Error("Erro ao criar projeto");
-      
+
       setNewProjectTitle("");
       setNewProjectDescription("");
       setShowCreateModal(false);
@@ -130,9 +127,7 @@ export default function PlanningPage() {
     const { id, title } = deleteTarget;
     setDeleteTarget(null);
     try {
-      const res = await fetch(`/api/v1/planning/projects/${id}`, {
-        method: "DELETE",
-      });
+      const res = await apiClient.delete(`/api/v1/planning/projects/${id}`);
       if (!res.ok) throw new Error("Erro ao excluir projeto");
       addToast(`Projeto "${title}" excluído`, "success");
       fetchProjects();
