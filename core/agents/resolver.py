@@ -67,12 +67,17 @@ def _get_connector_tools() -> dict[str, Callable[[], list]]:
         from core.tools.planning import PLANNING_TOOLS
         return list(PLANNING_TOOLS)
 
+    def _wareline_tools():
+        from core.tools.wareline import wareline_search_tables
+        return [wareline_search_tables]
+
     return {
         "glpi": _glpi_tools,
         "zabbix": _zabbix_tools,
         "linear": _linear_tools,
         "tavily": _tavily_tools,
         "planning": _planning_tools,
+        "wareline": _wareline_tools,
     }
 
 
@@ -201,6 +206,7 @@ def resolve_for_legacy(
     enable_zabbix: bool = False,
     enable_linear: bool = False,
     enable_planning: bool = False,
+    enable_wareline: bool = False,
     enable_vsa: bool = False,
     project_id: str | None = None,
 ) -> ResolvedAgent:
@@ -236,6 +242,11 @@ def resolve_for_legacy(
 
     if enable_planning:
         factory = CONNECTOR_TOOL_REGISTRY.get("planning")
+        if factory:
+            tools.extend(factory())
+
+    if enable_wareline:
+        factory = CONNECTOR_TOOL_REGISTRY.get("wareline")
         if factory:
             tools.extend(factory())
 

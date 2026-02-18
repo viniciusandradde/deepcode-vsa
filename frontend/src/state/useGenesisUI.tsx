@@ -7,7 +7,7 @@ import { ChatProvider, useChat } from "./chat-context";
 import { ArtifactProvider, useArtifacts } from "./artifact-context";
 
 // Re-export types for backward compatibility
-export type { Role, GenesisMessage, GenesisSession, ModelOption, FileAttachment, AgentOption } from "./types";
+export type { Role, GenesisMessage, GenesisSession, ModelOption, FileAttachment, AgentOption, KnowledgeSource } from "./types";
 
 export function GenesisUIProvider({ children }: { children: React.ReactNode }) {
   return (
@@ -57,6 +57,8 @@ export function useGenesisUI() {
     agents: config.agents,
     selectedAgentId: config.selectedAgentId,
     setSelectedAgentId: config.setSelectedAgentId,
+    // Knowledge sources
+    knowledgeSources: config.knowledgeSources,
     // Session
     sessions: session.sessions,
     currentSessionId: session.currentSessionId,

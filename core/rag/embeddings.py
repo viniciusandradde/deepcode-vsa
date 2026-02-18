@@ -20,6 +20,11 @@ BGE_M3_MODEL_NAME = "BGE-M3 Local (Privado)"
 BGE_M3_MODEL_DIMS = 1024
 BGE_M3_MODEL_REPO = "BAAI/bge-m3"
 
+OPENROUTER_BGE_M3_MODEL_ID = "openrouter-bge-m3"
+OPENROUTER_BGE_M3_MODEL_NAME = "BGE-M3 via OpenRouter"
+OPENROUTER_BGE_M3_MODEL_DIMS = 1024
+OPENROUTER_BGE_M3_REMOTE_MODEL = "baai/bge-m3"
+
 
 def _validate_openai_key() -> str:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -68,6 +73,18 @@ class EmbeddingFactory:
                 ) from e
             return HuggingFaceEmbeddings(model_name=BGE_M3_MODEL_REPO)
 
+        if model_id == OPENROUTER_BGE_M3_MODEL_ID:
+            api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+            if not api_key:
+                raise RuntimeError(
+                    "openrouter-bge-m3 requer OPENROUTER_API_KEY configurada."
+                )
+            return OpenAIEmbeddings(
+                model=OPENROUTER_BGE_M3_REMOTE_MODEL,
+                openai_api_key=api_key,
+                openai_api_base="https://openrouter.ai/api/v1",
+            )
+
         raise RuntimeError(f"Embedding model não suportado: {model_id}")
 
     @classmethod
@@ -78,5 +95,9 @@ class EmbeddingFactory:
         if _bge_available():
             models.append(
                 {"id": BGE_M3_MODEL_ID, "name": BGE_M3_MODEL_NAME, "dims": BGE_M3_MODEL_DIMS}
+            )
+        if os.getenv("OPENROUTER_API_KEY"):
+            models.append(
+                {"id": OPENROUTER_BGE_M3_MODEL_ID, "name": OPENROUTER_BGE_M3_MODEL_NAME, "dims": OPENROUTER_BGE_M3_MODEL_DIMS}
             )
         return models

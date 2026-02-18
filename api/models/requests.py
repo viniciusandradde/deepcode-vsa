@@ -34,6 +34,8 @@ class ChatRequest(BaseModel):
     enable_zabbix: bool = False
     enable_linear: bool = False
     enable_planning: bool = False  # Planning/NotebookLM tools
+    enable_wareline: bool = False  # Wareline hospital catalog search
+    wareline_domain: Optional[str] = None  # Domain filter (e.g. "FATURAMENTO")
     dry_run: bool = True  # Safe by default
 
 

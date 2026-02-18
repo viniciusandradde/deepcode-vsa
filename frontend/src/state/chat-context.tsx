@@ -16,7 +16,7 @@ interface ChatState {
   isLoading: boolean;
   isSending: boolean;
   messagesBySession: Record<string, GenesisMessage[]>;
-  sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[]) => Promise<void>;
+  sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[], knowledgeSource?: { provider: string; slug: string }) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
   editMessage: (messageId: string, newContent: string, attachments?: FileAttachment[]) => void;
@@ -86,7 +86,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, useStreaming: boolean = true, attachments: FileAttachment[] = []) => {
+    async (content: string, useStreaming: boolean = true, attachments: FileAttachment[] = [], knowledgeSource?: { provider: string; slug: string }) => {
       // Read fresh values from refs to avoid stale closures
       const { selectedModelId, useTavily, enableVSA, enableGLPI, enableZabbix, enableLinear, enablePlanning, selectedAgentId } = configRef.current;
       const { currentSessionId, sessions, createSession, setSessions } = sessionRef.current;
@@ -179,6 +179,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             enable_zabbix: enableZabbix,
             enable_linear: enableLinear,
             enable_planning: enablePlanning,
+            ...(knowledgeSource?.provider === "wareline" ? {
+              enable_wareline: true,
+              wareline_domain: knowledgeSource.slug.toUpperCase().replace(/-/g, " "),
+            } : {}),
             attachments: attachments.map((att) => ({
               file_id: att.id,
               name: att.name,
@@ -602,6 +606,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             enable_zabbix: enableZabbix,
             enable_linear: enableLinear,
             enable_planning: enablePlanning,
+            ...(knowledgeSource?.provider === "wareline" ? {
+              enable_wareline: true,
+              wareline_domain: knowledgeSource.slug.toUpperCase().replace(/-/g, " "),
+            } : {}),
             attachments: attachments.map((att) => ({
               file_id: att.id,
               name: att.name,

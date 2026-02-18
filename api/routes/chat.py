@@ -332,6 +332,19 @@ O relatório **Atendimentos por Centro de Custo ({start_date} a {end_date})** po
     return report_md, success
 
 
+def _fetch_wareline_context(query: str, domain: str | None) -> str | None:
+    """Fetch relevant Wareline catalog context for RAG injection."""
+    try:
+        from core.tools.wareline import search_wareline_catalog
+        result = search_wareline_catalog(query=query, domain=domain, limit=8, threshold=0.25)
+        if result and "Nenhuma tabela" not in result and "Erro" not in result:
+            return result
+        return None
+    except Exception as e:
+        logger.warning("[WARELINE] RAG fetch failed: %s", e)
+        return None
+
+
 def _fetch_project_context(query: str, project_id: str) -> str | None:
     try:
         from core.tools.planning_rag import search_project_knowledge
@@ -430,6 +443,7 @@ def _resolve_tools_and_prompt(request: ChatRequest) -> ResolvedAgent:
         enable_zabbix=request.enable_zabbix,
         enable_linear=request.enable_linear,
         enable_planning=request.enable_planning,
+        enable_wareline=request.enable_wareline,
         enable_vsa=request.enable_vsa,
         project_id=request.project_id,
     )
@@ -485,6 +499,18 @@ async def chat(request: ChatRequest):
             project_context = _fetch_project_context(request.message, request.project_id)
             if project_context:
                 system_prompt += f"\n\nCONTEXTO RECUPERADO DO PROJETO:\n{project_context}"
+
+        if request.wareline_domain or request.enable_wareline:
+            wareline_ctx = _fetch_wareline_context(request.message, request.wareline_domain)
+            if wareline_ctx:
+                domain_label = request.wareline_domain or "GERAL"
+                system_prompt += (
+                    f"\n\nCATÁLOGO WARELINE ({domain_label}):\n"
+                    "Use as informações abaixo sobre tabelas e colunas do sistema hospitalar "
+                    "Wareline/MV para responder a pergunta do usuário.\n\n"
+                    f"{wareline_ctx}"
+                )
+                logger.info("[WARELINE] Contexto injetado (%d chars, domínio=%s)", len(wareline_ctx), domain_label)
 
         # Select agent based on resolved type
         if enable_vsa:
@@ -629,6 +655,18 @@ async def stream_chat(request: ChatRequest):
             project_context = _fetch_project_context(request.message, request.project_id)
             if project_context:
                 system_prompt += f"\n\nCONTEXTO RECUPERADO DO PROJETO:\n{project_context}"
+
+        if request.wareline_domain or request.enable_wareline:
+            wareline_ctx = _fetch_wareline_context(request.message, request.wareline_domain)
+            if wareline_ctx:
+                domain_label = request.wareline_domain or "GERAL"
+                system_prompt += (
+                    f"\n\nCATÁLOGO WARELINE ({domain_label}):\n"
+                    "Use as informações abaixo sobre tabelas e colunas do sistema hospitalar "
+                    "Wareline/MV para responder a pergunta do usuário.\n\n"
+                    f"{wareline_ctx}"
+                )
+                logger.info("[WARELINE] Contexto injetado (%d chars, domínio=%s) [stream]", len(wareline_ctx), domain_label)
 
         # Select agent based on resolved type
         if enable_vsa:

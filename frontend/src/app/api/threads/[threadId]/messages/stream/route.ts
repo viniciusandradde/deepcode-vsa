@@ -10,6 +10,7 @@ interface PostPayload {
   model: string;
   useTavily: boolean;
   thread_id?: string;
+  agent_id?: string;
   attachments?: Array<{
     file_id: string;
     name?: string;
@@ -17,12 +18,15 @@ interface PostPayload {
     size?: number;
     url?: string;
   }>;
-  // VSA Integration fields (Task 1.1)
+  // VSA Integration fields
   enable_vsa?: boolean;
   enable_glpi?: boolean;
   enable_zabbix?: boolean;
   enable_linear?: boolean;
   enable_planning?: boolean;
+  // Wareline catalog
+  enable_wareline?: boolean;
+  wareline_domain?: string;
 }
 
 const isDev = process.env.NODE_ENV === "development";
@@ -59,11 +63,14 @@ export async function POST(
           thread_id: threadId,
           model: body.model,
           use_tavily: body.useTavily ?? false,
+          ...(body.agent_id ? { agent_id: body.agent_id } : {}),
           enable_vsa: body.enable_vsa ?? false,
           enable_glpi: body.enable_glpi ?? false,
           enable_zabbix: body.enable_zabbix ?? false,
           enable_linear: body.enable_linear ?? false,
           enable_planning: body.enable_planning ?? false,
+          enable_wareline: body.enable_wareline ?? false,
+          ...(body.wareline_domain ? { wareline_domain: body.wareline_domain } : {}),
           attachments: body.attachments ?? [],
         }),
         signal: controller.signal,

@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocalStorageState } from "./use-local-storage-state";
-import type { ModelOption } from "./types";
+import type { ModelOption, KnowledgeSource } from "./types";
 
 export interface AgentOption {
   id: string;
@@ -36,6 +36,8 @@ interface ConfigState {
   agents: AgentOption[];
   selectedAgentId: string;
   setSelectedAgentId: (id: string) => void;
+  // Knowledge sources for @mention
+  knowledgeSources: KnowledgeSource[];
 }
 
 const ConfigContext = createContext<ConfigState | null>(null);
@@ -49,6 +51,9 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   const [enableZabbix, setEnableZabbix] = useLocalStorageState('vsa_enableZabbix', false);
   const [enableLinear, setEnableLinear] = useLocalStorageState('vsa_enableLinear', false);
   const [enablePlanning, setEnablePlanning] = useLocalStorageState('vsa_enablePlanning', false);
+
+  // Knowledge sources for @mention
+  const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([]);
 
   // Multi-agent state
   const [agents, setAgents] = useState<AgentOption[]>([]);
@@ -122,6 +127,30 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     loadAgents();
   }, []);
 
+  // Load knowledge sources from API
+  useEffect(() => {
+    async function loadKnowledgeSources() {
+      try {
+        const res = await fetch("/api/v1/knowledge/sources", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const mapped: KnowledgeSource[] = (data.sources ?? []).map((s: any) => ({
+          id: s.id,
+          provider: s.provider,
+          slug: s.slug,
+          name: s.name,
+          description: s.description,
+          color: s.color,
+          meta: s.meta,
+        }));
+        setKnowledgeSources(mapped);
+      } catch (error) {
+        console.debug("Knowledge sources API not available:", error);
+      }
+    }
+    loadKnowledgeSources();
+  }, []);
+
   const value = useMemo<ConfigState>(
     () => ({
       models,
@@ -142,6 +171,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       agents,
       selectedAgentId,
       setSelectedAgentId,
+      knowledgeSources,
     }),
     [
       models,
@@ -161,6 +191,7 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
       agents,
       selectedAgentId,
       setSelectedAgentId,
+      knowledgeSources,
     ],
   );
 

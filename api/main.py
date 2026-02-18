@@ -18,6 +18,7 @@ from api.routes import (
     files,
     export,
     images,
+    knowledge,
     planning,
     projects,
     queue,
@@ -133,6 +134,9 @@ app.include_router(
     projects.router, prefix="/api/v1/projects", tags=["projects"], dependencies=_api_deps
 )
 app.include_router(export.router, prefix="/api/v1/export", tags=["export"], dependencies=_api_deps)
+app.include_router(
+    knowledge.router, prefix="/api/v1/knowledge", tags=["knowledge"], dependencies=_api_deps
+)
 app.include_router(
     agents_admin.router, prefix="/api/v1/admin", tags=["admin"], dependencies=_api_deps
 )

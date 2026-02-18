@@ -56,6 +56,16 @@ export interface AgentOption {
   skillCount: number;
 }
 
+export interface KnowledgeSource {
+  id: string;           // e.g. "wareline:faturamento"
+  provider: string;     // e.g. "wareline", "glpi", "zabbix"
+  slug: string;         // e.g. "faturamento"
+  name: string;         // e.g. "Faturamento"
+  description?: string;
+  color: string;
+  meta?: Record<string, any>;
+}
+
 export interface GenesisUIState {
   isLoading: boolean;
   isSending: boolean;
@@ -78,6 +88,8 @@ export interface GenesisUIState {
   agents: AgentOption[];
   selectedAgentId: string;
   setSelectedAgentId: (id: string) => void;
+  // Knowledge sources
+  knowledgeSources: KnowledgeSource[];
   sessions: GenesisSession[];
   currentSessionId: string;
   createSession: () => Promise<string | undefined>;
@@ -85,7 +97,7 @@ export interface GenesisUIState {
   renameSession: (id: string, title: string) => void;
   deleteSession: (id: string) => Promise<void>;
   messagesBySession: Record<string, GenesisMessage[]>;
-  sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[]) => Promise<void>;
+  sendMessage: (content: string, useStreaming?: boolean, attachments?: FileAttachment[], knowledgeSource?: { provider: string; slug: string }) => Promise<void>;
   editingMessageId: string | null;
   setEditingMessageId: (id: string | null) => void;
   editMessage: (messageId: string, newContent: string, attachments?: FileAttachment[]) => void;

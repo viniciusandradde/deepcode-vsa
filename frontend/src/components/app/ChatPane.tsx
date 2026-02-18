@@ -41,6 +41,8 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
     enableZabbix,
     enableLinear,
     enablePlanning,
+    // Knowledge sources
+    knowledgeSources,
     // Artifacts
     artifactsBySession,
     selectedArtifactId,
@@ -98,10 +100,11 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
   const handleMessageSubmit: (
     message: string,
     streaming: boolean,
-    attachments?: FileAttachment[]
+    attachments?: FileAttachment[],
+    knowledgeSource?: { provider: string; slug: string },
   ) => Promise<void> = useCallback(
-    async (message, streaming, attachments) => {
-      await sendMessage(message, streaming, attachments ?? []);
+    async (message, streaming, attachments, knowledgeSource) => {
+      await sendMessage(message, streaming, attachments ?? [], knowledgeSource);
     },
     [sendMessage]
   );
@@ -333,6 +336,7 @@ export function ChatPane({ sidebarCollapsed = false, sidebarOpen = false, onTogg
           isSending={isSending}
           onCancel={cancelMessage}
           currentSessionId={currentSessionId}
+          knowledgeSources={knowledgeSources}
         />
       </div>
 

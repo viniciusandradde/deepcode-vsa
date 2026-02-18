@@ -5,14 +5,22 @@ import clsx from "clsx";
 import { Button } from "@/components/ui/button";
 import { AudioRecorderButton } from "./AudioRecorderButton";
 import { QuickActionsMenu } from "./QuickActionsMenu";
-import type { FileAttachment } from "@/state/types";
+import { MentionSelector } from "./MentionSelector";
+import { SourceChip } from "./SourceChip";
+import type { FileAttachment, KnowledgeSource } from "@/state/types";
 
 interface MessageInputProps {
-  onSubmit: (message: string, streaming: boolean, attachments?: FileAttachment[]) => Promise<void>;
+  onSubmit: (
+    message: string,
+    streaming: boolean,
+    attachments?: FileAttachment[],
+    knowledgeSource?: { provider: string; slug: string },
+  ) => Promise<void>;
   isLoading: boolean;
   isSending: boolean;
   onCancel: () => void;
   currentSessionId: string | null;
+  knowledgeSources?: KnowledgeSource[];
 }
 
 /**
@@ -24,13 +32,17 @@ export function MessageInput({
   isLoading,
   isSending,
   onCancel,
-  currentSessionId
+  currentSessionId,
+  knowledgeSources = [],
 }: MessageInputProps) {
   const [draft, setDraft] = useState("");
   const [useStreaming, setUseStreaming] = useState(true);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<KnowledgeSource | null>(null);
+  const [showMentionSelector, setShowMentionSelector] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,18 +76,58 @@ export function MessageInput({
     };
   }, []);
 
+  function handleDraftChange(value: string) {
+    setDraft(value);
+
+    // Detect @mention trigger
+    if (knowledgeSources.length > 0) {
+      // Find last @ that might be a mention trigger (at start of text or after whitespace)
+      const lastAtIndex = value.lastIndexOf("@");
+      if (lastAtIndex >= 0) {
+        const charBefore = lastAtIndex === 0 ? " " : value[lastAtIndex - 1];
+        const textAfterAt = value.slice(lastAtIndex + 1);
+        // Only trigger if @ is at start or after whitespace, and no space in the filter text
+        if ((charBefore === " " || charBefore === "\n" || lastAtIndex === 0) && !textAfterAt.includes(" ")) {
+          setMentionFilter(textAfterAt);
+          setShowMentionSelector(true);
+          return;
+        }
+      }
+      setShowMentionSelector(false);
+    }
+  }
+
+  function handleMentionSelect(source: KnowledgeSource) {
+    setSelectedSource(source);
+    setShowMentionSelector(false);
+
+    // Remove the @filter text from draft
+    const lastAtIndex = draft.lastIndexOf("@");
+    if (lastAtIndex >= 0) {
+      setDraft(draft.slice(0, lastAtIndex).trimEnd());
+    }
+
+    textareaRef.current?.focus();
+  }
+
   async function handleSubmit(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const trimmed = draft.trim();
     if ((!trimmed && attachments.length === 0) || isLoading || isSending || uploading) return;
 
     const currentDraft = trimmed || "Analise os anexos.";
+    const source = selectedSource
+      ? { provider: selectedSource.provider, slug: selectedSource.slug }
+      : undefined;
+
     setDraft("");
     setUploadError(null);
+    setShowMentionSelector(false);
 
     try {
-      await onSubmit(currentDraft, useStreaming, attachments);
+      await onSubmit(currentDraft, useStreaming, attachments, source);
       setAttachments([]);
+      setSelectedSource(null);
     } catch (error) {
       setDraft(currentDraft);
       console.error("Erro ao enviar mensagem:", error);
@@ -149,9 +201,16 @@ export function MessageInput({
   return (
     <footer className="keyboard-safe border-t border-white/[0.06] bg-obsidian-900/80 backdrop-blur-md px-4 md:px-10 py-3 md:py-5">
       <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3 md:flex-row md:items-start md:gap-4">
-        <div className="flex-1">
-          {attachments.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
+        <div className="relative flex-1">
+          {/* Source chip + attachments row */}
+          {(selectedSource || attachments.length > 0) && (
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {selectedSource && (
+                <SourceChip
+                  source={selectedSource}
+                  onRemove={() => setSelectedSource(null)}
+                />
+              )}
               {attachments.map((att) => (
                 <div
                   key={att.id}
@@ -176,7 +235,7 @@ export function MessageInput({
                     onClick={() => setAttachments((prev) => prev.filter((item) => item.id !== att.id))}
                     aria-label="Remover anexo"
                   >
-                    ✕
+                    &#10005;
                   </button>
                 </div>
               ))}
@@ -185,14 +244,29 @@ export function MessageInput({
           {uploadError && (
             <div className="mb-2 text-xs text-red-400">{uploadError}</div>
           )}
+
+          {/* Mention selector dropdown */}
+          {showMentionSelector && knowledgeSources.length > 0 && (
+            <MentionSelector
+              sources={knowledgeSources}
+              filter={mentionFilter}
+              onSelect={handleMentionSelect}
+              onClose={() => setShowMentionSelector(false)}
+            />
+          )}
+
           <textarea
             id="message-input"
             ref={textareaRef}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={isLoading ? "Carregando..." : "Digite sua mensagem..."}
+            onChange={(event) => handleDraftChange(event.target.value)}
+            placeholder={isLoading ? "Carregando..." : knowledgeSources.length > 0 ? "Digite sua mensagem... (use @ para mencionar fontes)" : "Digite sua mensagem..."}
             className="min-h-[96px] md:min-h-[90px] w-full resize-none rounded-xl border border-white/10 bg-obsidian-800 px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
             onKeyDown={(event) => {
+              // Don't submit on Enter when mention selector is open
+              if (showMentionSelector && (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Enter" || event.key === "Escape")) {
+                return; // Let MentionSelector handle these keys
+              }
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
                 handleSubmit();
