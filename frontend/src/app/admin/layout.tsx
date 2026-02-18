@@ -6,10 +6,10 @@ import clsx from "clsx";
 import { PageNavBar } from "@/components/app/PageNavBar";
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Agentes", icon: "bot" },
-  { href: "/admin/connectors", label: "Conectores", icon: "plug" },
-  { href: "/admin/domains", label: "Domínios", icon: "database" },
-];
+  { href: "/admin" as const, label: "Agentes", icon: "bot" },
+  { href: "/admin/connectors" as const, label: "Conectores", icon: "plug" },
+  { href: "/admin/domains" as const, label: "Domínios", icon: "database" },
+] as const;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

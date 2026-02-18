@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocalStorageState } from "./use-local-storage-state";
 import type { ModelOption } from "./types";
 
@@ -52,7 +52,16 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
 
   // Multi-agent state
   const [agents, setAgents] = useState<AgentOption[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useLocalStorageState<string>('vsa_selectedAgentId', '');
+  const [selectedAgentIdState, setSelectedAgentIdState] = useState<string>('');
+  useEffect(() => {
+    const saved = localStorage.getItem('vsa_selectedAgentId');
+    if (saved) setSelectedAgentIdState(saved);
+  }, []);
+  const setSelectedAgentId = useCallback((id: string) => {
+    setSelectedAgentIdState(id);
+    localStorage.setItem('vsa_selectedAgentId', id);
+  }, []);
+  const selectedAgentId = selectedAgentIdState;
 
   useEffect(() => {
     async function loadModels() {
